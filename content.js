@@ -13,6 +13,7 @@
     let monthlyFetchInFlight = false; // evita chamadas paralelas
     let monthlyFetched = false;       // garante fetch único por item/página
     let lastCreatedAt = null;
+    const dispatchedProductData = new Set();
 
     let subtitleObs = null;          // NEW: observer do subtítulo
     let subtitlePatchLock = 0;
@@ -33,6 +34,9 @@
     const NVAI_SCRAPED_DATA = {};
     const NVAI_IN_FLIGHT_SCRIPTS = new Map();
     const NVAI_CARD_CACHE = new Map();
+    const NVAI_VISITS_CACHE = new Map();
+    const NVAI_VISITS_IN_FLIGHT = new Map();
+    const NVAI_SPINNER_HTML = '<span class="novai-spinner" aria-hidden="true"></span>';
 
     document.addEventListener(NVAI_EVENTS.PRODUCT_DATA_RESPONSE, (event) => {
       const detail = event?.detail;
@@ -185,6 +189,9 @@ function findCardContentHost(li) {
       monthlySeries = null;
       monthlyFetchInFlight = false;
       monthlyFetched = false;
+      dispatchedProductData.clear();
+      NVAI_VISITS_CACHE.clear();
+      NVAI_VISITS_IN_FLIGHT.clear();
     }
   
     function getItemIdFromUrl() {
@@ -695,8 +702,10 @@ function nvaiCalculateAgeDays(startTime) {
   const date = new Date(startTime);
   if (Number.isNaN(date.getTime())) return null;
   const diff = Date.now() - date.getTime();
-  if (!Number.isFinite(diff) || diff < 0) return 0;
-  return Math.floor(diff / (24 * 3600 * 1000));
+  if (!Number.isFinite(diff)) return null;
+  const safeDiff = diff <= 0 ? 0 : diff;
+  const wholeDays = Math.floor(safeDiff / (24 * 3600 * 1000));
+  return wholeDays + 1;
 }
 
 function nvaiParseSalesText(str) {
@@ -917,9 +926,31 @@ async function nvaiScrapeForScripts(itemId, url, canonical = false, options = {}
 
 function nvaiGetAgeColor(days) {
   if (days == null) return "#3b82f6";
-  if (days > 365) return "#ef4444";
-  if (days > 180) return "#f59e0b";
+  if (days > 365) return "#ff0000";
+  if (days > 180) return "#f7b500";
   return "#22c55e";
+}
+
+function nvaiShouldShareProductData(sales, days) {
+  if (sales == null || days == null) return false;
+  if (sales >= 100 && days > 30) return true;
+  if (sales < 5 && days > 45) return true;
+  if (sales < 100 && days >= 90) return true;
+  return false;
+}
+
+function nvaiDispatchSharedProductData(itemId, startTime, sales) {
+  if (!itemId || !startTime) return;
+  const key = `${itemId}|${startTime}`;
+  if (dispatchedProductData.has(key)) return;
+  dispatchedProductData.add(key);
+  const detail = {
+    itemId,
+    startTime,
+    itemSales: sales ?? null,
+    sales: sales ?? null,
+  };
+  document.dispatchEvent(new CustomEvent("StoreProductData", { detail }));
 }
 
 function ensureNovaiCardSkeleton(li, itemId) {
@@ -951,34 +982,63 @@ function updateNovaiMetricsCard(li, itemId, data = {}) {
 
   const days = daysOverride != null ? daysOverride : nvaiCalculateAgeDays(startTime);
   const color = nvaiGetAgeColor(days);
-  const loader = '<span class="novai-spinner" aria-hidden="true"></span>';
+  const loader = NVAI_SPINNER_HTML;
 
   const salesValue = Number.isFinite(Number(sales)) ? Math.max(0, Math.round(Number(sales))) : null;
   const displaySales = loading
     ? loader
     : salesValue != null
     ? (salesValue >= 5 ? `+${salesValue}` : String(salesValue))
-    : '—';
+    : '--';
 
   const displayDays = loading
     ? loader
     : days != null
     ? `${days} dia${days === 1 ? '' : 's'}`
-    : '—';
+    : '--';
+
+  const visitsEntry = NVAI_VISITS_CACHE.get(itemId);
+  const visitsLoading = NVAI_VISITS_IN_FLIGHT.has(itemId);
+  const visitsValue =
+    visitsEntry && Number.isFinite(Number(visitsEntry.total))
+      ? Math.max(0, Math.round(Number(visitsEntry.total)))
+      : null;
+  const displayVisits = visitsLoading
+    ? loader
+    : visitsValue != null
+    ? visitsValue.toLocaleString('pt-BR')
+    : '-';
+  const visitsButtonState = visitsLoading ? 'loading' : visitsEntry ? 'ready' : 'idle';
+  const visitsButtonLabel = visitsEntry ? 'Detalhes' : 'Ver';
 
   card.innerHTML = `
     <div class="novai-metric-block">
-      <span class="novai-metric-label">Criado há</span>
+      <span class="novai-metric-label">Criado ha</span>
       <strong>${displayDays}</strong>
     </div>
     <div class="novai-metric-block">
       <span class="novai-metric-label">Vendas</span>
       <strong id="nvai-sales-${itemId}">${displaySales}</strong>
     </div>
+    <div class="novai-metric-block novai-visits-block">
+      <span class="novai-metric-label">Visitas (6m)</span>
+      <div class="novai-visits-row">
+        <strong id="novai-visits-${itemId}">${displayVisits}</strong>
+        <button
+          type="button"
+          class="novai-visits-trigger"
+          data-item-id="${itemId}"
+          data-state="${visitsButtonState}"
+        >
+          ${visitsLoading ? loader : visitsButtonLabel}
+        </button>
+      </div>
+    </div>
   `;
 
   card.style.borderLeftColor = color;
   card.dataset.novaiStatus = loading ? 'loading' : (error ? 'error' : 'ready');
+  nvaiWireVisitsTrigger(card, itemId);
 
   if (!loading) {
     if (salesValue != null) li.setAttribute('sales', String(salesValue));
@@ -992,9 +1052,13 @@ function updateNovaiMetricsCard(li, itemId, data = {}) {
       updatedAt: Date.now(),
     };
     NVAI_CARD_CACHE.set(itemId, cacheEntry);
+
+    const effectiveStart = startTime || li.getAttribute('product-start-time') || null;
+    if (nvaiShouldShareProductData(salesValue, days) && effectiveStart) {
+      nvaiDispatchSharedProductData(itemId, effectiveStart, salesValue);
+    }
   }
 }
-
 function applyCachedNovaiMetrics(ol) {
   if (!ol) return;
   for (const li of Array.from(ol.children)) {
@@ -1010,6 +1074,156 @@ function applyCachedNovaiMetrics(ol) {
   }
 }
 
+function nvaiBuildVisitRanges(months = 6) {
+  const ranges = [];
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+  for (let i = 0; i < months; i++) {
+    const from = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    const to = new Date(start.getFullYear(), start.getMonth() + i + 1, 0);
+    const label = from.toLocaleString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '').trim();
+    ranges.push({
+      date_from: from.toISOString().slice(0, 10),
+      date_to: to.toISOString().slice(0, 10),
+      label,
+    });
+  }
+  return ranges;
+}
+
+function nvaiFetchVisitSeries(itemId) {
+  if (!itemId) return Promise.reject(new Error('itemId ausente'));
+  if (NVAI_VISITS_CACHE.has(itemId)) {
+    return Promise.resolve(NVAI_VISITS_CACHE.get(itemId));
+  }
+  if (NVAI_VISITS_IN_FLIGHT.has(itemId)) {
+    return NVAI_VISITS_IN_FLIGHT.get(itemId);
+  }
+
+  const ranges = nvaiBuildVisitRanges(6);
+  const payload = ranges.map(({ date_from, date_to }) => ({ date_from, date_to }));
+
+  const promise = new Promise((resolve, reject) => {
+    try {
+      chrome.runtime.sendMessage(
+        { type: 'NOVAI_FETCH_VISITS_SERIES', itemId, ranges: payload },
+        (response) => {
+          const runtimeErr = chrome.runtime.lastError;
+          if (runtimeErr) {
+            reject(new Error(runtimeErr.message || 'runtime error'));
+            return;
+          }
+          if (!response || response.ok !== true) {
+            reject(new Error(response?.error || 'Erro ao obter visitas'));
+            return;
+          }
+
+          const rawSeries = Array.isArray(response.data?.series) ? response.data.series : [];
+          const mapped = rawSeries.map((entry, idx) => {
+            const base = ranges[idx] || {};
+            const visits = Number(entry?.visits ?? entry?.total_visits ?? entry?.total ?? 0) || 0;
+            return {
+              date_from: entry?.date_from || base.date_from,
+              date_to: entry?.date_to || base.date_to,
+              label: entry?.label || base.label || `${base.date_from} - ${base.date_to}`,
+              visits,
+            };
+          });
+
+          const suppliedTotal = Number(response.data?.total);
+          const total = Number.isFinite(suppliedTotal) && suppliedTotal >= 0
+            ? Math.round(suppliedTotal)
+            : mapped.reduce((acc, seg) => acc + (Number(seg.visits) || 0), 0);
+
+          const cacheEntry = {
+            total,
+            series: mapped,
+            fetchedAt: Date.now(),
+          };
+          NVAI_VISITS_CACHE.set(itemId, cacheEntry);
+          resolve(cacheEntry);
+        }
+      );
+    } catch (err) {
+      reject(err);
+    }
+  }).catch((err) => {
+    NVAI_VISITS_CACHE.delete(itemId);
+    throw err;
+  });
+
+  const inflight = promise.finally(() => NVAI_VISITS_IN_FLIGHT.delete(itemId));
+  NVAI_VISITS_IN_FLIGHT.set(itemId, inflight);
+  return inflight;
+}
+
+function nvaiWireVisitsTrigger(card, itemId) {
+  const btn = card.querySelector(`.novai-visits-trigger[data-item-id="${itemId}"]`);
+  const valueEl = card.querySelector(`#novai-visits-${itemId}`);
+  if (!btn || !valueEl) return;
+
+  const setResult = (data) => {
+    const total = Number(data?.total) || 0;
+    valueEl.textContent = total.toLocaleString('pt-BR');
+    btn.dataset.state = 'ready';
+    btn.textContent = 'Detalhes';
+    if (Array.isArray(data?.series) && data.series.length) {
+      btn.title = data.series
+        .map((seg) => {
+          const label = seg.label || `${seg.date_from || ''} - ${seg.date_to || ''}`;
+          const val = Number(seg.visits || 0).toLocaleString('pt-BR');
+          return `${label}: ${val}`;
+        })
+        .join('\n');
+    }
+  };
+
+  const setLoading = () => {
+    btn.dataset.state = 'loading';
+    btn.innerHTML = NVAI_SPINNER_HTML;
+    valueEl.innerHTML = NVAI_SPINNER_HTML;
+  };
+
+  const setError = (message) => {
+    btn.dataset.state = 'error';
+    btn.textContent = 'Erro';
+    valueEl.textContent = '-';
+    if (message) btn.title = message;
+  };
+
+  const ensureData = () => {
+    if (NVAI_VISITS_CACHE.has(itemId)) {
+      setResult(NVAI_VISITS_CACHE.get(itemId));
+      return;
+    }
+    if (btn.dataset.state === 'loading') return;
+    setLoading();
+    nvaiFetchVisitSeries(itemId)
+      .then((data) => setResult(data))
+      .catch((err) => {
+        warn('Falha ao coletar visitas', { itemId, err });
+        setError(err?.message || 'Erro nas visitas');
+      });
+  };
+
+  if (btn.dataset.bound === '1') {
+    if (NVAI_VISITS_CACHE.has(itemId)) {
+      setResult(NVAI_VISITS_CACHE.get(itemId));
+    }
+    return;
+  }
+  btn.dataset.bound = '1';
+
+  btn.addEventListener('mouseenter', ensureData, { once: true });
+  btn.addEventListener('click', (evt) => {
+    evt.preventDefault();
+    ensureData();
+  });
+
+  if (NVAI_VISITS_CACHE.has(itemId)) {
+    setResult(NVAI_VISITS_CACHE.get(itemId));
+  }
+}
 async function nvaiProcessSearchItems(items, ol) {
   if (!Array.isArray(items) || items.length === 0) return;
   const itemIds = items.map((it) => it.itemId).filter(Boolean);
@@ -1268,16 +1482,21 @@ function ensureSearchListStyles() {
       background:#111; display:inline-block; margin-right:6px; vertical-align:middle;
     }
     .novai-metrics-card{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;
       padding:8px 10px; margin:8px 0 4px;
       background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px;
       border-left:6px solid #22c55e;
       color:#0f172a; box-shadow:0 2px 6px rgba(15,23,42,.08);
       font:600 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto;
     }
-    .novai-metric-block{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+    .novai-metric-block{ display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 120px; }
     .novai-metric-block strong{ font-weight:800; font-size:14px; }
     .novai-metric-label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.02em; color:#475569; }
+    .novai-visits-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .novai-visits-trigger{ display:inline-flex; align-items:center; gap:4px; background:#eef2ff; border:1px solid #c7d2fe; border-radius:9999px; padding:3px 10px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; cursor:pointer; transition:all .2s ease; color:#1e293b; }
+    .novai-visits-trigger:hover{ background:#e0e7ff; border-color:#818cf8; }
+    .novai-visits-trigger[data-state="loading"]{ opacity:.65; pointer-events:none; }
+    .novai-visits-trigger[data-state="error"]{ background:#fee2e2; border-color:#f87171; color:#b91c1c; }
     .novai-spinner{
       display:inline-block;
       width:16px; height:16px;
@@ -2089,3 +2308,13 @@ function hidePanel(panel){
     setupObserver();
     injectKpiCardsDebounced();
   })();
+
+
+
+
+
+
+
+
+
+

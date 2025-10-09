@@ -6,6 +6,8 @@ const API_BASE = "https://nossopoint-backend-flask-server.com";
 const NVAI_SCRIPT_CACHE = new Map();
 const NVAI_SCRIPT_CACHE_TTL = 60 * 60 * 1000; // 1h
 const NVAI_PRODUCT_STORAGE_KEY = "novai_product_cache_v1";
+const NVAI_VISITS_CACHE = new Map();
+const NVAI_VISITS_CACHE_TTL = 15 * 60 * 1000; // 15 min
 
 // ---------- cookies ----------
 function getCookieHeaderForUrl(url) {
@@ -106,6 +108,34 @@ function extractScriptsFromHtml(html) {
     scripts.push(match[0]);
   }
   return scripts;
+}
+
+async function fetchVisitsRange(itemId, dateFrom, dateTo) {
+  const url = new URL('https://api.mercadolibre.com/items/visits');
+  url.searchParams.set('ids', itemId);
+  if (dateFrom) url.searchParams.set('date_from', dateFrom);
+  if (dateTo) url.searchParams.set('date_to', dateTo);
+
+  const res = await fetch(url.toString(), {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`visits ${res.status}: ${body}`.trim());
+  }
+
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Falha ao decodificar resposta de visitas');
+  }
+
+  const entry = Array.isArray(data) ? data[0] : data;
+  return Number(entry?.total_visits ?? entry?.total ?? entry?.visits ?? 0) || 0;
 }
 
 async function fetchScriptsOnly(url, noRedirect = false) {
@@ -240,6 +270,55 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // async
   }
 
+  // visitas (˙ltimos 6 meses) via API p˙blica
+  if (message.type === "NOVAI_FETCH_VISITS_SERIES") {
+    const itemId = message.itemId;
+    const ranges = Array.isArray(message.ranges) ? message.ranges : [];
+
+    (async () => {
+      try {
+        if (!itemId || ranges.length === 0) {
+          sendResponse({ ok: false, error: "Parametros invalidos" });
+          return;
+        }
+
+        const signature = ranges
+          .map((r) => `${r?.date_from || ""}|${r?.date_to || ""}`)
+          .join(",");
+        const cached = NVAI_VISITS_CACHE.get(itemId);
+        const now = Date.now();
+        if (cached && cached.signature === signature && now - cached.timestamp < NVAI_VISITS_CACHE_TTL) {
+          sendResponse({ ok: true, data: { total: cached.total, series: cached.series } });
+          return;
+        }
+
+        const series = [];
+        for (const range of ranges) {
+          const visits = await fetchVisitsRange(itemId, range?.date_from, range?.date_to);
+          series.push({
+            date_from: range?.date_from || null,
+            date_to: range?.date_to || null,
+            label: range?.label || null,
+            visits,
+          });
+        }
+        const total = series.reduce((acc, seg) => acc + (Number(seg.visits) || 0), 0);
+
+        NVAI_VISITS_CACHE.set(itemId, {
+          total,
+          series,
+          timestamp: now,
+          signature,
+        });
+
+        sendResponse({ ok: true, data: { total, series } });
+      } catch (err) {
+        console.error("[BG] NOVAI_FETCH_VISITS_SERIES erro", err);
+        sendResponse({ ok: false, error: String(err?.message || err) });
+      }
+    })();
+    return true;
+  }
   // guardar dados de produto no cache local
   if (message.type === "NOVAI_STORE_PRODUCT_DATA") {
     const data = message.data;
@@ -319,3 +398,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   // (sem return -> s√≠ncrono)
 });
+
+
+
+
+
+
+
+
+
+
+
