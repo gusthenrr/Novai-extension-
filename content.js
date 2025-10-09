@@ -19,7 +19,117 @@
   
     const ROOT_ID = "novai-root";
     let lastUrl = location.href;
-    let LAST_BULK_MAP = null;
+    const NVAI_EVENTS = {
+      SCRAPE_REQUEST: "NovaiScrapeScriptsURL",
+      SCRAPE_RESPONSE: "NovaiScrapedScriptsURL",
+      STORE_PRODUCT_DATA: "NovaiStoreProductData",
+      PRODUCT_DATA_RESPONSE: "NovaiProductDataResponse",
+    };
+
+    const NVAI_PRODUCT_STORAGE = {
+      items: {},
+    };
+
+    const NVAI_SCRAPED_DATA = {};
+    const NVAI_IN_FLIGHT_SCRIPTS = new Map();
+    const NVAI_CARD_CACHE = new Map();
+
+    document.addEventListener(NVAI_EVENTS.PRODUCT_DATA_RESPONSE, (event) => {
+      const detail = event?.detail;
+      if (!detail || typeof detail !== "object") return;
+      NVAI_PRODUCT_STORAGE.items = {
+        ...NVAI_PRODUCT_STORAGE.items,
+        ...detail,
+      };
+    });
+
+    document.addEventListener(NVAI_EVENTS.STORE_PRODUCT_DATA, (event) => {
+      const payload = event?.detail;
+      if (!payload || !payload.itemId) return;
+      const stored = {
+        itemId: payload.itemId,
+        itemSales: payload.itemSales ?? payload.sales ?? null,
+        startTime: payload.startTime ?? null,
+        storedAt: Date.now(),
+      };
+      NVAI_PRODUCT_STORAGE.items[payload.itemId] = stored;
+      try {
+        chrome.runtime.sendMessage(
+          { type: "NOVAI_STORE_PRODUCT_DATA", data: stored },
+          () => void chrome.runtime.lastError
+        );
+      } catch (err) {
+        warn("Falha ao enviar dados ao background", err);
+      }
+    });
+
+    document.addEventListener(NVAI_EVENTS.SCRAPE_RESPONSE, (event) => {
+      const detail = event?.detail;
+      const idRef = detail?.idRef;
+      if (!idRef) return;
+      NVAI_SCRAPED_DATA[idRef] = detail;
+    });
+
+    document.addEventListener(NVAI_EVENTS.SCRAPE_REQUEST, (event) => {
+      const detail = event?.detail || {};
+      const { url, idRef, noRedirect = false, prefix = "" } = detail;
+      if (!url || !idRef) return;
+      const finalUrl = prefix ? `${prefix}${url}` : url;
+      try {
+        chrome.runtime.sendMessage(
+          { type: "NOVAI_FETCH_SCRIPTS", url: finalUrl, noRedirect: !!noRedirect },
+          (resp) => {
+            const runtimeErr = chrome.runtime.lastError;
+            if (runtimeErr) {
+              document.dispatchEvent(
+                new CustomEvent(NVAI_EVENTS.SCRAPE_RESPONSE, {
+                  detail: {
+                    url: finalUrl,
+                    idRef,
+                    error: runtimeErr.message || "runtime error",
+                  },
+                })
+              );
+              return;
+            }
+
+            if (!resp || resp.ok !== true) {
+              document.dispatchEvent(
+                new CustomEvent(NVAI_EVENTS.SCRAPE_RESPONSE, {
+                  detail: {
+                    url: finalUrl,
+                    idRef,
+                    error: resp?.error || "Erro ao obter scripts",
+                  },
+                })
+              );
+              return;
+            }
+
+            document.dispatchEvent(
+              new CustomEvent(NVAI_EVENTS.SCRAPE_RESPONSE, {
+                detail: {
+                  url: finalUrl,
+                  idRef,
+                  scripts: resp.scripts || [],
+                  html: resp.html || null,
+                },
+              })
+            );
+          }
+        );
+      } catch (err) {
+        document.dispatchEvent(
+          new CustomEvent(NVAI_EVENTS.SCRAPE_RESPONSE, {
+            detail: {
+              url: finalUrl,
+              idRef,
+              error: err?.message || String(err),
+            },
+          })
+        );
+      }
+    });
 
 
     // --- no topo do arquivo (perto das outras variáveis de estado)
@@ -542,204 +652,452 @@ function collectItemsFromOl(ol) {
 
     const urlKey = normalizeUrlKey(url);
     const itemName = getItemNameFromLi(li);
+    const catalog = /\/p\//.test(url);
 
-    items.push({ itemId: id, url, urlKey, itemName });
+    items.push({ itemId: id, url, urlKey, itemName, li, catalog });
   }
   return items;
 }
 
 
+async function nvaiLoadCachedProductData(itemIds) {
+  if (!Array.isArray(itemIds) || itemIds.length === 0) return {};
+  return new Promise((resolve) => {
+    try {
+      chrome.runtime.sendMessage(
+        { type: "NOVAI_GET_PRODUCT_DATA", itemIds },
+        (resp) => {
+          const runtimeErr = chrome.runtime.lastError;
+          if (runtimeErr) {
+            warn("Erro ao obter cache de produtos", runtimeErr);
+            resolve({});
+            return;
+          }
+          if (resp?.ok && resp.data) {
+            document.dispatchEvent(
+              new CustomEvent(NVAI_EVENTS.PRODUCT_DATA_RESPONSE, { detail: resp.data })
+            );
+            resolve(resp.data);
+          } else {
+            resolve({});
+          }
+        }
+      );
+    } catch (err) {
+      warn("Falha ao solicitar cache ao background", err);
+      resolve({});
+    }
+  });
+}
 
-// === normaliza resposta do BG '/scraping' => { [itemId]: { visits, sold, revenue, conversion, monthly:{labels, visits, revenues, quantities} } }
-function normalizeBulkMetricsResponse(resp){
-  const byId  = {};
-  const byUrl = {};
+function nvaiCalculateAgeDays(startTime) {
+  if (!startTime) return null;
+  const date = new Date(startTime);
+  if (Number.isNaN(date.getTime())) return null;
+  const diff = Date.now() - date.getTime();
+  if (!Number.isFinite(diff) || diff < 0) return 0;
+  return Math.floor(diff / (24 * 3600 * 1000));
+}
 
-  const src = resp?.data || resp?.items || resp || {};
-  const asArray = Array.isArray(src)
-    ? src
-    : Object.entries(src).map(([k,v]) => ({ item_id: k, ...v }));
+function nvaiParseSalesText(str) {
+  if (!str || typeof str !== "string") return null;
+  const normalized = str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  const match = normalized.match(/(?:mais\s+de\s+)?\+?\s*([\d.,]+)\s*(milhoes?|milhao|mil|m|k)?\s*vendid[oa]s/);
+  if (!match) return null;
+  let raw = match[1].replace(/\./g, "").replace(",", ".");
+  let num = Number.parseFloat(raw);
+  if (!Number.isFinite(num)) return null;
+  const suffix = (match[2] || "").toLowerCase();
+  if (suffix.startsWith("milh") || suffix === "m") num *= 1_000_000;
+  else if (suffix.startsWith("mil") || suffix === "k") num *= 1_000;
+  return Math.round(num);
+}
 
-  for (const row of asArray) {
-    // chaves
-    const id  = String(row.item_id || row.itemId || row.id || "").toUpperCase();
-    const url = row.url || row.href || row.link || row.url_full || "";
-    const urlKey = row.url_key || (url ? normalizeUrlKey(url) : "");
+function nvaiDecodeJsonString(str) {
+  try {
+    return JSON.parse(`"${str}"`);
+  } catch {
+    return str
+      .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+      .replace(/\\"/g, '"');
+  }
+}
 
-    // métricas
-    const visits = Number(row.visits ?? row.visualizacoes ?? row.views ?? 0) || 0;
-    const sold   = Number(row.sold   ?? row.vendidos      ?? row.quantity ?? 0) || 0;
-    const rev    = Number(row.revenue?? row.faturamento   ?? 0) || 0;
+function nvaiStripScriptWrapper(script) {
+  if (!script) return "";
+  return script
+    .replace(/^<script[^>]*>/i, "")
+    .replace(/<\/script>$/i, "")
+    .trim();
+}
 
-    let conv = Number(row.conversion ?? row.conversao ?? 0) || 0;
-    if (conv > 0 && conv <= 1) conv *= 100;
+function nvaiSafeJsonParse(str) {
+  if (!str) return null;
+  try {
+    return JSON.parse(str);
+  } catch {
+    return null;
+  }
+}
 
-    const monthly = row.monthly || {
-      labels:     row.labels || row.month_labels || [],
-      visits:     row.month_visits || row.visits_month || [],
-      revenues:   row.month_revenues || row.revenues_month || [],
-      quantities: row.month_quantities || row.quantity_month || [],
-    };
+function nvaiExtractStateFromScriptBody(body) {
+  if (!body) return null;
+  const trimmed = body.trim();
+  if (!trimmed) return null;
 
-    const packed = {
-      visits, sold, revenue: rev, conversion: conv,
-      monthly: {
-        labels: Array.isArray(monthly.labels) ? monthly.labels : [],
-        visits: Array.isArray(monthly.visits) ? monthly.visits.map(n=>Number(n)||0) : [],
-        revenues: Array.isArray(monthly.revenues) ? monthly.revenues.map(n=>Number(n)||0) : [],
-        quantities: Array.isArray(monthly.quantities) ? monthly.quantities.map(n=>Number(n)||0) : [],
+  if (trimmed.startsWith("{") && trimmed.includes("pageState")) {
+    const parsed = nvaiSafeJsonParse(trimmed);
+    if (parsed) return parsed.pageState || parsed.initialState || parsed;
+  }
+
+  const preloadedMatch = body.match(/window\.__PRELOADED_STATE__\s*=\s*(\{[\s\S]*?\})\s*;/);
+  if (preloadedMatch && preloadedMatch[1]) {
+    const parsed = nvaiSafeJsonParse(preloadedMatch[1]);
+    if (parsed) return parsed;
+  }
+
+  const pushMatch = body.match(/w\[l\]\.push\((\{[\s\S]*?\})\)/);
+  if (pushMatch && pushMatch[1]) {
+    const parsed = nvaiSafeJsonParse(pushMatch[1]);
+    if (parsed) return parsed;
+  }
+
+  return null;
+}
+
+function nvaiExtractSalesDataFromState(state) {
+  if (!state || typeof state !== "object") return null;
+  const initial = state.initialState || state.pageState || state;
+  const components = initial?.components || {};
+  const header = components.header || initial?.header || {};
+  const subtitles = [
+    header.subtitle,
+    header.subtitleText,
+    header?.title_subtitle?.subtitle,
+    initial?.subtitle,
+  ].filter(Boolean);
+
+  let sales = null;
+  let subtitleUsed = null;
+  for (const text of subtitles) {
+    const parsed = nvaiParseSalesText(text);
+    if (parsed != null) {
+      sales = parsed;
+      subtitleUsed = text;
+      break;
+    }
+  }
+
+  const track = components.track || initial?.track || {};
+  const melidata = track.melidata_event || {};
+  const gtm = track.gtm_event || {};
+
+  const startTime =
+    state.startTime ||
+    gtm.startTime ||
+    gtm.start_time ||
+    melidata.event_data?.start_time ||
+    melidata.event_data?.startTime ||
+    initial?.metadata?.stats?.start_time ||
+    null;
+
+  if (sales == null && typeof subtitleUsed !== "string" && typeof header === "object") {
+    const fallback = header?.subtitle_html || header?.subtitleHtml;
+    if (fallback) {
+      const parsed = nvaiParseSalesText(fallback);
+      if (parsed != null) sales = parsed;
+    }
+  }
+
+  return { sales, startTime, subtitle: subtitleUsed };
+}
+
+function nvaiExtractSubtitleFromBody(body) {
+  if (!body) return null;
+  const subtitleMatch = body.match(/"subtitle"\s*:\s*"([^"\\]*?(?:vendid[^"\\]*?))"/i);
+  if (subtitleMatch && subtitleMatch[1]) {
+    return nvaiDecodeJsonString(subtitleMatch[1]);
+  }
+  return null;
+}
+
+function nvaiExtractSalesDataFromScript(script) {
+  if (!script) return null;
+  const body = nvaiStripScriptWrapper(script);
+  if (!body) return null;
+
+  const state = nvaiExtractStateFromScriptBody(body);
+  if (state) {
+    const parsed = nvaiExtractSalesDataFromState(state);
+    if (parsed && (parsed.sales != null || parsed.startTime)) {
+      return parsed;
+    }
+  }
+
+  const subtitle = nvaiExtractSubtitleFromBody(body);
+  if (subtitle) {
+    const sales = nvaiParseSalesText(subtitle);
+    if (sales != null) return { sales, startTime: null, subtitle };
+  }
+
+  return null;
+}
+
+function nvaiExtractSalesDataFromScripts(scripts) {
+  if (!Array.isArray(scripts)) return { sales: null, startTime: null };
+  for (const script of scripts) {
+    const parsed = nvaiExtractSalesDataFromScript(script);
+    if (parsed && (parsed.sales != null || parsed.startTime)) return parsed;
+  }
+  return { sales: null, startTime: null };
+}
+
+async function nvaiScrapeForScripts(itemId, url, canonical = false, options = {}) {
+  const key = `${canonical ? "canonical-" : ""}scripts-${itemId}`;
+  if (NVAI_SCRAPED_DATA[key] && !NVAI_SCRAPED_DATA[key].error) {
+    const cached = NVAI_SCRAPED_DATA[key];
+    return cached.scripts || cached.html || [];
+  }
+  if (NVAI_IN_FLIGHT_SCRIPTS.has(key)) {
+    return NVAI_IN_FLIGHT_SCRIPTS.get(key);
+  }
+
+  const promise = new Promise((resolve, reject) => {
+    const existing = NVAI_SCRAPED_DATA[key];
+    if (existing && !existing.error) {
+      resolve(existing.scripts || existing.html || []);
+      return;
+    }
+
+    const onResponse = (event) => {
+      const detail = event?.detail;
+      if (!detail || detail.idRef !== key) return;
+      cleanup();
+      if (detail.error) {
+        reject(new Error(detail.error));
+      } else {
+        NVAI_SCRAPED_DATA[key] = detail;
+        resolve(detail.scripts || detail.html || []);
       }
     };
 
-    if (id)     byId[id] = packed;
-    if (urlKey) byUrl[urlKey] = packed;
-  }
+    const onTimeout = () => {
+      cleanup();
+      reject(new Error("Timeout"));
+    };
 
-  return { byId, byUrl };
+    const cleanup = () => {
+      clearTimeout(timer);
+      document.removeEventListener(NVAI_EVENTS.SCRAPE_RESPONSE, onResponse);
+      NVAI_IN_FLIGHT_SCRIPTS.delete(key);
+    };
+
+    document.addEventListener(NVAI_EVENTS.SCRAPE_RESPONSE, onResponse);
+    const timer = setTimeout(onTimeout, options.timeoutMs || 10000);
+
+    document.dispatchEvent(
+      new CustomEvent(NVAI_EVENTS.SCRAPE_REQUEST, {
+        detail: {
+          url,
+          idRef: key,
+          noRedirect: !!options.noRedirect,
+          prefix: options.prefix || "",
+        },
+      })
+    );
+  });
+
+  NVAI_IN_FLIGHT_SCRIPTS.set(key, promise);
+  return promise;
 }
 
 
-// === cache mensal (24 meses) ===
-const NOVAI_MONTHLY_CACHE = new Map(); // id -> { labels, visits, revenues, quantities }
-
-// === barra de carregamento no header ===
-function ensureLoadingBar(show) {
-  let bar = document.getElementById('novai-loading-bar');
-  if (!bar) {
-    bar = document.createElement('div');
-    bar.id = 'novai-loading-bar';
-    Object.assign(bar.style, {
-      position: 'fixed',
-      top: '0', left: '0', width: '100%', height: '3px',
-      background: '#111', zIndex: '2147483646', display: 'none'
-    });
-    const fill = document.createElement('div');
-    fill.className = 'fill';
-    Object.assign(fill.style, {
-      width: '0%', height: '100%',
-      background: 'var(--novai-ml-yellow,#ffe600)',
-      transition: 'width .4s ease'
-    });
-    bar.appendChild(fill);
-    document.body.appendChild(bar);
-  }
-  bar.style.display = show ? 'block' : 'none';
-  const fill = bar.querySelector('.fill');
-  if (show) {
-    fill.style.width = '10%';
-    setTimeout(() => (fill.style.width = '65%'), 100);
-  } else {
-    fill.style.width = '100%';
-    setTimeout(() => { bar.style.display = 'none'; fill.style.width = '0%'; }, 350);
-  }
+function nvaiGetAgeColor(days) {
+  if (days == null) return "#3b82f6";
+  if (days > 365) return "#ef4444";
+  if (days > 180) return "#f59e0b";
+  return "#22c55e";
 }
 
-
-// === strip de métricas no topo do card ===
-function formatBR(n){ try{ return n.toLocaleString('pt-BR'); }catch{ return String(n) } }
-function formatBRL(n){ try{ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n) }catch{ return `R$ ${n}` } }
-
-function ensureMetricsStripInLi(li, summary){
-  if (!li) return;
-
-  // sempre ajusta o li para nosso layout “tuned”
+function ensureNovaiCardSkeleton(li, itemId) {
+  if (!li) return null;
   li.classList.add('novai-card-tuned');
-
-  const hostContainer = findCardContentHost(li);
-
-  // cria/pega o strip dentro do CONTEÚDO do card
-  let host = hostContainer.querySelector('.novai-metrics-strip');
-  if (!host) {
-    host = document.createElement('div');
-    host.className = 'novai-metrics-strip';
-    hostContainer.insertBefore(hostContainer.firstChild ? host : hostContainer.appendChild(host), hostContainer.firstChild);
+  const host = findCardContentHost(li) || li;
+  let card = host.querySelector('.novai-metrics-card');
+  if (!card) {
+    card = document.createElement('div');
+    card.className = 'novai-metrics-card';
+    host.insertBefore(card, host.firstChild);
   }
-
-  const { visits=0, sold=0, revenue=0, conversion=0 } = summary || {};
-  host.innerHTML = `
-    <span title="Visualizações">👁️ <b>${formatBR(visits)}</b></span>
-    <span title="Vendidos">🛒 <b>${formatBR(sold)}</b></span>
-    <span title="Faturamento">💰 <b>${formatBRL(revenue)}</b></span>
-    <span title="Conversão">📈 <b>${(Number(conversion)||0).toFixed(2)}%</b></span>
-  `;
+  card.dataset.novaiItemId = itemId;
+  li.setAttribute('product-id', itemId);
+  return card;
 }
 
+function updateNovaiMetricsCard(li, itemId, data = {}) {
+  const card = ensureNovaiCardSkeleton(li, itemId);
+  if (!card) return;
 
-function applyBulkMetricsToList(ol, map){
-  if (!ol || !map) return;
-  LAST_BULK_MAP = map;
+  const {
+    loading = false,
+    sales = null,
+    startTime = null,
+    days: daysOverride = null,
+    error = false,
+  } = data;
 
-  // Compat: se vier no formato antigo (objeto simples), trate como byId
-  const byId  = map.byId  || (map.byUrl ? {} : map) || {};
-  const byUrl = map.byUrl || {};
+  const days = daysOverride != null ? daysOverride : nvaiCalculateAgeDays(startTime);
+  const color = nvaiGetAgeColor(days);
+  const loader = '<span class="novai-spinner" aria-hidden="true"></span>';
 
+  const salesValue = Number.isFinite(Number(sales)) ? Math.max(0, Math.round(Number(sales))) : null;
+  const displaySales = loading
+    ? loader
+    : salesValue != null
+    ? (salesValue >= 5 ? `+${salesValue}` : String(salesValue))
+    : '—';
+
+  const displayDays = loading
+    ? loader
+    : days != null
+    ? `${days} dia${days === 1 ? '' : 's'}`
+    : '—';
+
+  card.innerHTML = `
+    <div class="novai-metric-block">
+      <span class="novai-metric-label">Criado há</span>
+      <strong>${displayDays}</strong>
+    </div>
+    <div class="novai-metric-block">
+      <span class="novai-metric-label">Vendas</span>
+      <strong id="nvai-sales-${itemId}">${displaySales}</strong>
+    </div>
+  `;
+
+  card.style.borderLeftColor = color;
+  card.dataset.novaiStatus = loading ? 'loading' : (error ? 'error' : 'ready');
+
+  if (!loading) {
+    if (salesValue != null) li.setAttribute('sales', String(salesValue));
+    if (days != null) li.setAttribute('product-days', String(days));
+    if (startTime) li.setAttribute('product-start-time', startTime);
+    const cacheEntry = {
+      itemId,
+      itemSales: salesValue,
+      startTime: startTime || null,
+      itemDays: days != null ? days : null,
+      updatedAt: Date.now(),
+    };
+    NVAI_CARD_CACHE.set(itemId, cacheEntry);
+  }
+}
+
+function applyCachedNovaiMetrics(ol) {
+  if (!ol) return;
   for (const li of Array.from(ol.children)) {
-    const id = getLiItemId(li);
-    const urlKey = getLiUrlKey(li);
-
-    const m = (id && byId[id]) || (urlKey && byUrl[urlKey]);
-    if (!m) continue;
-
-    ensureMetricsStripInLi(li, m);
-
-    // cache mensal (usa id ou urlKey como chave)
-    const cacheKey = id || urlKey;
-    if (cacheKey && m.monthly) NOVAI_MONTHLY_CACHE.set(cacheKey, {
-      labels: m.monthly.labels || [],
-      visits: m.monthly.visits || [],
-      revenues: m.monthly.revenues || [],
-      quantities: m.monthly.quantities || [],
+    const itemId = getLiItemId(li);
+    if (!itemId) continue;
+    const cached = NVAI_CARD_CACHE.get(itemId) || NVAI_PRODUCT_STORAGE.items[itemId];
+    if (!cached) continue;
+    updateNovaiMetricsCard(li, itemId, {
+      sales: cached.itemSales ?? cached.sales ?? null,
+      startTime: cached.startTime ?? null,
+      days: cached.itemDays ?? (cached.startTime ? nvaiCalculateAgeDays(cached.startTime) : null),
     });
   }
 }
 
+async function nvaiProcessSearchItems(items, ol) {
+  if (!Array.isArray(items) || items.length === 0) return;
+  const itemIds = items.map((it) => it.itemId).filter(Boolean);
+  await nvaiLoadCachedProductData(itemIds);
+  if (ol) applyCachedNovaiMetrics(ol);
+
+  for (const item of items) {
+    const { itemId, url, li, catalog } = item;
+    if (!itemId || !url || !li) continue;
+
+    const cached = NVAI_CARD_CACHE.get(itemId) || NVAI_PRODUCT_STORAGE.items[itemId];
+    if (cached && (cached.itemSales != null || cached.sales != null)) {
+      updateNovaiMetricsCard(li, itemId, {
+        sales: cached.itemSales ?? cached.sales ?? null,
+        startTime: cached.startTime ?? null,
+        days: cached.itemDays ?? null,
+      });
+      continue;
+    }
+
+    updateNovaiMetricsCard(li, itemId, { loading: true });
+
+    try {
+      const scripts = await nvaiScrapeForScripts(itemId, url, !!catalog);
+      const parsed = nvaiExtractSalesDataFromScripts(scripts);
+      if (!parsed || (parsed.sales == null && !parsed.startTime)) {
+        updateNovaiMetricsCard(li, itemId, { sales: null, startTime: parsed?.startTime ?? null, error: true });
+        continue;
+      }
+
+      const payload = {
+        itemId,
+        itemSales: parsed.sales ?? null,
+        startTime: parsed.startTime ?? null,
+      };
+      document.dispatchEvent(new CustomEvent(NVAI_EVENTS.STORE_PRODUCT_DATA, { detail: payload }));
+      updateNovaiMetricsCard(li, itemId, {
+        sales: parsed.sales ?? null,
+        startTime: parsed.startTime ?? null,
+      });
+    } catch (err) {
+      warn('Falha ao coletar scripts do item', { itemId, url, err });
+      updateNovaiMetricsCard(li, itemId, { error: true });
+    }
+  }
+
+  if (ol) applyCachedNovaiMetrics(ol);
+}
 
 
 
-function wireSearchBarButton() { 
+
+
+
+
+
+function wireSearchBarButton() {
   const btn = document.getElementById('novai-btn-buscar-metricas');
   if (!btn) return;
 
-  btn.onclick = () => {
+  btn.onclick = async () => {
     const ol = findSearchOl();
-    const list = collectItemsFromOl(ol);       // [{ itemId, url }]
+    const { items } = collectSearchItems();
+    const list = items.length ? items : collectItemsFromOl(ol);
     if (!list.length) return;
-
-    // payload no formato que o backend /scraping espera
-    const items = list.map(x => ({ item_id: x.itemId, url: x.url, url_key: x.urlKey, item_name: x.itemName}));
-    const ids   = list.map(x => x.itemId);
 
     btn.disabled = true;
     const orig = btn.textContent;
-    btn.textContent = 'Buscando...';
-    ensureLoadingBar(true);
+    btn.textContent = 'Carregando...';
 
-    chrome.runtime.sendMessage(
-      { type: 'GET_SEARCH_METRICS_BULK', items, itemIds: ids },
-      (resp) => {
-        btn.disabled = false;
-        ensureLoadingBar(false);
-
-        if (resp?.ok) {
-          const map = normalizeBulkMetricsResponse(resp.data ?? resp);
-          applyBulkMetricsToList(ol, map);
-
-          btn.textContent = 'Métricas aplicadas ✔';
-          setTimeout(() => (btn.textContent = orig), 1800);
-        } else {
-          btn.textContent = 'Tentar novamente';
-          setTimeout(() => (btn.textContent = orig), 1800);
-          console.error('[NOVAI] bulk metrics error:', resp?.error);
-        }
-      }
-    );
+    try {
+      await nvaiProcessSearchItems(list, ol);
+      btn.textContent = 'Métricas ativadas ✔';
+      setTimeout(() => (btn.textContent = orig), 1800);
+    } catch (err) {
+      warn('Erro ao ativar métricas de busca', err);
+      btn.textContent = 'Tentar novamente';
+      setTimeout(() => (btn.textContent = orig), 1800);
+    } finally {
+      btn.disabled = false;
+    }
   };
 }
 
 
 
 
-function ensureSearchActionsRow(items) {
+function ensureSearchActionsRow() {
   const ol = findSearchOl();
   if (!ol) return;
 
@@ -757,7 +1115,7 @@ function ensureSearchActionsRow(items) {
     `;
     ol.parentElement.insertBefore(row, ol);
   }
-  wireSearchBarButton(items);
+  wireSearchBarButton();
 }
 
 function isFullInLi(li) {
@@ -909,16 +1267,26 @@ function ensureSearchListStyles() {
       content:''; width:6px; height:6px; border-radius:9999px;
       background:#111; display:inline-block; margin-right:6px; vertical-align:middle;
     }
-    .novai-metrics-strip{
-    position: relative !important;
-    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-    padding:6px 8px; margin:6px 0 8px 0;
-    background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px;
-    color:#0f172a; box-shadow:0 1px 2px rgba(0,0,0,.04);
-    font:600 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto;
-  }
-  .novai-metrics-strip span{ display:inline-flex; align-items:center; gap:4px; }
-  .novai-metrics-strip b{ font-weight:800 }
+    .novai-metrics-card{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:8px 10px; margin:8px 0 4px;
+      background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px;
+      border-left:6px solid #22c55e;
+      color:#0f172a; box-shadow:0 2px 6px rgba(15,23,42,.08);
+      font:600 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto;
+    }
+    .novai-metric-block{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+    .novai-metric-block strong{ font-weight:800; font-size:14px; }
+    .novai-metric-label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.02em; color:#475569; }
+    .novai-spinner{
+      display:inline-block;
+      width:16px; height:16px;
+      border:2px solid rgba(148,163,184,.35);
+      border-top-color:#111;
+      border-radius:50%;
+      animation:novai-spin 0.65s linear infinite;
+    }
+    @keyframes novai-spin{ to{ transform:rotate(360deg); } }
   `;
   document.head.appendChild(st);
 }
@@ -1006,7 +1374,9 @@ async function ensureSearchHeader() {
   const { items, total } = collectSearchItems();
   const ol = findSearchOl();
   ensureCatalogBadgesFromOl(ol);
-  ensureSearchActionsRow(items);
+  ensureSearchActionsRow();
+
+  if (ol) applyCachedNovaiMetrics(ol);
 
   const catalogLocal = countCatalogInList(ol);
   const fullLocal    = countFullInList(ol);
@@ -1015,7 +1385,7 @@ async function ensureSearchHeader() {
 
   if (ol && !searchObs) {
     searchObs = new MutationObserver(() => {
-      if (LAST_BULK_MAP) applyBulkMetricsToList(ol, LAST_BULK_MAP);
+      if (NVAI_CARD_CACHE.size > 0) applyCachedNovaiMetrics(ol);
       ensureSearchHeader();
     });
     searchObs.observe(ol, { childList: true, subtree: false });

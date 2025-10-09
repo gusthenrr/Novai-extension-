@@ -3,15 +3,17 @@ console.log("[BG] service worker up");
 
 const API_BASE = "https://nossopoint-backend-flask-server.com";
 
+const NVAI_SCRIPT_CACHE = new Map();
+const NVAI_SCRIPT_CACHE_TTL = 60 * 60 * 1000; // 1h
+const NVAI_PRODUCT_STORAGE_KEY = "novai_product_cache_v1";
 
-
-// Retorna string "name=value; name2=value2" para o hostname da URL
+// ---------- cookies ----------
 function getCookieHeaderForUrl(url) {
   return new Promise((resolve) => {
     try {
       chrome.cookies.getAll({ url }, (cookies) => {
         if (!cookies || cookies.length === 0) return resolve("");
-        const kv = cookies.map(c => `${c.name}=${c.value}`).join("; ");
+        const kv = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
         console.log("[BG] cookies coletados:", cookies.length, "itens");
         resolve(kv);
       });
@@ -24,32 +26,41 @@ function getCookieHeaderForUrl(url) {
 
 /* ---------- helpers HTTP ---------- */
 async function postJSON(url, body, extraHeaders = {}) {
-  const headers = Object.assign(
-    { "Content-Type": "application/json" },
-    extraHeaders
-  );
+  const headers = {
+    "Content-Type": "application/json",
+    ...extraHeaders,
+  };
 
   const res = await fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify(body),
+    body: JSON.stringify(body ?? {}),
   });
-  const txt = await res.text();
-  let data;
-  try { data = JSON.parse(txt); } catch { data = txt; }
+
   if (!res.ok) {
-    console.error("[BG] HTTP", res.status, data);
-    throw new Error(`HTTP ${res.status}`);
+    let detail = "";
+    try { detail = await res.text(); } catch {}
+    throw new Error(`POST ${url} -> ${res.status} ${detail}`.trim());
   }
-  return data;
+
+  const ct = res.headers.get("content-type") || "";
+  if (ct.includes("application/json")) return res.json();
+
+  // fallback: tenta parsear como JSON, senão devolve texto
+  const raw = await res.text();
+  try { return JSON.parse(raw); } catch { return raw; }
 }
 
 // tenta uma lista de endpoints alternativos (nome flexível no backend)
 async function postFirst(paths, body, extraHeaders = {}) {
   let lastErr;
-  for (const p of (Array.isArray(paths) ? paths : [paths])) {
-    try { return await postJSON(`${API_BASE}${p}`, body, extraHeaders); }
-    catch (e) { lastErr = e; }
+  const arr = Array.isArray(paths) ? paths : [paths];
+  for (const p of arr) {
+    try {
+      return await postJSON(`${API_BASE}${p}`, body, extraHeaders);
+    } catch (e) {
+      lastErr = e;
+    }
   }
   throw lastErr || new Error("All endpoints failed");
 }
@@ -73,19 +84,83 @@ function isLikelyAdsUrl(url = "") {
     const host = u.hostname || "";
     const full = u.href;
 
-    // domínios/caminhos típicos de "Patrocinado" no ML
     if (/^click\d*\.mercadolivre/.test(host) || /^click\d*\.mercadolibre/.test(host)) return true;
     if (/publicidade\.mercadolivre/i.test(host) || /publicidad\.mercadolibre/i.test(host)) return true;
     if (/\/mlm\/clicks\/external/i.test(full)) return true;
     if (/\/count_cking/i.test(full)) return true;
-
-    // parâmetros clássicos de ads (não determinístico, mas ajuda)
     if (/[?&](gclid|msclkid|fbclid)=/i.test(full)) return true;
 
     return false;
   } catch {
     return false;
   }
+}
+
+/* ---------- pegar <script> de uma HTML ---------- */
+function extractScriptsFromHtml(html) {
+  const scripts = [];
+  if (typeof html !== "string") return scripts;
+  const regex = /<script\b[^>]*>[\s\S]*?<\/script>|<script\b[^>]*\/>/gi;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    scripts.push(match[0]);
+  }
+  return scripts;
+}
+
+async function fetchScriptsOnly(url, noRedirect = false) {
+  if (!url) throw new Error("URL inválida");
+  const key = `${url}|nr:${noRedirect ? 1 : 0}`;
+  const cached = NVAI_SCRIPT_CACHE.get(key);
+  if (cached && Date.now() - cached.timestamp < NVAI_SCRIPT_CACHE_TTL) {
+    return cached.payload;
+  }
+
+  const res = await fetch(url, {
+    credentials: "include",
+    redirect: noRedirect ? "manual" : "follow",
+    headers: {
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    },
+  });
+
+  // Em redirecionamento "opaqueredirect" (alguns fluxos), seguimos adiante
+  if (!res.ok && res.type !== "opaqueredirect") {
+    throw new Error(`HTTP ${res.status}`);
+  }
+
+  const html = await res.text();
+  const scripts = extractScriptsFromHtml(html);
+  const payload = { scripts };
+  NVAI_SCRIPT_CACHE.set(key, { timestamp: Date.now(), payload });
+  return payload;
+}
+
+/* ---------- storage local (cache de produtos) ---------- */
+function readProductStorage() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get([NVAI_PRODUCT_STORAGE_KEY], (result) => {
+      if (chrome.runtime.lastError) {
+        console.warn("[BG] storage read error", chrome.runtime.lastError);
+        resolve({});
+        return;
+      }
+      resolve(result[NVAI_PRODUCT_STORAGE_KEY] || {});
+    });
+  });
+}
+
+function writeProductStorage(map) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.set({ [NVAI_PRODUCT_STORAGE_KEY]: map }, () => {
+      if (chrome.runtime.lastError) {
+        console.warn("[BG] storage write error", chrome.runtime.lastError);
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve();
+      }
+    });
+  });
 }
 
 /* ---------- onMessage ---------- */
@@ -112,20 +187,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "GET_VISITS_MONTHLY") {
     const { itemId, conversion, price } = message;
     const convNum = Number(conversion) || 0; // % (backend espera %)
-    const priceNum = Number(price) || 0;
 
-    postJSON(`${API_BASE}/visitas_por_mes`, {
-      item_id: itemId,
-      conversion: convNum,
-      price: priceNum,
-    })
+    postFirst(
+      ["/visitas_por_mes", "/visitas_por_mes_30d"],
+      { itemId, conversion: convNum, price }
+    )
       .then((data) => {
-        // Esperado: { meses: [...], faturamentos: [...], quantityMonths:[...], data_criacao: ... }
-        let visitasArr = Array.isArray(data?.meses) ? data.meses.slice() : [];
-        let faturArr   = Array.isArray(data?.faturamentos) ? data.faturamentos.slice() : [];
-        let quantArr   = Array.isArray(data?.quantityMonths) ? data.quantityMonths.slice() : [];
+        // Esperado do backend (flexível): arrays de visitas/faturamento/quantidade do mais novo -> mais antigo
+        const visitasArr = [...(data?.visitas_por_mes || data?.visits || [])];
+        const faturArr   = [...(data?.faturamento_por_mes || data?.revenues || [])];
+        const quantArr   = [...(data?.quantidade_por_mes || data?.quantities || [])];
 
-        // Backend vem 1 mês atrás → 24 meses atrás; normaliza p/ cronologia
+        // Backend costuma vir do presente para o passado → invertimos
         visitasArr.reverse();
         faturArr.reverse();
         quantArr.reverse();
@@ -137,7 +210,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           labels: labels.slice(-len),
           visits: visitasArr.slice(-len),
           revenues: faturArr.slice(-len),
-          createdAt: data?.data_criacao ?? null,
+          createdAt: data?.data_criacao ?? data?.createdAt ?? null,
           quantityMonths: quantArr.slice(-len),
         };
 
@@ -152,36 +225,97 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // async
   }
 
-  // ====== NOVO: botão “Ativar Métricas de Busca” ======
-if (message.type === "GET_SEARCH_METRICS_BULK") {
-  const items   = Array.isArray(message.items) ? message.items : [];
-  const itemIds = Array.isArray(message.itemIds) ? message.itemIds : [];
+  // baixar scripts de uma página (HTML)
+  if (message.type === "NOVAI_FETCH_SCRIPTS") {
+    const { url, noRedirect = false } = message;
+    (async () => {
+      try {
+        const payload = await fetchScriptsOnly(url, noRedirect);
+        sendResponse({ ok: true, scripts: payload.scripts });
+      } catch (err) {
+        console.error("[BG] NOVAI_FETCH_SCRIPTS erro", err);
+        sendResponse({ ok: false, error: String(err?.message || err) });
+      }
+    })();
+    return true; // async
+  }
 
-  const payload = items.length
-    ? { items }
-    : { items: itemIds.map(id => ({ item_id: id })) };
+  // guardar dados de produto no cache local
+  if (message.type === "NOVAI_STORE_PRODUCT_DATA") {
+    const data = message.data;
+    (async () => {
+      try {
+        if (!data?.itemId) {
+          sendResponse({ ok: false, error: "itemId ausente" });
+          return;
+        }
+        const map = await readProductStorage();
+        map[data.itemId] = { ...(map[data.itemId] || {}), ...data, storedAt: Date.now() };
+        await writeProductStorage(map);
+        sendResponse({ ok: true });
+      } catch (err) {
+        console.error("[BG] NOVAI_STORE_PRODUCT_DATA erro", err);
+        sendResponse({ ok: false, error: String(err?.message || err) });
+      }
+    })();
+    return true; // async
+  }
 
-  const firstUrl = (items[0] && items[0].url) || "https://www.mercadolivre.com.br";
+  // ler dados de produto do cache local
+  if (message.type === "NOVAI_GET_PRODUCT_DATA") {
+    const itemIds = Array.isArray(message.itemIds) ? message.itemIds : [];
+    (async () => {
+      try {
+        const map = await readProductStorage();
+        if (itemIds.length === 0) {
+          sendResponse({ ok: true, data: map });
+          return;
+        }
+        const subset = {};
+        for (const id of itemIds) {
+          if (id && map[id]) subset[id] = map[id];
+        }
+        sendResponse({ ok: true, data: subset });
+      } catch (err) {
+        console.error("[BG] NOVAI_GET_PRODUCT_DATA erro", err);
+        sendResponse({ ok: false, error: String(err?.message || err) });
+      }
+    })();
+    return true; // async
+  }
 
-  (async () => {
-    try {
-      const cookieHeader = await getCookieHeaderForUrl(firstUrl);
+  // ====== Botão “Ativar Métricas de Busca” (bulk) ======
+  if (message.type === "GET_SEARCH_METRICS_BULK") {
+    const items   = Array.isArray(message.items) ? message.items : [];
+    const itemIds = Array.isArray(message.itemIds) ? message.itemIds : [];
 
-      // >>> ENVIE OS COOKIES NO CORPO (ou num header customizado tipo X-ML-Cookie)
-      const data = await postFirst("/scraping", {
-        ...payload,
-        cookie: cookieHeader,        // <-- AQUI
-      });
+    const payload = items.length
+      ? { items }
+      : { items: itemIds.map((id) => ({ item_id: id })) };
 
-      console.log("[BG] bulk metrics ok:", data);
-      sendResponse({ ok: true, data: data ?? {} });
-    } catch (err) {
-      console.error("[BG] bulk metrics error:", err);
-      sendResponse({ ok: false, error: String(err?.message || err) });
-    }
-  })();
+    const firstUrl =
+      (items[0] && items[0].url) ||
+      "https://www.mercadolivre.com.br";
 
-  return true; // async
-}
+    (async () => {
+      try {
+        const cookieHeader = await getCookieHeaderForUrl(firstUrl);
 
+        // Envia cookies no corpo (ou adapte p/ header customizado se seu backend preferir)
+        const data = await postFirst(
+          ["/scraping", "/search_metrics_bulk"],
+          { ...payload, cookie: cookieHeader }
+        );
+
+        console.log("[BG] bulk metrics ok:", data);
+        sendResponse({ ok: true, data: data ?? {} });
+      } catch (err) {
+        console.error("[BG] bulk metrics error:", err);
+        sendResponse({ ok: false, error: String(err?.message || err) });
+      }
+    })();
+    return true; // async
+  }
+
+  // (sem return -> síncrono)
 });
