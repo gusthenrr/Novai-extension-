@@ -193,16 +193,32 @@ function findCardContentHost(li) {
       NVAI_VISITS_CACHE.clear();
       NVAI_VISITS_IN_FLIGHT.clear();
     }
-  
+
+    function nvaiIsCatalogPath(pathname) {
+      if (!pathname) return false;
+      const lower = String(pathname).toLowerCase();
+      return lower.includes('/p/') || lower.includes('/up/');
+    }
+
+    function nvaiIsCatalogHref(href) {
+      if (!href) return false;
+      try {
+        const u = new URL(href, location.origin);
+        return nvaiIsCatalogPath(u.pathname);
+      } catch {
+        return nvaiIsCatalogPath(href);
+      }
+    }
+
     function getItemIdFromUrl() {
   const { href, pathname } = window.location;
 
-  // catálogo se a URL tiver /p/ no caminho
-  const isCatalog = pathname.includes('/p/');
+  // catálogo se a URL tiver /p/ ou /up/ no caminho
+  const isCatalog = nvaiIsCatalogPath(pathname);
   
-  // captura MLB123… ou MLB-123…, na ordem em que aparecem na URL
-  const ids = [...href.matchAll(/MLB-?\d+/gi)]
-    .map(m => m[0].replace(/-/g, '').toUpperCase()); // normaliza MLB-123 → MLB123
+  // captura MLB seguido de exatamente 10 dígitos (como MLB1234567890)
+  const ids = [...href.matchAll(/MLB-?(\d{10})/gi)]
+    .map(m => `MLB${m[1]}`); // sempre normaliza para MLB + 10 dígitos
 
   log('getItemIdFromUrl', { href, pathname, isCatalog, ids });
 
@@ -213,8 +229,8 @@ function findCardContentHost(li) {
 }
 
 function isCatalogPage() {
-  // catálogo se o pathname tiver /p/
-  return window.location.pathname.includes('/p/');
+  // catálogo se o pathname tiver /p/ ou /up/
+  return nvaiIsCatalogPath(window.location.pathname);
 }
 
 function findPdpContainer() {
@@ -236,8 +252,8 @@ function restoreHostPosition(host) {
 
 function isCatalogLi(li){
   if (!li) return false;
-  // Qualquer link do card com /p/ indica Catálogo
-  return !!li.querySelector('a[href*="/p/"]');
+  // Qualquer link do card com /p/ ou /up/ indica Catálogo
+  return Array.from(li.querySelectorAll('a[href]')).some((a) => nvaiIsCatalogHref(a.getAttribute('href')));
 }
 
 function countCatalogInList(ol){
@@ -262,6 +278,7 @@ function getItemNameFromLi(li) {
     li.querySelector('h3 a[href]') ||
     li.querySelector('a[href*="/MLB"]') ||
     li.querySelector('a[href*="/p/"]') ||
+    li.querySelector('a[href*="/up/"]') ||
     li.querySelector('a[href]');
   if (a) {
     const t =
@@ -387,9 +404,10 @@ function parseItemIdFromHref(href) {
   if (!href) return null;
   try {
     const u = new URL(href, location.origin);
-    const isCatalog = u.pathname.includes('/p/');
-    const ids = [...u.href.matchAll(/MLB-?\d+/gi)]
-      .map(m => m[0].replace(/-/g, '').toUpperCase());
+    const isCatalog = nvaiIsCatalogPath(u.pathname);
+    // captura MLB seguido de exatamente 10 dígitos
+    const ids = [...u.href.matchAll(/MLB-?(\d{10})/gi)]
+      .map(m => `MLB${m[1]}`); // sempre normaliza para MLB + 10 dígitos
     if (ids.length === 0) return null;
     return isCatalog ? (ids[1] || ids[0]) : ids[0];
   } catch {
@@ -410,6 +428,7 @@ function collectSearchItems() {
       li.querySelector('h3 a[href]') ||
       li.querySelector('a[href*="/MLB"]') ||
       li.querySelector('a[href*="/p/"]') ||
+      li.querySelector('a[href*="/up/"]') ||
       li.querySelector('a[href]');
     if (!a) continue;
 
@@ -418,7 +437,7 @@ function collectSearchItems() {
     if (!id || seen.has(id)) continue;
     seen.add(id);
 
-    const isCatalog = /\/p\//.test(url);
+    const isCatalog = nvaiIsCatalogHref(url);
     items.push({ url, itemId: id, catalog: isCatalog, li });
   }
 
@@ -590,6 +609,7 @@ function getLiUrlKey(li) {
     li.querySelector('h3 a[href]') ||
     li.querySelector('a[href*="/MLB"]') ||
     li.querySelector('a[href*="/p/"]') ||
+    li.querySelector('a[href*="/up/"]') ||
     li.querySelector('a[href]');
   if (!a) return null;
 
@@ -605,6 +625,7 @@ function getLiItemData(li){
     li.querySelector('h3 a[href]') ||
     li.querySelector('a[href*="/MLB"]') ||
     li.querySelector('a[href*="/p/"]') ||
+    li.querySelector('a[href*="/up/"]') ||
     li.querySelector('a[href]');
   if (!a) return null;
 
@@ -621,14 +642,14 @@ function getLiItemData(li){
 function getLiItemId(li){
   if (!li) return null;
   // tenta por href
-  const a = li.querySelector('h3 a[href], a[href*="/MLB"], a[href*="/p/"], a[href]');
+  const a = li.querySelector('h3 a[href], a[href*="/MLB"], a[href*="/p/"], a[href*="/up/"], a[href]');
   if (a) {
     const id = parseItemIdFromHref(a.getAttribute('href'));
     if (id) return id;
   }
   // fallback: pega por data-attrs comuns
   const wid = li.getAttribute('data-wid') || li.dataset?.wid || "";
-  if (/^MLB\d+$/i.test(wid)) return wid.toUpperCase();
+  if (/^MLB\d{10}$/i.test(wid)) return wid.toUpperCase();
   return null;
 }
 
@@ -645,11 +666,14 @@ function collectItemsFromOl(ol) {
       li.querySelector('h3 a[href]') ||
       li.querySelector('a[href*="/MLB"]') ||
       li.querySelector('a[href*="/p/"]') ||
+      li.querySelector('a[href*="/up/"]') ||
       li.querySelector('a[href]');
     if (!a) continue;
 
     const href = a.getAttribute('href');
-    const id = (href.match(/MLB-?\d+/i) || [])[0]?.replace(/-/g, '').toUpperCase();
+    // captura MLB seguido de exatamente 10 dígitos
+    const match = href.match(/MLB-?(\d{10})/i);
+    const id = match ? `MLB${match[1]}` : null;
     if (!id || seen.has(id)) continue;
     seen.add(id);
 
@@ -659,7 +683,7 @@ function collectItemsFromOl(ol) {
 
     const urlKey = normalizeUrlKey(url);
     const itemName = getItemNameFromLi(li);
-    const catalog = /\/p\//.test(url);
+    const catalog = nvaiIsCatalogHref(url);
 
     items.push({ itemId: id, url, urlKey, itemName, li, catalog });
   }
@@ -723,6 +747,16 @@ function nvaiParseSalesText(str) {
   if (suffix.startsWith("milh") || suffix === "m") num *= 1_000_000;
   else if (suffix.startsWith("mil") || suffix === "k") num *= 1_000;
   return Math.round(num);
+}
+
+function nvaiBuildCanonicalProductUrl(itemId) {
+  if (!itemId) return null;
+  const normalized = String(itemId).toUpperCase();
+  if (!/^MLB-?\d+$/.test(normalized)) return null;
+  const withDash = normalized.includes('-')
+    ? normalized
+    : normalized.replace(/^MLB/, 'MLB-');
+  return `https://produto.mercadolivre.com.br/${withDash}`;
 }
 
 function nvaiDecodeJsonString(str) {
@@ -1247,8 +1281,26 @@ async function nvaiProcessSearchItems(items, ol) {
     updateNovaiMetricsCard(li, itemId, { loading: true });
 
     try {
-      const scripts = await nvaiScrapeForScripts(itemId, url, !!catalog);
-      const parsed = nvaiExtractSalesDataFromScripts(scripts);
+      const canonicalUrl = catalog ? nvaiBuildCanonicalProductUrl(itemId) : null;
+      let parsed = null;
+
+      if (canonicalUrl) {
+        try {
+          const canonicalScripts = await nvaiScrapeForScripts(itemId, canonicalUrl, true);
+          parsed = nvaiExtractSalesDataFromScripts(canonicalScripts);
+        } catch (err) {
+          warn('Falha ao coletar scripts canônicos do item', { itemId, canonicalUrl, err });
+        }
+      }
+
+      if (!parsed || (parsed.sales == null && !parsed.startTime)) {
+        const fallbackScripts = await nvaiScrapeForScripts(itemId, url, false);
+        const fallbackParsed = nvaiExtractSalesDataFromScripts(fallbackScripts);
+        if (fallbackParsed && (fallbackParsed.sales != null || fallbackParsed.startTime)) {
+          parsed = fallbackParsed;
+        }
+      }
+
       if (!parsed || (parsed.sales == null && !parsed.startTime)) {
         updateNovaiMetricsCard(li, itemId, { sales: null, startTime: parsed?.startTime ?? null, error: true });
         continue;
@@ -1272,12 +1324,6 @@ async function nvaiProcessSearchItems(items, ol) {
 
   if (ol) applyCachedNovaiMetrics(ol);
 }
-
-
-
-
-
-
 
 
 function wireSearchBarButton() {
@@ -1547,29 +1593,7 @@ function ensureCatalogBadgesFromOl(ol){
     }
   }
 }
-// no topo, com as outras flags
-let content2Loaded = false;
-let content2Module = null;
 
-// carregador correto (MV3): usa dynamic import no contexto do content script
-async function loadContent2Once() {
-  if (content2Loaded) return content2Module;
-  content2Loaded = true;
-
-  // ⚠️ use o nome exato do arquivo no seu pacote:
-  const url = chrome.runtime.getURL('content2.js'); // ou 'content.2.js' se for esse mesmo
-
-  try {
-    content2Module = await import(url);  // executa top-level do módulo
-    // se o seu arquivo exportar um init(), chame aqui:
-    // content2Module?.init?.();
-    return content2Module;
-  } catch (e) {
-    content2Loaded = false; // libera para tentar novamente se quiser
-    console.warn('[NOVAI] Falha ao importar content2:', e);
-    throw e;
-  }
-}
 
 
 async function ensureSearchHeader() {
@@ -1580,12 +1604,6 @@ async function ensureSearchHeader() {
     if (row) row.remove();
     if (searchObs) { searchObs.disconnect(); searchObs = null; }
     return;
-  }
-
-  try {
-    await loadContent2Once(); // roda 1x e mantém chrome.runtime acessível
-  } catch (e) {
-    console.warn('[NOVAI] Falha ao carregar content2:', e);
   }
 
   // ... o restante do ensureSearchHeader que já existe ...
