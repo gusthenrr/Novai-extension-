@@ -2117,8 +2117,104 @@ function runOnList() {
     c = Array.from(c), c = c.filter((e => e.classList.contains("ui-search-layout__item")));
     let p = c.length, g = p;
     var t = p;
-    let f = '<div id="ealistrequest" style="transition: all 0.25s;display: flex;align-items: center;justify-content: center;background: rgb(60,115,255);background: linear-gradient( #3483fa 92%,  var(--mfy-main) 92%);padding: 0.75em 2em; margin: 0rem 0rem 1rem 0rem; border-radius: 0.5em;width: fit-content;color: #fff;font-size: 0.77em;cursor: pointer;box-shadow: rgb(0 0 0 / 10%) 0px 11px 6px -7px, rgb(0 0 0 / 13%) 0px 4px 3px -3px;"><img src="https://img.icons8.com/pastel-glyph/64/ffffff/analytics.png" style="width: 21px;margin-right: 0.75em;"><span style="font-weight: 500;font-size: 1.11em;letter-spacing: 0.01em;margin: 0.35em;font-family: Montserrat;">Ativar Métricas de Busca </span></div>';
-    let u = `\n    <div class="mfy-ad-listinfo_widget" style="display: flex;align-items: center;justify-content: space-between;border-radius: 5rem;margin: 0rem 1rem;position: relative; z-index:999">\n    <div style="display: flex; gap: .5rem;">\n    <div style="\n    background-color: var(--mfy-main);\n    color: #fff;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: .25rem .75rem;\n    border-radius: 5rem;\n    font-size: 1.1rem;\n    font-weight: 700;\n    letter-spacing: 0.02rem;\n    gap: .25rem;\n" class="imageset"><img width="16" height="16" src="https://img.icons8.com/material-outlined/ffffff/24/stack-of-photos--v1.png" alt="stack-of-photos--v1">10</div>\n<div style="\n    background-color: #fff;\n    color: var(--mfy-main);\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: .2rem .5rem;\n    border-radius: 5rem;\n    font-size: 1rem;\n    font-weight: 900;\n    letter-spacing: 0.02rem;\n    border: 1px solid #ebebeb;\n    box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;\n" class="reviews"><img width="18" height="18" src="https://img.icons8.com/sf-ultralight-filled/${mfyMainColorNumbers}/25/star.png" alt="star">4.5</div>\n<div style="\n    background-color: #fff;\n    color: var(--mfy-main);\n    display: flex;\n    gap: .25rem;\n    align-items: center;\n    justify-content: center;\n    padding: .2rem .5rem;\n    border-radius: 5rem;\n    font-size: 1rem;\n    font-weight: 900;\n    letter-spacing: 0.02rem;\n    border: 1px solid #ebebeb;\n    box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;\n" class="local"><img width="16" height="16" src="https://img.icons8.com/material-outlined/${mfyMainColorNumbers}/24/visit.png" alt="box--v1">0un</div>\n</div>\n\n${'<div style="\n      background-color: #fff159;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      padding: .35rem 1rem;\n      border-radius: 1rem 0 0 1rem;\n      margin-right: -1rem;\n      font-size: 1.1rem;\n      font-weight: 900;\n      letter-spacing: 0.02rem;\n      gap: 1rem;\n      box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;\n      position: absolute;\n      top: -1000%;\n      right: 0;\n      " class="iscatalog">Catálogo</div>'}\n    \n</div>`;
+    let f = `
+<div id="ealistrequest"
+     style="
+      transition: all .25s;
+      display:flex; align-items:center; gap:.6em; justify-content:center;
+      background: linear-gradient(to bottom, #ffe600 0, #ffe600 4px, #222222 4px, #222222 100%);
+      padding:.75em 2em; margin:0 0 1rem 0; border-radius:.5em;
+      width:fit-content; color:#fff; font-size:.77em; cursor:pointer;
+      border:1px solid #fff; box-shadow:0 6px 18px rgba(0,0,0,.06);
+     ">
+  <span style="font-weight:700; font-size:1.11em; letter-spacing:.01em; margin:.35em; font-family: Montserrat;">
+    Buscar Métricas
+  </span>
+  <!-- ícone inline (sem dependências) -->
+  <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"
+       fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+       style="display:block;">
+    <!-- eixo -->
+    <path d="M3 3v18h18"></path>
+    <!-- linha de tendência -->
+    <polyline points="6,15 10,11 13,13 18,8"></polyline>
+    <!-- marcadores -->
+    <circle cx="6" cy="15" r="1"></circle>
+    <circle cx="10" cy="11" r="1"></circle>
+    <circle cx="13" cy="13" r="1"></circle>
+    <circle cx="18" cy="8" r="1"></circle>
+  </svg>
+</div>`;
+
+
+
+    let u = `
+    <div class="mfy-ad-listinfo_widget" style="display: flex;align-items: center;justify-content: space-between;border-radius: 5rem;margin: 0rem 1rem;position: relative; z-index:999">
+    <div style="display: flex; gap: .5rem;">
+    <div style="
+    background-color: var(--mfy-main);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: .25rem .75rem;
+    border-radius: 5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.02rem;
+    gap: .25rem;
+" class="imageset"><img width="16" height="16" src="https://img.icons8.com/material-outlined/ffffff/24/stack-of-photos--v1.png" alt="stack-of-photos--v1">10</div>
+<div style="
+    background-color: #fff;
+    color: var(--mfy-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: .2rem .5rem;
+    border-radius: 5rem;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0.02rem;
+    border: 1px solid #ebebeb;
+    box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;
+" class="reviews"><img width="18" height="18" src="https://img.icons8.com/sf-ultralight-filled/${mfyMainColorNumbers}/25/star.png" alt="star">4.5</div>
+<div style="
+    background-color: #fff;
+    color: var(--mfy-main);
+    display: flex;
+    gap: .25rem;
+    align-items: center;
+    justify-content: center;
+    padding: .2rem .5rem;
+    border-radius: 5rem;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0.02rem;
+    border: 1px solid #ebebeb;
+    box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;
+" class="local"><img width="16" height="16" src="https://img.icons8.com/material-outlined/${mfyMainColorNumbers}/24/visit.png" alt="box--v1">0un</div>
+</div>
+<div style="
+      background-color: #ffe600;          /* NOVAI amarelo */
+      color: #111;                        /* texto preto */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: .35rem 1rem;
+      border-radius: 1rem;                /* ambos os lados arredondados */
+      border: 2px solid #000;             /* borda preta */
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: 0.02rem;
+      gap: 1rem;
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+      position: absolute;
+      top: 0;                             /* canto superior direito */
+      right: 0;
+      " class="iscatalog">Catálogo</div>
+    
+</div>`;
+
   c && "pro" == verif && !document.getElementById("ealistrequest") && (m.insertAdjacentHTML("beforebegin", f), function () {
       let e = preLoadedState.initialState.results.filter((e => e.trends_categories?.polycards)).length > 0, t = preLoadedState.initialState.results.filter((e => e.trends_categories?.polycards))[0], n = e ? t.trends_categories.polycards: preLoadedState.initialState.results, i = e ? n: n.filter((e => e.id && e.id.startsWith("POLYCARD"))), s = !(!i[0]?.polycard && !e);
       i = i[0]?.polycard ? i.map((e => e.polycard)): i.filter((e => e?.id && e.id.startsWith("MLB")));
@@ -2152,7 +2248,7 @@ function runOnList() {
           let f, y = g.firstElementChild;
           if (0 == r ? y.querySelector(".iscatalog").remove(): (y.setAttribute("catalog", !0), l++), y.querySelector(".local") && y.querySelector(".local").remove(), y.querySelector(".imageset") && y.querySelector(".imageset").remove(), d && c[t]) {
             let e = c[t].querySelector(".ui-search-item__pub-label") ?? c[t].querySelector(".poly-component__ads-promotions");
-            e && e.setAttribute("style", "background-color: #eaeaea;color: var(--mfy-dark);border-radius: 0.5em;padding: 0.25em 0.75em;font-size: 0.86em;font-weight: 800;letter-spacing: 0.01em;margin-left: 0.5em;")
+            e && e.setAttribute("style", "background-color: #ffd900ff;color: var(--mfy-dark);border-radius: 0.5em;padding: 0.25em 0.75em;font-size: 0.86em;font-weight: 800;letter-spacing: 0.01em;margin-left: 0.5em;display: flex;align-items: center;justify-content: center;text-align: center; ")
           }
           if ("listing" == listView) {
             y.style.position = "absolute", y.style.bottom = "7%";
@@ -2601,7 +2697,32 @@ async function l(n, a) {
       let r = n.title.toLowerCase().replace(/[ãâàáäåāăąạảấầẩẫậắằẳẵặ]/g, "").replace(/[õôòóöøōŏőơọỏốồổỗộớờởỡợ]/g, "").replace(/[ñńņňṅṇṉṋṅ]/g, "").replace(/[ēĕėęěẹẻẽếềểễệ]/g, "").replace(/[īĭįỉịớờởỡợ]/g, "").replace(/[ūŭůűųụủứừửữự]/g, "").replace(/[ýỳỵỷỹ]/g, "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").split(" ").join("-").replace(/[^a-zA-Z0-9-]/g, "").replace(/^-/, ""), l = "https://produto.mercadolivre.com.br/MLB-" + n.itemID.split("MLB")[1], d = (n.catalogID.split("MLB")[1], n.itemID, i.getElementsByClassName("mfy-ad-listinfo_widget")[0]?.getAttribute("catalog"), l);
       if (i.setAttribute("product-id", n.itemID), i.setAttribute("product-price", n.price), i.setAttribute("shipping", n.shipping), "true" == i.getElementsByClassName("mfy-ad-listinfo_widget")[0]?.getAttribute("catalog") || n.catalogListed) {
         i.setAttribute("catalog", !0);
-        let e = '<div style="background-color: #fff159;display: flex;align-items: center;justify-content: center;border-radius: 1rem 0 1rem 1rem;margin-right: 2rem;font-size: 1.1rem;font-weight: 900;letter-spacing: 0.02rem;gap: 1rem;padding: 0.75rem 1rem 0.5rem 1rem;box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;position: absolute;right: 0;" class="iscatalog">Catálogo</div>';
+       let e = `
+<div style="
+  background-color: #ffe600;          /* NOVAI amarelo */
+  color: #111;                        /* texto preto */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;                /* cantos arredondados */
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 0.02rem;
+  gap: 1rem;
+  padding: 0.75rem 1rem 0.5rem 1rem;
+  border: 2px solid #000;             /* borda preta */
+  box-shadow: 0 6px 18px rgba(0,0,0,.06);
+  position: absolute;                 /* continua relativo ao card */
+  top: 0;                             /* canto superior direito do card */
+  right: 0;
+  z-index: 2147483647;                /* acima de tudo no card */
+  pointer-events: auto;               /* clicável */
+" class="iscatalog">
+  Catálogo
+</div>`;
+
+
+
         i.getElementsByClassName("poly-card__content")[0].insertAdjacentHTML("afterbegin", e)
       }
       else i.setAttribute("catalog", !1);
@@ -2664,7 +2785,7 @@ async function l(n, a) {
       const n = document.getElementById("root-app");
       if (!n) return;
       let e = `<div id="eanotify"
-      // style="background: var(--mfy-main); margin-top: 0em; transition: all 0.35s ease 0s; display: flex; align-items: center; justify-content: center; height: 3.5em;">
+      // style="background: #222222; margin-top: 0em; transition: all 0.35s ease 0s; display: flex; align-items: center; justify-content: center; height: 3.5em;">
       <div style="
       display: flex;
       justify-content: space-between;
@@ -2702,7 +2823,7 @@ async function l(n, a) {
                   src="https://img.icons8.com/fluent-systems-filled/48/ffffff/lightning-bolt.png"
                   style="width: 21px;margin-right: 0.35em;"><span id="eabar_fullrate" class="eafont2">-<span
                       style="font-size: 0.77em;"><span
-                          style="letter-spacing: 1px;margin-left: -0.31em;color: #ffffff70;">/${p}</span><span
+                          style="letter-spacing: 1px;margin-left: -0.31em;color: #d8ca0070;">/${p}</span><span
                           style="color: #14305c;letter-spacing: 0.05em;">(0%)</span></span></span></div>
           <div style="display: flex;align-items: center;margin-right: 1em;"><img
                   src="https://img.icons8.com/fluent-systems-filled/48/ffffff/post-ads.png"
@@ -2719,11 +2840,11 @@ async function l(n, a) {
 
           <div style="margin-right: 1em;display: flex;align-items: center;"><img
                   src="https://img.icons8.com/ios-glyphs/30/ffffff/fire-element--v1.png"
-                  style="width: 21px;margin-right: 0.35em;"><span
+                  style="width: 21px;margin-right: 0.35em;"><span style="color: #fff"
                   class="eafont1">Concorrência: </span><span id="eabar_competition"
                   style="font-weight: 900;font-size: 1.14em;color: #ffffff;margin-left: 0.21em;background-color: #3456e270;border-radius: 4px;padding: 0.21em 1em;">-
               </span><img id="notyhide" src="https://img.icons8.com/fluent/48/000000/collapse-arrow.png"
-                  style="transition:all 0.35s;width: 3em;margin-top: 3.1em;margin-left: 1em;z-index: 14;padding: 0.5em;cursor: pointer;background-color: #1f2734;border-radius: 2em;filter: hue-rotate(40deg);">
+                  style="transition:all 0.35s;width: 3em;margin-top: 3.1em;margin-left: 1em;z-index: 14;padding: 0.5em;cursor: pointer;background-color: #131313ff;border-radius: 2em;filter: hue-rotate(40deg);">
           </div>
           
 

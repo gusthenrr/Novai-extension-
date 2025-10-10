@@ -130,7 +130,23 @@ function authDataRetrieve(key) {
   });
 }
 
+function safeStorageGet(keys) {
+  try {
+    const maybePromise = chrome.storage.local.get(keys ?? undefined);
+    if (maybePromise && typeof maybePromise.then === 'function') {
+      return maybePromise;
+    }
+  } catch (error) {
+    console.error('Error invoking chrome.storage.local.get', error);
+    return Promise.resolve({});
+  }
 
+  return new Promise((resolve) => {
+    chrome.storage.local.get(keys ?? undefined, (result) => {
+      resolve(result || {});
+    });
+  });
+}
 // Listening for messages from the content scripts.
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Message received in worker:", request);
@@ -260,68 +276,65 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true; // Will respond asynchronously
   } else if (request.type === 'GET_PRODUCT_DATA') {
-    const { itemIds } = request.payload;
-    // If itemIds is null or empty, we'll fetch everything.
-    const keysToGet = (itemIds && itemIds.length > 0) ? itemIds : null;
+    const rawIds = (request.payload && Array.isArray(request.payload.itemIds)) ? request.payload.itemIds : [];
+    const itemIds = rawIds.filter((id) => typeof id === 'string' && id.trim().length > 0);
+    const keysToGet = itemIds.length > 0 ? itemIds : null;
 
-    chrome.storage.local.get(keysToGet, (result) => {
-        const freshData = {};
-        const keysToRemove = [];
-        const now = new Date();
-        const fortyEightHoursInMillis = 48 * 60 * 60 * 1000;
+    safeStorageGet(keysToGet).then((result) => {
+      const freshData = {};
+      const keysToRemove = [];
+      const now = new Date();
+      const fortyEightHoursInMillis = 48 * 60 * 60 * 1000;
 
-        for (const itemId in result) {
-            // We only want to process keys that are direct properties of the result object.
-            if (result.hasOwnProperty(itemId)) {
-                let itemData;
-                try {
-                    // Attempt to parse the stored value.
-                    itemData = JSON.parse(result[itemId]);
-                } catch (e) {
-                    // If it's not valid JSON, it's not our data. Skip it.
-                    continue; 
-                }
+      for (const itemId in result) {
+        if (Object.prototype.hasOwnProperty.call(result, itemId)) {
+          let itemData;
+          try {
+            itemData = JSON.parse(result[itemId]);
+          } catch (e) {
+            continue;
+          }
 
-                // Check if this object is one of ours by looking for our specific keys.
-                if (itemData && itemData.updated_at && itemData.hasOwnProperty('itemSales')) {
-                    const updatedAt = new Date(itemData.updated_at);
-                    const isStale = (now.getTime() - updatedAt.getTime()) > fortyEightHoursInMillis;
-                    // Determine listing age from startTime if available
-                    let creationDays = 0;
-                    if (itemData.startTime) {
-                        const st = typeof itemData.startTime === 'number' ? itemData.startTime : Date.parse(itemData.startTime);
-                        if (!isNaN(st)) {
-                            creationDays = Math.floor((now.getTime() - st) / (1000 * 60 * 60 * 24));
-                        }
-                    }
-                    // Align cache retention with front-end rules:
-                    // keep if (sales >= 100 && days > 30) OR (sales < 100 && days >= 90) OR (sales < 5 && days > 45)
-                    const meetsKeepRule =
-                        (itemData.itemSales >= 100 && creationDays > 30) ||
-                        (itemData.itemSales < 100 && creationDays >= 90) ||
-                        (itemData.itemSales < 5 && creationDays > 45);
-
-                    if (isStale || !meetsKeepRule) {
-                        keysToRemove.push(itemId);
-                    } else {
-                        freshData[itemId] = itemData;
-                    }
-                }
+          if (itemData && itemData.updated_at && Object.prototype.hasOwnProperty.call(itemData, 'itemSales')) {
+            const updatedAt = new Date(itemData.updated_at);
+            const isStale = (now.getTime() - updatedAt.getTime()) > fortyEightHoursInMillis;
+            let creationDays = 0;
+            if (itemData.startTime) {
+              const st = typeof itemData.startTime === 'number' ? itemData.startTime : Date.parse(itemData.startTime);
+              if (!isNaN(st)) {
+                creationDays = Math.floor((now.getTime() - st) / (1000 * 60 * 60 * 24));
+              }
             }
-        }
 
-        if (keysToRemove.length > 0) {
-            chrome.storage.local.remove(keysToRemove, () => {
-                if (chrome.runtime.lastError) {
-                    console.error('Error removing stale product data:', chrome.runtime.lastError);
-                } else {
-                    console.log('Removed invalid product data for items:', keysToRemove);
-                }
-            });
+        const meetsKeepRule =
+              (itemData.itemSales >= 100 && creationDays > 30) ||
+              (itemData.itemSales < 100 && creationDays >= 90) ||
+              (itemData.itemSales < 5 && creationDays > 45);
+
+            if (isStale || !meetsKeepRule) {
+              keysToRemove.push(itemId);
+            } else {
+              freshData[itemId] = itemData;
+            }
+          }
         }
         
-        // Always send a response, even if it's empty.
-        sendResponse({ data: freshData });
+        }
+
+      if (keysToRemove.length > 0) {
+        chrome.storage.local.remove(keysToRemove, () => {
+          if (chrome.runtime.lastError) {
+            console.error('Error removing stale product data:', chrome.runtime.lastError);
+          } else {
+            console.log('Removed invalid product data for items:', keysToRemove);
+          }
+        });
+      }
+
+      sendResponse({ data: freshData });
+    }).catch((error) => {
+      console.error('Error retrieving product data from storage', error);
+      sendResponse({ data: {}, error: error?.message || 'Failed to read product cache' });
     });
 
     // Return true to indicate we will respond asynchronously.
