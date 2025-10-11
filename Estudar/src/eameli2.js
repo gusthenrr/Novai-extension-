@@ -674,15 +674,6 @@ var eapricewarning = !1;
 
 function pricingWarning() {
   if (1 == eapricewarning) {
-    var f = document.getElementById("notyhide");
-    eanotify.addEventListener("mouseover", function () {
-      this.style.marginTop = "0em";
-      f.setAttribute("style", "transition:all 0.35s;width: 3em;margin-top: 3.1em;margin-left: 1em;z-index: 1;padding: 0.5em;cursor: pointer; border-radius: 2em;background-color: #1f2734;border-radius: 2em;filter: hue-rotate(40deg);z-index: 14;");
-    });
-    f.addEventListener("click", function () {
-      eanotify.style.marginTop = "-2.77em";
-      f.setAttribute("style", "transform: rotate(180deg);margin-top: 3.1em;z-index:1;transition:all 0.35s; width: 2em;margin-left: 1em;padding: 0.5em;cursor: pointer;border-radius: 2em;background-color: #1f2734;border-radius: 2em;filter: hue-rotate(40deg);z-index: 14;");
-    });
     (function () {
       let e = preLoadedState.initialState.melidata_track.event_data.category_id;
       e?.length > 0 && o(e);
@@ -2931,8 +2922,7 @@ async function l(n, a) {
                   style="width: 21px;margin-right: 0.35em;"><span style="color: #fff"
                   class="eafont1">Concorrência: </span><span id="eabar_competition"
                   style="font-weight: 900;font-size: 1.14em;color: #ffffff;margin-left: 0.21em;background-color: #3456e270;border-radius: 4px;padding: 0.21em 1em;">-
-              </span><img id="notyhide" src="https://img.icons8.com/fluent/48/000000/collapse-arrow.png"
-                  style="transition:all 0.35s;width: 3em;margin-top: 3.1em;margin-left: 1em;z-index: 14;padding: 0.5em;cursor: pointer;background-color: #131313ff;border-radius: 2em;filter: hue-rotate(40deg);">
+              </span>
           </div>
           
 
@@ -2963,14 +2953,7 @@ async function l(n, a) {
       g <= 0 && (g = 1), r([g,
       parseFloat((0).toFixed(0)),
       parseFloat((a.length / 50 * 100).toFixed(0))]), eanotify = document.getElementById("eanotify");
-      var f = document.getElementById("notyhide");
-      eanotify.addEventListener("mouseover", function () {
-        this.style.marginTop = "0em";
-        f.setAttribute("style", "transition:all 0.35s;width: 3em;margin-top: 3.1em;margin-left: 1em;z-index: 1;padding: 0.5em;cursor: pointer; border-radius: 2em;background-color: #1f2734;border-radius: 2em;filter: hue-rotate(40deg);z-index: 14;");
-      }), f.addEventListener("click", function () {
-        eanotify.style.marginTop = "-2.77em";
-        f.setAttribute("style", "transform: rotate(180deg);margin-top: 3.1em;z-index:1;transition:all 0.35s; width: 2em;margin-left: 1em;padding: 0.5em;cursor: pointer;border-radius: 2em;background-color: #1f2734;border-radius: 2em;filter: hue-rotate(40deg);z-index: 14;");
-      }), function () {
+      (function () {
         let e = preLoadedState.initialState.melidata_track.event_data.category_id;
         e?.length > 0 && o(e), async function (e) {
           "" != e && null != e && await new Promise((t => {
@@ -2989,7 +2972,7 @@ async function l(n, a) {
             t.parentElement.parentElement.remove();
           }
         }(e);
-      }();
+      }());
     } catch(_) {}
   };
   if (document.readyState === "complete" || document.readyState === "interactive") setTimeout(insertHeader, 0);
