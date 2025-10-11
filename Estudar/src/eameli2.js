@@ -1,4 +1,3 @@
-
 function getRandomProxy() {
   const e = ["https://mfy-cors.up.railway.app/"];
   return e[Math.floor(Math.random() * e.length)]
@@ -174,7 +173,7 @@ function _mfyKeepAliveTick() {
       const hasSwitch = document.getElementById('eaoffSwitch');
       if (!hasSwitch) return _mfyScheduleReinit('missing eaoffSwitch');
     } else if (paginaAtual === 'lista') {
-      const hasCTA = document.getElementById('ealistrequest') || document.getElementById('mfy-catalog-filter');
+      const hasCTA = document.getElementById('ealistrequest') || document.getElementById('mfy-catalog-filter-container');
       if (!hasCTA) return _mfyScheduleReinit('missing list widgets');
     }
   } catch (_) {}
@@ -2374,60 +2373,91 @@ setTimeout((function () {
     document.getElementById("ealistrequest")?.remove();
     return;
   }
-  let e = `
-  <div style="display:flex; flex-direction:row; align-items:center; justify-content:flex-start; gap:0.75rem;">
-    <div style="margin: 1rem 1rem 1rem 0; width: fit-content; border: 1px solid #FFE600; border-radius: 1rem; display:flex; align-items:center; justify-content:center; padding: 1rem 0.5rem; background:#222222; color:#eaeaea; box-shadow: rgba(9,30,66,0.25) 0px 1px 1px, rgba(9,30,66,0.13) 0px 0px 1px 1px;">
-      <span>
+  let e = `<style>
+  #mfy-spinner {
+    width: 22px;
+    height: 22px;
+    border: 3px solid #444;
+    border-top-color: #FFE600;
+    border-radius: 50%;
+    animation: mfy-spinner-spin 1s linear infinite;
+  }
+
+  @keyframes mfy-spinner-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+<div style="display:flex; flex-direction:row; align-items:center; justify-content:space-between; width:100%; gap:1rem; font-family: Montserrat, sans-serif; margin-bottom: 10px;">
+    <div style="display:flex; flex-direction:row; align-items:center; gap:1.5rem;">
+      <div id="mfy-catalog-filter-container" style="display:flex; flex-direction:row; align-items:center; gap:.5rem; background:#222; border:1px solid #383838; padding:.4rem; border-radius:8px;">
+        <button type="button" data-filter="todos" class="mfy-catalog-filter-btn" style="padding: 0.5rem 1rem; border-radius: 6px; border: none; background:#FFE600; color:#111; font-weight:700; font-size: 0.9rem; cursor:pointer; transition: all .2s ease;">Todos</button>
+        <button type="button" data-filter="filtrar" class="mfy-catalog-filter-btn" style="padding: 0.5rem 1rem; border-radius: 6px; border: none; background:#333; color:#eaeaea; font-weight:600; font-size: 0.9rem; cursor:pointer; transition: all .2s ease;">Catálogos</button>
+        <button type="button" data-filter="ocultar" class="mfy-catalog-filter-btn" style="padding: 0.5rem 1rem; border-radius: 6px; border: none; background:#333; color:#eaeaea; font-weight:600; font-size: 0.9rem; cursor:pointer; transition: all .2s ease;">Ocultar catálogos</button>
+      </div>
+      <div id="mfy-smetrics-status" style="display:flex; flex-direction:row; align-items:center; min-width: 22px;">
+        <div id="mfy-spinner"></div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; background:#222; border: 1px solid #383838; border-radius: 8px; padding: 0.4rem 0.5rem 0.4rem 1rem;">
+      <span style="font-size: 0.9rem; color: #aaa; margin-right: 0.75rem; white-space: nowrap;">
         Filtrar por
-        <select disabled id="easortselect"
-          style="margin-left: 0.5rem; border: 1px solid #333; background: #111;
-                 font-size: 1.1rem; font-weight: 700; color: #fff; font-family: Montserrat;
-                 border-radius: .4rem; padding: .15rem .4rem; appearance: none; opacity:1;">
-          <option value="og" style="color:#fff;background:#111;">Selecione</option>
-          <option value="time" style="color:#fff;background:#111;">Mais recentes</option>
-          <option value="sales" style="color:#fff;background:#111;">Número de vendas</option>
-          <option value="mostprice" style="color:#fff;background:#111;">Maior preço</option>
-          <option value="lessprice" style="color:#fff;background:#111;">Menor preço</option>
-        </select>
       </span>
-    </div>
-
-    <div id="mfy-smetrics-status" style="display:flex; flex-direction:row; align-items:center; gap:.5rem; color:#eaeaea;">
-      <label for="mfy-smetrics-progress">Carregando vendas...</label>
-      <progress id="mfy-smetrics-progress" value="0" max=${p}
-        style="width: 7rem; height: 2rem; margin: 1rem; accent-color:#FFE600; background:#111; border:1px solid #333; border-radius:6px;"></progress>
-    </div>
-
-    <div id="mfy-catalog-filter-container" style="display:none; align-items:center; gap:.5rem; background:#222222; border:1px solid #333; padding:.5rem .75rem; border-radius:.5rem;">
-      <label for="mfy-catalog-filter" style="font-size: 1.21rem; font-weight: 700; color:#eaeaea;">Exibir:</label>
-      <select id="mfy-catalog-filter"
-        style="padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid #444; background:#111; color:#fff; opacity:1;">
-        <option value="todos"   style="color:#fff;background:#111;">Todos</option>
-        <option value="ocultar" style="color:#fff;background:#111;">Ocultar catálogos</option>
-        <option value="filtrar" style="color:#fff;background:#111;">Apenas catálogos</option>
+      <select disabled id="easortselect" style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background: transparent; border: none; font-size: 1rem; font-weight: 700; color: #fff; font-family: Montserrat; border-radius: .4rem; padding: .15rem 1.8rem .15rem 0; cursor: pointer; outline: none; background-image: url('data:image/svg+xml,%3csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 16 16\\'%3e%3cpath fill=\\'none\\' stroke=\\'%23FFE600\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\' stroke-width=\\'2\\' d=\\'M2 5l6 6 6-6\\'/%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.2rem center; background-size: 1em;">
+        <option value="og" style="color:#fff;background:#111;">Selecione</option>
+        <option value="time" style="color:#fff;background:#111;">Mais recentes</option>
+        <option value="sales" style="color:#fff;background:#111;">Número de vendas</option>
+        <option value="mostprice" style="color:#fff;background:#111;">Maior preço</option>
+        <option value="lessprice" style="color:#fff;background:#111;">Menor preço</option>
       </select>
     </div>
-  </div>`, t = document.getElementsByClassName("ui-search-results")[0] ?? document.getElementsByClassName("ui-search-layout--grid__grid__layout--grid")[0], n = t.querySelectorAll("ol");
-  n[0].insertAdjacentHTML("beforebegin", e), s(n), document.getElementById("ealistrequest")?.remove(), document.getElementById("mfy-catalog-filter").addEventListener("change", (e => {
-    !function (e, t) {
-      let n = e[0];
-      Array.from(n.querySelectorAll("ol > li")).forEach((e => {
-        const n = "true" === e.getAttribute("catalog");
-        switch (t) {
-        case "todos": e.style.display = "";
-        break;
-      case "ocultar": e.style.display = n ? "none": "";
-      break;
-    case "filtrar": e.style.display = n ? "": "none";
-    break;
-  default : e.style.display = ""
-}
-}
-))
-}
-(t.querySelectorAll("ol"), e.target.value)
-}
-))
+</div>`, t = document.getElementsByClassName("ui-search-results")[0] ?? document.getElementsByClassName("ui-search-layout--grid__grid__layout--grid")[0], n = t.querySelectorAll("ol");
+  n[0].insertAdjacentHTML("beforebegin", e), s(n), document.getElementById("ealistrequest")?.remove();
+  const applyCatalogFilter = (lists, mode) => {
+    const normalizedMode = ["todos", "ocultar", "filtrar"].includes(mode) ? mode : "todos";
+    lists.forEach((listNode => {
+      if (!listNode || "OL" !== listNode.tagName) return;
+      Array.from(listNode.children).forEach((item => {
+        if (!item || "LI" !== item.tagName) return;
+        const isCatalog = "true" === item.getAttribute("catalog");
+        switch (normalizedMode) {
+          case "ocultar":
+            item.style.display = isCatalog ? "none" : "";
+            break;
+          case "filtrar":
+            item.style.display = isCatalog ? "" : "none";
+            break;
+          default:
+            item.style.display = "";
+        }
+      }))
+    }))
+  };
+  const setupCatalogFilterButtons = lists => {
+    const container = document.getElementById("mfy-catalog-filter-container");
+    if (!container) return;
+    const buttons = Array.from(container.querySelectorAll("[data-filter]"));
+    if (buttons.length === 0) return;
+    const baseStyle = "padding: 0.35rem 0.75rem; border-radius: .4rem; border: 1px solid #333; background:#111; color:#fff; font-weight:600; cursor:pointer; transition: background .2s, color .2s;";
+    const activeStyle = "padding: 0.35rem 0.75rem; border-radius: .4rem; border: 1px solid #FFE600; background:#FFE600; color:#111; font-weight:600; cursor:pointer; transition: background .2s, color .2s;";
+    const setActive = activeButton => {
+      buttons.forEach((button => {
+        button.setAttribute("style", button === activeButton ? activeStyle : baseStyle);
+      }));
+    };
+    const handleFilterChange = (button) => {
+      setActive(button);
+      applyCatalogFilter(lists, button.dataset.filter);
+    };
+    buttons.forEach((button => {
+      button.setAttribute("style", baseStyle);
+      button.addEventListener("click", (() => handleFilterChange(button)));
+    }));
+    const defaultButton = buttons.find((button => "todos" === button.dataset.filter)) || buttons[0];
+    defaultButton && handleFilterChange(defaultButton);
+  };
+  setupCatalogFilterButtons(Array.from(n));
 }
 ), 2750)
 }
