@@ -2321,7 +2321,7 @@ function runOnList() {
 let y = document.getElementById("ealistrequest");
 function n(e) {
   let t = e.target, a = document.getElementById("ealistrequest");
-  t.removeEventListener("click", n), a.style.margin = "0rem 0rem 1rem 0rem", a.outerHTML = `<div id="ealistrequest" style=" margin: 0.35rem 0.35rem 1rem 0.35rem; font-weight: 500;font-size: 1em;letter-spacing: 0.01em;font-family: Montserrat;transition: all 0.25s;display: flex;align-items: center;justify-content: center;background: var(--mfy-main);/* background: linear-gradient(25deg, rgb(121 51 255) 92%, rgb(77 18 190) 100%); */padding: 0.75em 2em;border-radius: 0.5em;width: fit-content;color: #fff;font-size: 0.77em;cursor: pointer;box-shadow: rgb(0 0 0 / 10%) 0px 11px 6px -7px, rgb(0 0 0 / 13%) 0px 4px 3px -3px;">Carregando dados ${SpinLoader} </div>`;
+  t.removeEventListener("click", n), a.style.margin = "0rem 0rem 1rem 0rem", a.outerHTML = `<div id="ealistrequest" style=" margin: 0.35rem 0.35rem 1rem 0.35rem; font-weight: 500;font-size: 1em;letter-spacing: 0.01em;font-family: Montserrat;transition: all 0.25s;display: flex;align-items: center;justify-content: center;background: #222222;/* background: linear-gradient(25deg, rgb(121 51 255) 92%, rgb(77 18 190) 100%); */padding: 0.75em 2em;border-radius: 0.5em;width: fit-content;color: #fff;font-size: 0.77em;cursor: pointer;box-shadow: rgb(0 0 0 / 10%) 0px 11px 6px -7px, rgb(0 0 0 / 13%) 0px 4px 3px -3px;">Carregando ${SpinLoader} </div>`;
   let i = document.getElementsByClassName("mfy-ad-listinfo_widget");
   for (let e = 0;
   e < i.length;
@@ -2374,7 +2374,40 @@ setTimeout((function () {
     document.getElementById("ealistrequest")?.remove();
     return;
   }
-  let e = `\n          <div style="display: flex; flex-direction: row; align-items: center;">\n          <div style="margin: 1rem 1rem 1rem 0;width: fit-content;border: 1px solid rgb(0,0,0,0.31);border-radius: 1rem;display: flex;align-items: center;justify-content: center;padding: 1rem 0.5rem;box-shadow: rgba(9, 30, 66, 0.25) 0px 1px 1px, rgba(9, 30, 66, 0.13) 0px 0px 1px 1px;">\n          <img src="https://i.ibb.co/K7Lc6cr/metrify.png" style="pointer-events:none; width:15px;margin: auto;margin-left:0.75rem; margin-right: 0.5rem;">\n          <span>\n            Filtrar por <select disabled id="easortselect" style="margin-left: 0.5rem; border: none; background: transparent; font-size: 1.1rem; font-weight: 700; color: rgb(0,0,0,0.7); font-family: Montserrat;">\n            <option value="og">Selecione</option>\n            <option value="time">Mais recentes</option>\n            <option value="sales">Número de vendas</option>\n            <option value="mostprice">Maior preço</option>\n            <option value="lessprice">Menor preço</option>\n            </select>\n          </span>\n          </div>\n          <div id="mfy-smetrics-status" style="display:flex;flex-direction:row;align-items:center">\n          <label for="mfy-smetrics-progress">Carregando vendas...</label>\n          <progress id="mfy-smetrics-progress" value="0" max=${p} style=" width:  7rem; height: 2rem; margin: 1rem;" />\n          </div>\n          <div id="mfy-catalog-filter-container" style="display:none">\n            <label for="mfy-catalog-filter" style="font-size: 1.21rem;font-weight: 700;">Exibir:</label>\n            <select id="mfy-catalog-filter" style="padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid #ccc;">\n              <option value="todos">Todos</option>\n              <option value="ocultar">Ocultar catálogos</option>\n              <option value="filtrar">Apenas catálogos</option>\n            </select>\n          </div>\n</div>`, t = document.getElementsByClassName("ui-search-results")[0] ?? document.getElementsByClassName("ui-search-layout--grid__grid__layout--grid")[0], n = t.querySelectorAll("ol");
+  let e = `
+  <div style="display:flex; flex-direction:row; align-items:center; justify-content:flex-start; gap:0.75rem;">
+    <div style="margin: 1rem 1rem 1rem 0; width: fit-content; border: 1px solid #FFE600; border-radius: 1rem; display:flex; align-items:center; justify-content:center; padding: 1rem 0.5rem; background:#222222; color:#eaeaea; box-shadow: rgba(9,30,66,0.25) 0px 1px 1px, rgba(9,30,66,0.13) 0px 0px 1px 1px;">
+      <span>
+        Filtrar por
+        <select disabled id="easortselect"
+          style="margin-left: 0.5rem; border: 1px solid #333; background: #111;
+                 font-size: 1.1rem; font-weight: 700; color: #fff; font-family: Montserrat;
+                 border-radius: .4rem; padding: .15rem .4rem; appearance: none; opacity:1;">
+          <option value="og" style="color:#fff;background:#111;">Selecione</option>
+          <option value="time" style="color:#fff;background:#111;">Mais recentes</option>
+          <option value="sales" style="color:#fff;background:#111;">Número de vendas</option>
+          <option value="mostprice" style="color:#fff;background:#111;">Maior preço</option>
+          <option value="lessprice" style="color:#fff;background:#111;">Menor preço</option>
+        </select>
+      </span>
+    </div>
+
+    <div id="mfy-smetrics-status" style="display:flex; flex-direction:row; align-items:center; gap:.5rem; color:#eaeaea;">
+      <label for="mfy-smetrics-progress">Carregando vendas...</label>
+      <progress id="mfy-smetrics-progress" value="0" max=${p}
+        style="width: 7rem; height: 2rem; margin: 1rem; accent-color:#FFE600; background:#111; border:1px solid #333; border-radius:6px;"></progress>
+    </div>
+
+    <div id="mfy-catalog-filter-container" style="display:none; align-items:center; gap:.5rem; background:#222222; border:1px solid #333; padding:.5rem .75rem; border-radius:.5rem;">
+      <label for="mfy-catalog-filter" style="font-size: 1.21rem; font-weight: 700; color:#eaeaea;">Exibir:</label>
+      <select id="mfy-catalog-filter"
+        style="padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid #444; background:#111; color:#fff; opacity:1;">
+        <option value="todos"   style="color:#fff;background:#111;">Todos</option>
+        <option value="ocultar" style="color:#fff;background:#111;">Ocultar catálogos</option>
+        <option value="filtrar" style="color:#fff;background:#111;">Apenas catálogos</option>
+      </select>
+    </div>
+  </div>`, t = document.getElementsByClassName("ui-search-results")[0] ?? document.getElementsByClassName("ui-search-layout--grid__grid__layout--grid")[0], n = t.querySelectorAll("ol");
   n[0].insertAdjacentHTML("beforebegin", e), s(n), document.getElementById("ealistrequest")?.remove(), document.getElementById("mfy-catalog-filter").addEventListener("change", (e => {
     !function (e, t) {
       let n = e[0];
@@ -2613,7 +2646,32 @@ async function l(n, a) {
         , ((e, t) => m.add(t, "month"))), g = c.map((e => d(e.startOf("month")))), f = c.map((e => d(e.endOf("month")))), u = f.map(((e, t) => `${mfyProxyLessRestricted}https://api.mercadolibre.com/items/visits?ids=${n.itemID}&date_from=${g[t]}&date_to=${e}`));
         let y = "position: absolute; bottom: -21px; z-index: 99;";
         "gallery" == listView && (y = "position: relative; z-index: 99;");
-        let h = `<div class="${n.itemID}" style="${y}font-family: 'Montserrat', sans-serif;margin: -2.5em 0em 1em 0em;display: flex;padding: 0em 0.5em;background: white;align-items: center;justify-content: center;width: 19rem;height: 3.5rem;border-radius: 0.7em;border-left: 8px solid ${s};box-shadow: rgba(0, 0, 0, 0.21) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px;">\n          \n          <div style="font-size: 0.61em;font-weight: 400;color: black;line-height: 1.31em;flex: 1.35;">Criado há: <br><span style="font-size: 0.86rem;font-weight: 700;"><div class="created-at" style="font-size: 1.1rem;font-weight: 700;">${r&&!l?SpinLoader:a}</d> ${r?"":"dia(s)"}</div> </div>\n          \n          <div style="font-size: 0.61em;font-weight: 400;color: black;line-height: 1.31em;flex: 1;padding-left: 1em;border-left: 1px solid #e3e2e2;">Vendas: <br><span id="${n.itemID}" style="font-size: 1.21rem;font-weight: 700;">${SpinLoader}</span> </div>\n          \n          <div style="font-size: 0.61em;font-weight: 400;color: black;line-height: 1.31em;flex:2;padding-left: 1em;border-left: 1px solid #e3e2e2;display:flex"><div>Visitas: <br><span style="font-size: 0.8rem">(6m)</span></div> \n          <div id="loader-${n.itemID}" class="itemloader" style="cursor: pointer;margin: auto;display: flex;align-items: end;justify-content: center;">\n          <img style="cursor: pointer;width:1.21rem;margin-right: 0.31rem;"src="https://img.icons8.com/external-tanah-basah-basic-outline-tanah-basah/24/777777/external-qr-code-scan-coding-tanah-basah-basic-outline-tanah-basah.png"/> Ver\n          </div> </div> </div>`, b = i.getElementsByTagName("mfyloader")[0];
+        let h = `<div class="${n.itemID}" style="${y}font-family: 'Montserrat', sans-serif;margin: -2.5em 0em 1em 0em;display: flex;padding: 0.5em;background: #222222;align-items: center;justify-content: space-around;width: 19rem;height: 3.5rem;border-radius: 0.7em;border-top: 5px solid ${s};box-shadow: rgba(0, 0, 0, 0.4) 0px 8px 13px -3px, rgba(0, 0, 0, 0.2) 0px 4px 6px -2px;box-sizing: border-box;">
+
+  <!-- Seção: Criado há -->
+  <div style="font-size: 0.61em;font-weight: 400;color: #f0f0f0;line-height: 1.31em;flex: 1.35;text-align: center;">Criado há: <br>
+    <span style="font-size: 0.86rem;font-weight: 700;">
+      <span class="created-at" style="font-size: 1.1rem;font-weight: 700;">${r&&!l?SpinLoader:a}</span> ${r?"":"dia(s)"}
+    </span>
+  </div>
+
+  <!-- Seção: Vendas -->
+  <div style="font-size: 0.61em;font-weight: 400;color: #f0f0f0;line-height: 1.31em;flex: 1;padding-left: 1em;border-left: 1px solid #444444;text-align: center;">Vendas: <br>
+    <span id="${n.itemID}" style="font-size: 1.21rem;font-weight: 700;">${SpinLoader}</span>
+  </div>
+
+  <!-- Seção: Visitas -->
+  <div style="font-size: 0.61em;font-weight: 400;color: #f0f0f0;line-height: 1.31em;flex: 2;padding-left: 1em;border-left: 1px solid #444444;display: flex;align-items: center;justify-content: space-between;">
+    <div>Visitas: <br>
+      <span style="font-size: 0.8rem">(6m)</span>
+    </div>
+    <div id="loader-${n.itemID}" class="itemloader" style="cursor: pointer;display: flex;align-items: center;justify-content: center;">
+      <img style="cursor: pointer;width:1.21rem;margin-right: 0.31rem;" src="https://img.icons8.com/external-tanah-basah-basic-outline-tanah-basah/24/f0f0f0/external-qr-code-scan-coding-tanah-basah-basic-outline-tanah-basah.png" alt="QR Code Icon"/> Ver
+    </div>
+  </div>
+
+</div>`, b = i.getElementsByTagName("mfyloader")[0];
+
         if (b) {
           b.outerHTML = h;
         } else {
