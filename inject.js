@@ -196,35 +196,6 @@ async function scrapeScripts(url, noRedirect = false) {
     });
 }
 
-// Function to fetch user/me data through worker
-async function fetchUserMe(userId, authToken, forceRefresh = false) {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage({
-      type: 'FETCH_USER_ME',
-      userId: userId,
-      authToken: authToken,
-      forceRefresh: forceRefresh
-    }, (response) => {
-      if (chrome.runtime.lastError) {
-        resolve({ success: false, error: chrome.runtime.lastError.message });
-      } else {
-        resolve(response);
-      }
-    });
-  });
-}
-
-// Listen for FetchUserMe DOM event
-document.addEventListener('FetchUserMe', async function (event) {
-  const { userId, authToken, forceRefresh } = event.detail;
-  const response = await fetchUserMe(userId, authToken, forceRefresh);
-  
-  // Dispatch response back to page
-  document.dispatchEvent(new CustomEvent('UserMeResponse', { 
-    detail: response
-  }));
-});
-
 // Listen for ScrapeURL DOM event
 document.addEventListener('ScrapeURL', async function (event) {
     const { url, idRef, noRedirect } = event.detail;
