@@ -42,11 +42,19 @@ document.addEventListener('MetrifyExtension', function (event) {
 });
 
 document.addEventListener('StoreProductData', function(event) {
-    chrome.runtime.sendMessage({ type: 'STORE_PRODUCT_DATA', payload: event.detail });
+    const detail = event.detail;
+    if (!detail || typeof detail.itemId !== 'string' || !detail.itemId.trim()) {
+        return;
+    }
+    chrome.runtime.sendMessage({ type: 'STORE_PRODUCT_DATA', payload: detail });
 });
 
 document.addEventListener('GetProductData', function(event) {
-    chrome.runtime.sendMessage({ type: 'GET_PRODUCT_DATA', payload: event.detail }, (response) => {
+    const detail = event.detail;
+    if (!detail || typeof detail !== 'object') {
+        return;
+    }
+    chrome.runtime.sendMessage({ type: 'GET_PRODUCT_DATA', payload: detail }, (response) => {
         if (chrome.runtime.lastError) {
             console.error(chrome.runtime.lastError.message);
             return;
@@ -253,7 +261,7 @@ if (window.location.href.indexOf("https://www.mercadolivre.com.br") == 0 || wind
     if (window.location.href.indexOf("https://www.mercadolivre.com.br/anuncie/hub") == 0 || window.location.href.indexOf("https://www.mercadolivre.com.br/novidades") == 0 || window.location.href.indexOf("https://www.mercadolivre.com.br/publicar") == 0) {
         //console.log(`fixed`);
         document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/dayjs.min.js'), 'body'), false);
-        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/hashalg.js'), 'body'), false);
+        //document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/hashalg.js'), 'body'), false);
         //document.addEventListener("load", injectScript(chrome.runtime.getURL('src/eameli.js'), 'body'), false);
 
     } else {
@@ -266,19 +274,25 @@ if (window.location.href.indexOf("https://www.mercadolivre.com.br") == 0 || wind
         document.getElementsByTagName("head")[0].appendChild(link); */
 
 
-        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/hashalg.js'), 'body'), false);
-        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/apexcharts.js'), 'body'), false);
+        //document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/hashalg.js'), 'body'), false);
+        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/apexcharts.js'), 'body'), false); //gráfico normal
         // Load lottie-player only on product pages where it's actually used (e.g., price tool)
-        if (window.location.href.indexOf("https://produto.mercadolivre.com.br") === 0) {
-            document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/lottie-player.js'), 'body'), false);
-        }
-        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/lodash.min.js'), 'body'), false);
-        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/amcharts-index.js'), 'body'), false);
-        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/amcharts-micro.js'), 'body'), false);
-        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/amcharts-xy.js'), 'body'), false);
-        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/range-slider.js'), 'body'), false);
-        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/dayjs.min.js'), 'body'), false);
-        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/dayjs-plugins/toObject.min.js'), 'body'), false);
+        //if (window.location.href.indexOf("https://produto.mercadolivre.com.br") === 0) {
+            //document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/lottie-player.js'), 'body'), false);
+        //}
+        //document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/lodash.min.js'), 'body'), false);
+
+
+        //Gráfico de visitas ultimos 6 meses miniatura no card de cada produto
+        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/amcharts-index.js'), 'body'), false);//gráfico miniatura
+        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/amcharts-micro.js'), 'body'), false);//gráfico miniatura
+        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/amcharts-xy.js'), 'body'), false);//gráfico miniatura
+        //
+
+
+        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/range-slider.js'), 'body'), false);//nao sei pra que serve ainda
+        document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/dayjs.min.js'), 'body'), false);// arquivo importante de data
+        //document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/dayjs-plugins/toObject.min.js'), 'body'), false);
         
         (async () => {
             await asyncInjectScript(chrome.runtime.getURL('src/libs/popper.min.js'), 'body');

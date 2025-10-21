@@ -1,8 +1,13 @@
 function getRandomProxy() {
-  const e = ["https://mfy-cors.up.railway.app/"];
-  return e[Math.floor(Math.random() * e.length)]
+  const e = ["https://nvai-proxy-production.up.railway.app/"];
+  console.log(' Using random CORS proxy:', e);
+  const a=e[Math.floor(Math.random() * e.length)]
+  console.log(' Selected CORS proxy:', a);
+// ou: const proxy = 'https://nossopoint-backend-flask-server.com';
+  return a;
 }
-var mfyProxy = getRandomProxy(), mfyProxyLessRestricted = "https://mfy.herokuapp.com/";
+var mfyProxy = getRandomProxy()
+var mfyProxyLessRestricted = "https://mfy.herokuapp.com/";
 // Derive the extension base URL from the current script tag (reliable in page context)
 var extensionBaseUrl = (function(){
   try {
@@ -63,98 +68,131 @@ var uid = typeof uid !== 'undefined' ? uid : null;
 meliCurrentFee = (typeof meliCurrentFee === 'number' && !isNaN(meliCurrentFee)) ? meliCurrentFee : 6.5;
 var catalogRemoteLookupData = Array.isArray(typeof catalogRemoteLookupData !== 'undefined' ? catalogRemoteLookupData : undefined) ? catalogRemoteLookupData : [];
 var eaAPIHeaders = (function(){ try { const h = new Headers(); h.append('X-Api-Key','Ps-RXiTdFgN62dmQhZ9bsoHMCEyT2!ypg!ov%7MEFR#jP3mtZWbDoSvEdctMgF6a'); return h; } catch(_) { return null; } })();
-class SpinLoaderManager {
-  constructor() {
-    this.template = null, this.localPath = ""
+// ===== NVAI LOADER TOTAL (drop-in) =====
+class NvaiLoaderTotal {
+  constructor(defaults = {}) {
+    this.defaults = {
+      size: 40,              // px
+      text: 'Analisando...', // legenda opcional
+      showText: true,
+      ...defaults
+    };
+    this.styleId = 'novai-atom-loader-css';
   }
-  getLocalPath() {
-    // Build a safe web-accessible path for the lottie JSON
-    if (!this.localPath) {
-      if (typeof extensionBaseUrl === 'string' && extensionBaseUrl.length > 0) {
-        this.localPath = `${extensionBaseUrl}lotties/lf20_uwR49r.json`;
-      }
-    }
-    return this.localPath || "src/lotties/lf20_uwR49r.json"
+
+  ensureStyles() {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById(this.styleId)) return;
+
+    const css = `
+@keyframes orbit-10 {
+  from { transform: translate(-50%,-50%) rotate(0deg) translateX(10px) rotate(0deg); }
+  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(10px) rotate(-360deg); }
+}
+@keyframes orbit-14 {
+  from { transform: translate(-50%,-50%) rotate(0deg) translateX(14px) rotate(0deg); }
+  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(14px) rotate(-360deg); }
+}
+@keyframes orbit-18 {
+  from { transform: translate(-50%,-50%) rotate(0deg) translateX(18px) rotate(0deg); }
+  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(18px) rotate(-360deg); }
+}
+@keyframes orbit-22 {
+  from { transform: translate(-50%,-50%) rotate(0deg) translateX(22px) rotate(0deg); }
+  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(22px) rotate(-360deg); }
+}
+
+.nvai-atom-wrap{display:flex;align-items:center;gap:.5rem;width:auto;height:auto}
+.nvai-analysing{color:var(--novai-text,#8E8E93);font-size:.875rem;padding-left:10px}
+.nvai-atom{position:relative}
+.nvai-electron{
+  position:absolute;top:50%;left:50%;
+  width:6px;height:6px;border-radius:50%;
+  background:var(--novai-main,#F8DD82);
+  box-shadow:0 0 6px rgba(248,221,130,0.6)
+}
+.nvai-e1{animation:orbit-10 1.0s linear infinite}
+.nvai-e2{animation:orbit-14 1.4s linear infinite}
+.nvai-e3{animation:orbit-18 1.8s linear infinite}
+.nvai-e4{animation:orbit-22 2.2s linear infinite}
+    `.trim();
+
+    const style = document.createElement('style');
+    style.id = this.styleId;
+    style.textContent = css;
+    document.head.appendChild(style);
   }
-  getHTML() {
-    // Use a lightweight inline SVG spinner to avoid custom element lifecycle issues
-    return `<svg data-mfy-spinner="true" width="24" height="24" viewBox="0 0 50 50" style="display:block;margin:auto">
-  <circle cx="25" cy="25" r="20" stroke="var(--mfy-main, #3483fa)" stroke-width="4" fill="none" stroke-linecap="round">
-    <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.8s" repeatCount="indefinite" />
-  </circle>
-</svg>`
+
+  // Gera o HTML do loader (tamanho/legenda customizáveis)
+  getHTML(opts = {}) {
+    this.ensureStyles();
+    const { size, text, showText } = { ...this.defaults, ...opts };
+    const label = showText ? `<span class="nvai-analysing">${text}</span>` : '';
+
+    return `
+<div data-nvai-spinner="true" role="status" aria-live="polite" class="nvai-atom-wrap">
+  <div class="nvai-atom" style="width:${size}px;height:${size}px;">
+    <span class="nvai-electron nvai-e1"></span>
+    <span class="nvai-electron nvai-e2"></span>
+    <span class="nvai-electron nvai-e3"></span>
+    <span class="nvai-electron nvai-e4"></span>
+  </div>
+  ${label}
+</div>
+    `.trim();
   }
-  replaceContent(e) {
-    // Render directly into the live node to ensure the custom element is connected
-    e.innerHTML = this.getHTML()
+
+  // Substitui conteúdo do nó pelo loader
+  replaceContent(node, opts = {}) {
+    if (!node) return;
+    node.innerHTML = this.getHTML(opts);
   }
-  hasSpinner(e) {
-    // Detect either our inline spinner or any legacy lottie-player
-    return e.querySelector('[data-mfy-spinner]') !== null || e.querySelector('lottie-player') !== null
+
+  // Detecta loader NVAI (e também legados mfy/lottie pra evitar duplicar)
+  hasSpinner(node) {
+    if (!node) return false;
+    return !!node.querySelector('[data-nvai-spinner],[data-novai-spinner],[data-mfy-spinner],lottie-player');
   }
-  getWrappedHTML(e = "") {
-    return `<div style="${e}">${this.getHTML()}</div>`
+
+  // Helpers de conveniência (compatíveis com o antigo)
+  getWrappedHTML(styleStr = "", opts = {}) {
+    return `<div style="${styleStr}">${this.getHTML(opts)}</div>`;
   }
-  getInlineHTML() {
-    return `<span style="display: inline-block; vertical-align: middle;">${this.getHTML()}</span>`
+
+  getInlineHTML(opts = {}) {
+    return `<span style="display:inline-block;vertical-align:middle;">${this.getHTML(opts)}</span>`;
+  }
+
+  // Monta e retorna o elemento do loader inserido
+  mount(node, opts = {}) {
+    if (!node) return null;
+    this.replaceContent(node, opts);
+    return node.querySelector('[data-nvai-spinner]');
+  }
+
+  // Remove o loader NVAI do nó
+  remove(node) {
+    if (!node) return;
+    const el = node.querySelector('[data-nvai-spinner]');
+    if (el) el.remove();
+  }
+
+  // Atalho estático
+  static html(opts = {}) {
+    return new NvaiLoaderTotal().getHTML(opts);
   }
 }
-const spinLoaderManager = new SpinLoaderManager;
-var SpinLoader = spinLoaderManager.getHTML(), localePTBR = [{
-  name: "pt-BR",
-  options: {
-    months: ["Janeiro",
-    "Fevereiro",
-    "Março",
-    "Abril",
-    "Maio",
-    "Junho",
-    "Julho",
-    "Agosto",
-    "Setembro",
-    "Outubro",
-    "Novembro",
-    "Dezembro"],
-    shortMonths: ["Jan",
-    "Fev",
-    "Mar",
-    "Abr",
-    "Mai",
-    "Jun",
-    "Jul",
-    "Ago",
-    "Set",
-    "Out",
-    "Nov",
-    "Dez"],
-    days: ["Domingo",
-    "Segunda",
-    "Terça",
-    "Quarta",
-    "Quinta",
-    "Sexta",
-    "Sábado"],
-    shortDays: ["Dom",
-    "Seg",
-    "Ter",
-    "Qua",
-    "Qui",
-    "Sex",
-    "Sáb"],
-    toolbar: {
-      exportToSVG: "Baixar SVG",
-      exportToPNG: "Baixar PNG",
-      menu: "Menu",
-      selection: "Seleção",
-      selectionZoom: "Zoom na seleção",
-      zoomIn: "Zoom In",
-      zoomOut: "Zoom Out",
-      pan: "Panorâmica",
-      reset: "Resetar Zoom"
-    }
-  }
-  }
-], fullIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="logo-full" width="151" height="39" viewBox="0 0 151 39" data-reactroot="" style="width: 3.75em;height: auto;position: relative;top: 0.2em;padding: 0em 0em 0em 0.35em;"><g fill="#00A650" fill-rule="evenodd"><path d="M9.577 0L0 22.286h15.962L9.577 39l25.54-25.071H19.153L28.732 0zM56.094 27.925h-6.931l5.924-24.38h19.706l-1.33 5.483H60.688l-.886 3.801h12.452l-1.33 5.483H58.433l-2.338 9.613zm33.718.439c-8.262 0-12.332-3.582-12.332-8.7 0-.402.12-1.242.202-1.608l3.546-14.51h7.052L84.774 17.91c-.04.183-.12.585-.12 1.023.04 2.01 1.732 3.948 5.158 3.948 3.707 0 5.601-2.12 6.286-4.971l3.507-14.365h7.012L103.11 18.02c-1.451 5.921-4.998 10.344-13.3 10.344zm36.014-.439h-17.732l5.924-24.38h6.932l-4.554 18.897h10.76l-1.33 5.483zm23.844 0h-17.732l5.924-24.38h6.932l-4.554 18.897H151l-1.33 5.483z"></path></g></svg>';
+
+// ===== Instância padrão (recomendado) =====
+const nvaiLoaderTotal = new NvaiLoaderTotal();
+
+// String pronta (como antes você tinha "SpinLoader")
+const NvaiLoader = nvaiLoaderTotal.getHTML();
+
+// ===== (Opcional) SHIM de compatibilidade =====
+// Se você não quer refatorar tudo agora, mantém os nomes antigos apontando pro novo:
+const spinLoaderManager = nvaiLoaderTotal;
+var SpinLoader = NvaiLoader;
 
 // ---- Resilient UI keep-alive (re-inject after React wipes nodes) ----
 let _mfyKeepAliveInterval = null;
@@ -471,56 +509,53 @@ Criado em: ${data_br}  |  Há cerca de: ${dias} dias
 
 var mlfee = "";
 
-var mfyloader = `
-<mfyloader style="width: 5rem;height: 5rem;display: flex;">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="margin: auto; background: rgb(255, 255, 255, 0); display: block;" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
-<defs>
-<filter id="ldio-r0lbqrngywn-filter" x="-100%" y="-100%" width="300%" height="300%" color-interpolation-filters="sRGB">
-  <feGaussianBlur in="SourceGraphic" stdDeviation="2.4000000000000004"></feGaussianBlur>
-  <feComponentTransfer result="cutoff">
-    <feFuncA type="table" tableValues="0 0 0 0 0 0 1 1 1 1 1"></feFuncA>
-  </feComponentTransfer>
-</filter>
-</defs>
-<g filter="url(#ldio-r0lbqrngywn-filter)"><g transform="translate(50 50)">
-<g>
-<circle cx="17" cy="0" r="5" fill="#6252c5">
-  <animate attributeName="r" keyTimes="0;0.5;1" values="3.5999999999999996;8.399999999999999;3.5999999999999996" dur="4s" repeatCount="indefinite" begin="-0.25s"></animate>
-</circle>
-<animateTransform attributeName="transform" type="rotate" keyTimes="0;1" values="0;360" dur="4s" repeatCount="indefinite" begin="0s"></animateTransform>
-</g>
-</g><g transform="translate(50 50)">
-<g>
-<circle cx="17" cy="0" r="5" fill="#2a9fde">
-  <animate attributeName="r" keyTimes="0;0.5;1" values="3.5999999999999996;8.399999999999999;3.5999999999999996" dur="2s" repeatCount="indefinite" begin="-0.2s"></animate>
-</circle>
-<animateTransform attributeName="transform" type="rotate" keyTimes="0;1" values="0;360" dur="2s" repeatCount="indefinite" begin="-0.05s"></animateTransform>
-</g>
-</g><g transform="translate(50 50)">
-<g>
-<circle cx="17" cy="0" r="5" fill="#00d9ff">
-  <animate attributeName="r" keyTimes="0;0.5;1" values="3.5999999999999996;8.399999999999999;3.5999999999999996" dur="1.3333333333333333s" repeatCount="indefinite" begin="-0.15s"></animate>
-</circle>
-<animateTransform attributeName="transform" type="rotate" keyTimes="0;1" values="0;360" dur="1.3333333333333333s" repeatCount="indefinite" begin="-0.1s"></animateTransform>
-</g>
-</g><g transform="translate(50 50)">
-<g>
-<circle cx="17" cy="0" r="5" fill="#6e2aff">
-  <animate attributeName="r" keyTimes="0;0.5;1" values="3.5999999999999996;8.399999999999999;3.5999999999999996" dur="1s" repeatCount="indefinite" begin="-0.1s"></animate>
-</circle>
-<animateTransform attributeName="transform" type="rotate" keyTimes="0;1" values="0;360" dur="1s" repeatCount="indefinite" begin="-0.15s"></animateTransform>
-</g>
-</g><g transform="translate(50 50)">
-<g>
-<circle cx="17" cy="0" r="5" fill="#6252c5">
-  <animate attributeName="r" keyTimes="0;0.5;1" values="3.5999999999999996;8.399999999999999;3.5999999999999996" dur="0.8s" repeatCount="indefinite" begin="-0.05s"></animate>
-</circle>
-<animateTransform attributeName="transform" type="rotate" keyTimes="0;1" values="0;360" dur="0.8s" repeatCount="indefinite" begin="-0.2s"></animateTransform>
-</g>
-</g></g>
-</svg>
-</mfyloader>
+var nvailoader = `
+<style id="novai-atom-loader-css">
+@keyframes orbit-10 {
+  from { transform: translate(-50%,-50%) rotate(0deg) translateX(10px) rotate(0deg); }
+  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(10px) rotate(-360deg); }
+}
+@keyframes orbit-14 {
+  from { transform: translate(-50%,-50%) rotate(0deg) translateX(14px) rotate(0deg); }
+  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(14px) rotate(-360deg); }
+}
+@keyframes orbit-18 {
+  from { transform: translate(-50%,-50%) rotate(0deg) translateX(18px) rotate(0deg); }
+  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(18px) rotate(-360deg); }
+}
+@keyframes orbit-22 {
+  from { transform: translate(-50%,-50%) rotate(0deg) translateX(22px) rotate(0deg); }
+  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(22px) rotate(-360deg); }
+}
+
+.nvai-atom-wrap{display:flex;align-items:center;gap:.5rem;width:auto;height:auto}
+.nvai-analysing{color:#8E8E93;font-size:.875rem;padding-left:10px}
+.nvai-atom{position:relative;width:40px;height:40px}
+
+/* apenas os elétrons */
+.nvai-electron{
+  position:absolute;top:50%;left:50%;
+  width:6px;height:6px;border-radius:50%;
+  background:#F8DD82;box-shadow:0 0 6px rgba(248,221,130,0.6)
+}
+.nvai-e1{animation:orbit-10 1.0s linear infinite}
+.nvai-e2{animation:orbit-14 1.4s linear infinite}
+.nvai-e3{animation:orbit-18 1.8s linear infinite}
+.nvai-e4{animation:orbit-22 2.2s linear infinite}
+</style>
+
+<nvailoader class="nvai-atom-wrap">
+  <div class="nvai-atom">
+    <span class="nvai-electron nvai-e1"></span>
+    <span class="nvai-electron nvai-e2"></span>
+    <span class="nvai-electron nvai-e3"></span>
+    <span class="nvai-electron nvai-e4"></span>
+  </div>
+  <span class="nvai-analysing">Analisando...</span>
+</nvailoader>
 `;
+
+
 
 var eanotifytag = `
 <div style="background-color: var(--mfy-main);background-image: linear-gradient(to right, #003eba -42%, var(--mfy-main) 35%);width:2em;height:2em;position: absolute;top: 2.7em;right: -1em;cursor: pointer;border-right: 2px solid #2c4cff;border-radius: 0px 5px 5px 0px;box-shadow: 0.31em 0 0.35em -0.35em rgb(0 0 0);">
@@ -717,13 +752,54 @@ function dLayerMainFallback() {
   NaN === preco_Local && (preco_Local = parseFloat(catalogData[0].body.price)), null == comprador && (comprador = document.documentElement.innerHTML.split("user_id")[1].split(",")[0].split(":")[1]), null == tipo_anuncio && (tipo_anuncio = null == melidata.q ? document.documentElement.innerHTML.split("listing_type_id")[1]?.split('"')[2]: catalogData[0].body.listing_type_id)
 }
 function dlayerFallback() {
-  dLayerAlt = catalogData[0].body.date_created ?? dataLayer[0].startTime, vendasAlt = catalogData[0].body.sold_quantity, 0 == vendas.length && (vendas = vendasAlt || (() => {
-    const e = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
-    if (!e) return vendas;
-    let t = e.innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
-    return t ? (t.endsWith("mil") && (t = 1e3 * parseFloat(t.replace("mil", ""))), parseFloat(t) || vendas): vendas
+  const catalogBody = catalogData?.[0]?.body || {};
+  const dataLayerEntry = Array.isArray(dataLayer) && dataLayer.length > 0 ? dataLayer[0] : null;
+  let startTimeRaw = catalogBody.date_created ?? dataLayerEntry?.startTime ?? null;
+  const vendasAlt = catalogBody.sold_quantity;
+  const vendasIsEmpty = typeof vendas === "string" ? vendas.length === 0 : null == vendas;
+  if (vendasIsEmpty) {
+    const parsedSubtitleSales = (() => {
+      const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
+      if (!subtitleEl) return null;
+      let salesText = subtitleEl.innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
+      if (!salesText) return null;
+      if (salesText.endsWith("mil")) {
+        const numeric = parseFloat(salesText.replace("mil", ""));
+        return isNaN(numeric) ? null : numeric * 1e3;
+      }
+      const numeric = parseFloat(salesText.replace(/\./g, "").replace(",", "."));
+      return isNaN(numeric) ? null : numeric;
+    })();
+    if (typeof vendasAlt === "number" && !isNaN(vendasAlt)) vendas = vendasAlt;
+    else if (typeof parsedSubtitleSales === "number" && !isNaN(parsedSubtitleSales)) vendas = parsedSubtitleSales;
   }
-  )()), dLayer = dLayerAlt?.split("T")[0], data_br = "" == data_br ? dLayer?.split("-").reverse().join("/"): data_br, dataMilisec = Date.parse(dLayer), eadiff = eanow - dataMilisec, "" == dias && (dias = Math.round(eadiff / (8.64 * Math.pow(10, 7)))), "" == media_vendas && (media_vendas = isNaN(Math.round(vendas / (dias / 30))) ? "Indisponível": Math.round(vendas / (dias / 30))), 0 == dias ? media_vendas = "0": dias < 30 && (alert_media_vendas = !0), dLayerMainFallback()
+  if ("number" == typeof startTimeRaw && isFinite(startTimeRaw)) {
+    const normalized = new Date(startTimeRaw);
+    startTimeRaw = isNaN(normalized.getTime()) ? null : normalized.toISOString();
+  }
+  if ("string" != typeof startTimeRaw || startTimeRaw.length === 0) return void dLayerMainFallback();
+  dLayerAlt = startTimeRaw;
+  dLayer = dLayerAlt.split("T")[0];
+  if (!dLayer) return void dLayerMainFallback();
+  "" == data_br && (data_br = dLayer.split("-").reverse().join("/"));
+  const dataMilisec = Date.parse(dLayer);
+  if (isNaN(dataMilisec)) return void dLayerMainFallback();
+  const diff = eanow - dataMilisec;
+  eadiff = diff;
+  if ("" == dias) {
+    const computedDays = Math.round(diff / (8.64 * Math.pow(10, 7)));
+    !isNaN(computedDays) && (dias = computedDays);
+  }
+  if ("" == media_vendas) {
+    if ("number" == typeof vendas && !isNaN(vendas) && dias > 0) {
+      const monthlyAvg = Math.round(vendas / (dias / 30));
+      media_vendas = isNaN(monthlyAvg) ? "Indisponível" : monthlyAvg;
+    } else media_vendas = "Indisponível";
+  }
+  const diasNumber = "number" == typeof dias ? dias : parseFloat(dias);
+  if (!isNaN(diasNumber)) dias = diasNumber;
+  0 == diasNumber ? media_vendas = "0": diasNumber < 30 && !isNaN(diasNumber) && (alert_media_vendas = !0);
+  dLayerMainFallback();
 }
 function altContentScpt() {
   spot0 = document.getElementsByClassName("ui-pdp-header"), spot0[0].insertAdjacentHTML("afterbegin", '<span id="eaoffSwitch" style="top: 0em;left: 0em;background-color:rgb(52, 131, 250);color:#fff;"><img src="https://img.icons8.com/external-gradak-royyan-wijaya/24/3f8afe/external-interface-gradak-interface-gradak-royyan-wijaya-5.png" style="width: 1.5em; height: 1.5em; position: relative; top: 0.21em; margin-right: 0.5em; filter: brightness(5); transform: scaleX(-1);"><span class="eahiddenlabel"> Ligar Análises</span></span>');
@@ -1121,6 +1197,7 @@ function getMLinfo() {
   }
 }
 async function findDocID(e, t, n) {
+  console.log("Buscando documento de identidade...", mfyProxy);
   t = t || 0, await fetch(`${mfyProxy}https://api.mercadolibre.com/users/me`, eaInit).then((e => e.json())).then((e => rawID = e.identification.number ?? void 0)).catch ((function (e) {})), generateEAN13(e, t, !!n)
 }
 function generateEAN13(e, t, n) {
@@ -1203,13 +1280,13 @@ function contentScpt() {
       }
       )), earanksearchGo.addEventListener("click", (function () {
         earanksearchForm.setAttribute("style", "display:none;position: relative; z-index: 0;"), async function (t) {
-          earanksearchForm.insertAdjacentHTML("afterend", `<div id="mfyloaderdiv" style="display: flex;width: 100%;">${mfyloader}<span style="position: relative;font-size: 0.86em;font-weight: 700;top: 5em;flex: 1;">Buscando este anúncio nas 20 primeiras páginas. Um momento... </span></div>`), document.getElementsByTagName("mfyloader")[0].style.marginTop = "3em";
+          earanksearchForm.insertAdjacentHTML("afterend", `<div id="nvailoaderdiv" style="display: flex;width: 100%;">${nvailoader}<span style="position: relative;font-size: 0.86em;font-weight: 700;top: 5em;flex: 1;">Buscando este anúncio nas 20 primeiras páginas. Um momento... </span></div>`), document.getElementsByTagName("nvailoader")[0].style.marginTop = "3em";
           let n = !1;
           for (let i = 0;
           i < 20;
           i++) {
             function a(e) {
-              document.getElementById("mfyloaderdiv")?.remove(), document.getElementById("eaadvsearchResult").setAttribute("style", "position: relative;top:1.75em;");
+              document.getElementById("nvailoaderdiv")?.remove(), document.getElementById("eaadvsearchResult").setAttribute("style", "position: relative;top:1.75em;");
               var n = document.getElementsByTagName("earesult")[0];
               if (n.innerHTML = 'Não encontrado <span style="font-size:0.7em;position: relative;left: -10.5em;top: 1.1em;">(nas 20 primeiras páginas)</span> <span style="font-size: 0.7em;color: #00000050;display: inline-flex;letter-spacing: 0.035em;padding: 0.35em 0.75em;background-color: #ebebeb;border-radius: 1em;position: relative;right: -15.5em;top: -1.35em;">"' + t + '"</span>', n.setAttribute("style", "position:relative;top:-0.35em;"), -1 != e) {
                 let a = Math.floor(e / 50) + 1, i = e % 50;
@@ -1319,7 +1396,7 @@ function contentScpt() {
           for (let e = 0;
           e < n.length;
           e++) "Informações sobre o vendedor" != n[e].innerText && "Informações da loja" != n[e].innerText && "Devolução grátis" != n[e].innerText || (t = n[e].parentElement.parentElement);
-          let a = `${'<span id="easellerbtn" sellerdata="none" open="false" class="andes-button--loud mfy-main-bg  andes-button" style="position:relative; z-index:1;margin-bottom: 28px;margin-top: -1em;width: 100%;"><img src="https://img.icons8.com/material-outlined/48/ffffff/individual-server.png" style="width: 1.35em;margin: 0.8em 0.2em -0.35em 0em;display: inline-block;">Informações Extras</span>'}${`<div class="smooth ui-pdp-component-list pr-16 pl-16 alinharvertical" id="sellerinfobox" style="margin: -3em 0em 0em 0em;padding: 2em 0em 1em 0em;height: 0px;overflow: hidden;opacity: 0;">${mfyloader}</div>`}`;
+          let a = `${'<span id="easellerbtn" sellerdata="none" open="false" class="andes-button--loud mfy-main-bg  andes-button" style="position:relative; z-index:1;margin-bottom: 28px;margin-top: -1em;width: 100%;"><img src="https://img.icons8.com/material-outlined/48/ffffff/individual-server.png" style="width: 1.35em;margin: 0.8em 0.2em -0.35em 0em;display: inline-block;">Informações Extras</span>'}${`<div class="smooth ui-pdp-component-list pr-16 pl-16 alinharvertical" id="sellerinfobox" style="margin: -3em 0em 0em 0em;padding: 2em 0em 1em 0em;height: 0px;overflow: hidden;opacity: 0;">${nvailoader}</div>`}`;
           "" != t && null != t?.firstChild && t?.firstChild.insertAdjacentHTML("beforebegin", a);
           let i = document.getElementById("easellerbtn"), s = document.getElementById("sellerinfobox");
           i?.addEventListener("click", (function () {
@@ -1329,7 +1406,7 @@ function contentScpt() {
         }
         else {
           document.getElementById("easellerbtn").setAttribute("sellerdata", "true");
-          let e = document.getElementById("sellerinfobox"), a = e.getElementsByTagName("mfyloader");
+          let e = document.getElementById("sellerinfobox"), a = e.getElementsByTagName("nvailoader");
           a.length > 0 && e.removeChild(a[0]);
           let i = new Date(t.seller.registration_date).toLocaleDateString("pt-br"), s = "", o = new Date(t.seller.registration_date).getFullYear(), r = (new Date).getFullYear();
           if (parseFloat(o) < parseFloat(r)) {
@@ -1449,12 +1526,21 @@ function contentScpt() {
       e && e.remove(), t && t.remove()
     }
     (), t(), function () {
-      let e = eadataRetrieve("eaActive"), t = document.getElementById("eaoffSwitch");
-      function n() {
-        e = eadataRetrieve("eaActive"), null === e && (e = !0), e ? (t.lastChild.innerText = " Desligar Análises", t.firstChild.style.filter = "brightness(1)", t.firstChild.style.transform = "scaleX(1)", t.setAttribute("style", ""), iscatalog || (t.style.top = "0.31em")): (t.setAttribute("style", "background-color:rgb(52, 131, 250);color:#fff;"), t.firstChild.style.filter = "brightness(5)", t.firstChild.style.transform = "scaleX(-1)", t.lastChild.innerText = " Ligar Análises")
+      let e = eadataRetrieve("eaActive");
+      const t = document.getElementById("eaoffSwitch");
+      if (!t) return;
+      const n = t.querySelector("img");
+      const a = t.querySelector(".eahiddenlabel");
+      function i() {
+        e = eadataRetrieve("eaActive"), null === e && (e = !0);
+        if (e) {
+          a && (a.innerText = " Desligar Análises"), n && (n.style.filter = "brightness(1)", n.style.transform = "scaleX(1)"), t.setAttribute("style", ""), iscatalog || (t.style.top = "0.31em");
+        } else {
+          a && (a.innerText = " Ligar Análises"), n && (n.style.filter = "brightness(5)", n.style.transform = "scaleX(-1)"), t.setAttribute("style", "background-color:rgb(52, 131, 250);color:#fff;");
+        }
       }
-      n(), t && t.addEventListener("click", (function () {
-        e = eadataRetrieve("eaActive"), null === e && (e = !0), eadataStore("eaActive", !e, TTL1), n(), setTimeout((function () {
+      i(), t.addEventListener("click", (function () {
+        e = eadataRetrieve("eaActive"), null === e && (e = !0), eadataStore("eaActive", !e, TTL1), i(), setTimeout((function () {
           try { initializeExtensionFeatures() } catch (err) {}
         }
         ), 1e3)
@@ -2070,7 +2156,7 @@ async function findfreshAuth() {
 function appendToken() {}
 function dataCleanup() {
   if ("anuncio" === paginaAtual) {
-    let e = document.getElementsByTagName("mfyloader");
+    let e = document.getElementsByTagName("nvailoader");
     if (e) for (loader of e) loader.remove()
   }
   getMLinfo()
@@ -2466,7 +2552,7 @@ if (y && !y.dataset.bound) {
   y.addEventListener("mouseout", function () { this.style.transform = "scale(1)" });
   y.dataset.bound = "1";
 }
-document.getElementsByTagName("mfyloader");
+document.getElementsByTagName("nvailoader");
 var a = document.getElementsByClassName("fulfillment ui-pb-label-builder fulfillment fulfillment").length > 0 ? document.getElementsByClassName("fulfillment ui-pb-label-builder fulfillment fulfillment"): document.querySelectorAll(".poly-component__shipped-from").length > 0 ? document.querySelectorAll(".poly-component__shipped-from"): document.getElementsByClassName("poly-shipping__promise-icon--full"), i = e.filter((e => e.metadata && "true" === e.metadata.is_pad)), s = [];
 function o(e) {
   let t = document.getElementById("eacatextrainfo");
@@ -2518,8 +2604,8 @@ async function l(n, a) {
   }
   // Insert loader only if not already present and metrics box not present
   const contentWrapper = i.getElementsByClassName("ui-search-result__content-wrapper")[0] ?? i.getElementsByClassName("poly-card__content")[0];
-  if (!i.querySelector('mfyloader') && !i.querySelector(`div.${o?.metadata?.id ?? ''}`)) {
-    contentWrapper?.insertAdjacentHTML("afterbegin", mfyloader);
+  if (!i.querySelector('nvailoader') && !i.querySelector(`div.${o?.metadata?.id ?? ''}`)) {
+    contentWrapper?.insertAdjacentHTML("afterbegin", nvailoader);
   }
   async function aWrapper(e) {
     !function (n) {
@@ -2691,7 +2777,7 @@ async function l(n, a) {
     </div>
   </div>
 
-</div>`, b = i.getElementsByTagName("mfyloader")[0];
+</div>`, b = i.getElementsByTagName("nvailoader")[0];
 
         if (b) {
           b.outerHTML = h;

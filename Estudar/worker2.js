@@ -258,18 +258,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true; // Will respond asynchronously
   } else if (request.type === 'STORE_PRODUCT_DATA') {
-    const { itemId, startTime, itemSales } = request.payload;
-    chrome.storage.local.get([itemId], (result) => {
-      let itemData = result[itemId] ? JSON.parse(result[itemId]) : {};
-      itemData.startTime = startTime;
-      itemData.itemSales = itemSales;
+    const payload = request.payload || {};
+    const rawItemId = typeof payload.itemId === 'string' ? payload.itemId.trim() : '';
+    if (!rawItemId) {
+      sendResponse({ success: false, error: 'Invalid product identifier' });
+      return false;
+    }
+    let normalizedStartTime = payload.startTime;
+    if (typeof normalizedStartTime === 'number') {
+      const dateCandidate = new Date(normalizedStartTime);
+      normalizedStartTime = isNaN(dateCandidate.getTime()) ? null : dateCandidate.toISOString();
+    }
+    let normalizedItemSales = payload.itemSales;
+    if (typeof normalizedItemSales === 'string') {
+      const parsedSales = parseFloat(normalizedItemSales.replace(/[^0-9.,-]/g, '').replace(',', '.'));
+      if (!isNaN(parsedSales)) {
+        normalizedItemSales = parsedSales;
+      }
+    }
+    if (typeof normalizedItemSales !== 'number' || !isFinite(normalizedItemSales)) {
+      sendResponse({ success: false, error: 'Invalid product sales value' });
+      return false;
+    }
+    chrome.storage.local.get([rawItemId], (result) => {
+      let itemData = result[rawItemId] ? JSON.parse(result[rawItemId]) : {};
+      itemData.startTime = normalizedStartTime;
+      itemData.itemSales = normalizedItemSales;
       itemData.updated_at = new Date().toISOString();
-      chrome.storage.local.set({ [itemId]: JSON.stringify(itemData) }, () => {
+      chrome.storage.local.set({ [rawItemId]: JSON.stringify(itemData) }, () => {
         if (chrome.runtime.lastError) {
-          console.error(`Error storing product data for ${itemId}:`, chrome.runtime.lastError);
+          console.error(`Error storing product data for ${rawItemId}:`, chrome.runtime.lastError);
           sendResponse({ success: false, error: chrome.runtime.lastError.message });
         } else {
-          // console.log(`Stored product data for ${itemId}:`, itemData);
           sendResponse({ success: true });
         }
       });

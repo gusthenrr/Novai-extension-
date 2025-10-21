@@ -1,15 +1,9 @@
 {
    "action": {
-      "default_icon": {
-         "128": "images/icon.png",
-         "16": "images/icon16.png",
-         "24": "images/icon24.png",
-         "32": "images/icon32.png"
-      },
       "default_popup": "pop.html",
-      "default_title": "Metrify"
+      "default_title": "N"
    },
-   "author": "Metrify",
+   "author": "N",
    "background": {
       "service_worker": "worker.js"
    },
@@ -29,7 +23,7 @@
    },
    "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAii6H0QnqS88vDOx8UMWdcieb4WkcuqQbB3hEAcHwinKfnvSuVbtcCiWrMLpqxjV33GR9LUb8iKHNw2G0+JdZthL/Jrm1pt9hzyiwOK4xo9WRL7SFTi8YiNioOZfl16n3F9mJG+Ay233K0cHR2dUrfpMLqJDlW7wwXWb7+d0Bd0kBT4nrTmLleJGPXpa2K5CvIjp1mBLZRUOmPRxqqNk8/67TW/iXD1CUEA+ZVdnWDY3/yTe/xrrDXb8zgQX5GDMnaQWU61mE3LyuPuxStIITv2HhP3hIusA2DTHb4W0pufOC2aVpiP8cAEb4B3mekHrszFX1BJKKKDYqrvysUZnHrQIDAQAB",
    "manifest_version": 3,
-   "name": "Metrify",
+   "name": "N",
    "permissions": [ "storage" ],
    "update_url": "https://clients2.google.com/service/update2/crx",
    "version": "1.8.7",
