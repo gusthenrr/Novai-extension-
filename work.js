@@ -206,22 +206,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     });
     return true; // Will respond asynchronously
-  } else if (request.type === 'AUTH_CHECK') {
-    const { key } = request;
-    chrome.storage.local.get([key], (result) => {
-      if (result[key]) {
-        const item = JSON.parse(result[key]);
-        const now = new Date();
-        if (now.getTime() < item.expiry) {
-          sendResponse({ value: item.value, type: 'AUTH_CHECK' });
-        } else {
-          sendResponse({ value: null, type: 'AUTH_CHECK' });
-        }
-      } else {
-        sendResponse({ value: null, type: 'AUTH_CHECK' });
-      }
-    });
-    return true; // Will respond asynchronously
   } else if (request.type === 'STORE_VISITS') {
     const { itemId, visitsData } = request;
     const now = new Date();

@@ -14,7 +14,7 @@ var registeringAcc = !1, requestOptions = {
   headers: eaAPIHeaders,
   redirect: "follow"
 }
-, mfyuser = void 0, mfy_userdata = {}, myHeaders = new Headers;
+, mfyuser = void 0, myHeaders = new Headers;
 myHeaders.append("accept", "application/json"), myHeaders.append("content-type", "application/x-www-form-urlencoded");
 var TTL0 = 9e5, TTL1 = 216e5, TTL2 = 3e4, TTL3 = 72e5, mfyHost = "https://api2.metrify.com.br/api", mfyEndpoints = {
   api_host: "https://api2.metrify.com.br/api",
@@ -129,37 +129,6 @@ const params = new Proxy(new URLSearchParams(window.location.search), {
   get: (e, t) => e.get(t)
 }
 );
-function sendToContentScript(e) {
-  try {
-    document.dispatchEvent(new CustomEvent("MetrifyExtension", {
-      detail: e
-    }
-    ))
-  }
-  catch (e) {}
-}
-function AuthDataStore(e, t) {
-  sendToContentScript({
-    type: "STORE",
-    key: e,
-    value: t
-  }
-  )
-}
-function AuthDataRetrieve(e) {
-  sendToContentScript({
-    type: "RETRIEVE",
-    key: e
-  }
-  )
-}
-function AuthDataCheck(e) {
-  sendToContentScript({
-    type: "AUTH_CHECK",
-    key: e
-  }
-  )
-}
 function isList() {
   null != document.getElementsByClassName("ui-search-breadcrumb__title")[0] && (paginaAtual = "lista")
 }
@@ -177,13 +146,7 @@ function eadataRetrieve(e) {
   const n = JSON.parse(t);
   return (new Date).getTime() > n.expiry ? (localStorage.removeItem(e), null): n.value
 }
-document.addEventListener("MetrifyExtensionResponse", (function (e) {
-  "RETRIEVE" == e.detail.type ? mfy_userdata = e.detail.value: "AUTH_CHECK" == e.detail.type && (mfy_userdata.remote = e.detail.value)
-}
-)), document.addEventListener("MetrifyAuthCheck", (function (e) {
-  mfy_userdata.remote = e.detail.value
-}
-)), isList();
+isList();
 var getHTML = async function (e, t) {
   try {
     const n = new Headers;
@@ -300,37 +263,6 @@ var scrapeHTML = async function (e, t, n, a, i) {
   )()
 }
 , eaHeaders = new Headers;
-async function fetchUserMeData(e, t = !1) {
-  return new Promise((n => {
-    const a = mfyuser?.id || null;
-    if (!a) return void n({
-      success: !1,
-      error: "No user ID available"
-    }
-    );
-    document.dispatchEvent(new CustomEvent("FetchUserMe", {
-      detail: {
-        userId: a,
-        authToken: e,
-        forceRefresh: t
-      }
-    }
-    ));
-    const i = e => {
-      document.removeEventListener("UserMeResponse", i), n(e.detail)
-    }
-    ;
-    document.addEventListener("UserMeResponse", i), setTimeout((() => {
-      document.removeEventListener("UserMeResponse", i), n({
-        success: !1,
-        error: "Timeout waiting for user data"
-      }
-      )
-    }
-    ), 2e4)
-  }
-  ))
-}
 eaHeaders.append("pragma", "no-cache"), eaHeaders.append("cache-control", "no-cache");
 var eaInit = {
   method: "GET",
@@ -1032,11 +964,7 @@ function confirmAuth(e, t) {
   }
 }
 function checkrefresh() {
-  let e = parseJwt(mfy_userdata?.token)?.token;
-  e && "" != e ? (eadataStore("ealocalrst", null, TTL3), setTimeout((function () {
-    document.location.reload(!0)
-  }
-  ), 1500)): confirmAuth(!1)
+  initializeExtensionFeatures()
 }
 async function checkDatalayer() {
   askPermissions(usuario_logado)
@@ -2068,31 +1996,16 @@ function s() {
 }
 ()
 }
-function storeFresh(e) {
-  AuthDataStore("ealocalrst", e), checkrefresh(!0)
+function initializeExtensionFeatures() {
+  dataCleanup()
 }
-async function findfreshAuth(e) {
-  await fetch(mfyEndpoints.auth, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    }
-    ,
-    body: JSON.stringify({
-      email: `${usuario_logado}`,
-      id: `${uid}`
-    }
-    )
-  }
-  ).then((e => e.json())).then((e => {
-    storeFresh(e)
-  }
-  )).catch ((e => {}))
+function storeFresh() {
+  initializeExtensionFeatures()
 }
-function appendToken(e) {
-  eaHeaders.append("Authorization", " Bearer " + e), eadataStore("local_usertkn", e, TTL1)
+async function findfreshAuth() {
+  initializeExtensionFeatures()
 }
+function appendToken() {}
 function dataCleanup() {
   if ("anuncio" === paginaAtual) {
     let e = document.getElementsByTagName("mfyloader");
@@ -2100,109 +2013,21 @@ function dataCleanup() {
   }
   getMLinfo()
 }
-var tried = !1;
-async function validateToken() {
-  let e = eadataRetrieve("local_usertkn");
-  async function t() {
-    let e = parseJwt(mfy_userdata?.token);
-    if (0 == tried) {
-      var t = {
-        method: "POST",
-        headers: myHeaders,
-        redirect: "follow"
-      }
-      ;
-      fetch("https://api.mercadolibre.com/oauth/token?grant_type=refresh_token&client_id=323521671107951&client_secret=FbKILwMpPIa89q6lYd59yA5wJrPK2noN&refresh_token=" + e.token, t).then((e => e.json())).then((e => {
-        if (400 != e.status) {
-          let t = e.access_token;
-          eaHeaders.append("Authorization", " Bearer " + t), eadataStore("local_usertkn", t, TTL1), window.location.reload(!0)
-        }
-        else tried = !0, validateToken()
-      }
-      )).catch ((e => {}))
-    }
-    else askPermissions(usuario_logado)
-  }
-  if (null == e || null == e) t();
-  else {
-    var n = new Headers;
-    if (n.append("pragma", "no-cache"), n.append("cache-control", "no-cache"), n.append("Authorization", " Bearer " + e.toString()), AuthDataCheck("remote_user"), await new Promise((e => setTimeout(e, 500))), mfy_userdata?.remote?.email != usuario_logado) try {
-      const n = await fetchUserMeData(e, !1);
-      if (n.success && n.data) {
-        const a = n.data;
-        AuthDataStore("remote_user", {
-          email: a.email,
-          id: a.id
-        }
-        ), a.email == usuario_logado ? (eaHeaders.append("Authorization", " Bearer " + e), dataCleanup()): t(), n.fromCache
-      }
-      else t()
-    }
-    catch (e) {
-      t()
-    }
-    else eaHeaders.append("Authorization", " Bearer " + e), dataCleanup()
-  }
-}
-function findTier(e) {
-  verif = e.tier, verif = "pro", validateToken()
-}
 var extdataVerified = !1, userdataOk = !0, dataTrial = 0;
+async function validateToken() {
+  initializeExtensionFeatures()
+}
+function findTier() {
+  verif = "pro", initializeExtensionFeatures()
+}
 async function registerNewAcc() {
-  null == uid && null == uid && (uid = `${dataLayer?.at(0)?.buyerId?dataLayer[0].buyerId:melidata_namespace?.actual_track.user.user_id?melidata_namespace?.actual_track.user.user_id:preLoadedState?.user?.id}`), registeringAcc = !0, await fetch(mfyEndpoints.register, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    }
-    ,
-    body: JSON.stringify({
-      email: `${usuario_logado}`,
-      id: uid
-    }
-    )
-  }
-  ).then((e => e.json())).then((e => window ? window.location.reload(): null)).catch ((e => {}))
+  initializeExtensionFeatures()
 }
-async function getnstoreData(e) {
-  if (null != usuario_logado) if (extdataVerified = !0, null == uid && null == uid && (uid = `${dataLayer?.at(0)?.buyerId?dataLayer[0].buyerId:melidata_namespace?.actual_track.user.user_id?melidata_namespace?.actual_track.user.user_id:preLoadedState?.user?.id}`), await fetch(mfyEndpoints.auth, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    }
-    ,
-    body: JSON.stringify({
-      email: `${usuario_logado}`,
-      id: uid
-    }
-    )
-  }
-  ).then((e => e.json())).then((e => AuthDataStore("ealocalrst", e))).catch ((e => {})), "userverif" == e && window.location.reload(), 1 == e) if (++dataTrial > 1) {
-    userdataOk = !1;
-    let e = document.getElementsByTagName("mfyloader");
-    if (e) for (loader of e) loader.remove();
-    setTimeout((() => {
-      registeringAcc || registerNewAcc()
-    }
-    ), 1e3);
-    spot0 = document.getElementsByClassName("ui-pdp-header");
-    document.getElementById("acc-register-btn")
-  }
-  else verifyData("getnstoreData-try2");
-  else verifyData("getnstoreData")
+async function getnstoreData() {
+  initializeExtensionFeatures()
 }
-async function verifyData(e) {
-  if (AuthDataRetrieve("ealocalrst"), await new Promise((e => setTimeout(e, 1e3))), mfy_userdata || eadataRetrieve("local_usertkn")) if (null == mfy_userdata?.token) if (extdataVerified) {
-    userdataOk = !1;
-    let e = document.getElementsByClassName("eadropdown")[0], t = '<div style=" position: absolute; background: red; width: 1em; text-align: center; border-radius: 2em; color: #fff; font-size: 0.75em; font-weight: bolder; padding: 0em 0.85em 0em 0.6em; top: 7.5em; left: 81.5em; z-index: 14;" class="eadropalert">!</div>';
-    userdataOk = !1, e && e.insertAdjacentHTML("beforebegin", t)
-  }
-  else getnstoreData();
-  else {
-    findTier(parseJwt(mfy_userdata?.token))
-  }
-  else getnstoreData(!0)
+async function verifyData() {
+  initializeExtensionFeatures()
 }
 const kFormatter = e => {
   if (Math.abs(e) > 999) {
