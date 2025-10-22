@@ -153,7 +153,7 @@ document.addEventListener('RequestDataEvent', function(event) {
 
 // Open side panel on custom DOM event from the page
 // Listen at the document level (bubbling) for cross-context dispatches
-/* document.addEventListener('mfy:openSidebar', function (event) {
+/* document.addEventListener('nvai:openSidebar', function (event) {
     try {
         chrome.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
     } catch (e) {
@@ -245,11 +245,11 @@ document.addEventListener('ScrapeScriptsURL', async function (event) {
 
 //get version event
 let count = 0;
-document.addEventListener('MetrifyVersion', function (event) {
+document.addEventListener('NovaiEvent', function (event) {
     var manifestData = chrome.runtime.getManifest();
     if (count < 1) {
         count++;
-        document.dispatchEvent(new CustomEvent('MetrifyVersion', { detail: manifestData.version }));
+        document.dispatchEvent(new CustomEvent('NovaiEvent', { detail: manifestData.version }));
     }
 });
 
@@ -261,26 +261,8 @@ if (window.location.href.indexOf("https://www.mercadolivre.com.br") == 0 || wind
     if (window.location.href.indexOf("https://www.mercadolivre.com.br/anuncie/hub") == 0 || window.location.href.indexOf("https://www.mercadolivre.com.br/novidades") == 0 || window.location.href.indexOf("https://www.mercadolivre.com.br/publicar") == 0) {
         //console.log(`fixed`);
         document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/dayjs.min.js'), 'body'), false);
-        //document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/hashalg.js'), 'body'), false);
-        //document.addEventListener("load", injectScript(chrome.runtime.getURL('src/eameli.js'), 'body'), false);
-
     } else {
-
-        //console.log(`complete`);
-        /* var link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.type = 'text/css';
-        link.href = chrome.runtime.getURL('src/libs/bootstrap.min.css');
-        document.getElementsByTagName("head")[0].appendChild(link); */
-
-
-        //document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/hashalg.js'), 'body'), false);
         document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/apexcharts.js'), 'body'), false); //gráfico normal
-        // Load lottie-player only on product pages where it's actually used (e.g., price tool)
-        //if (window.location.href.indexOf("https://produto.mercadolivre.com.br") === 0) {
-            //document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/lottie-player.js'), 'body'), false);
-        //}
-        //document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/lodash.min.js'), 'body'), false);
 
 
         //Gráfico de visitas ultimos 6 meses miniatura no card de cada produto
@@ -292,24 +274,18 @@ if (window.location.href.indexOf("https://www.mercadolivre.com.br") == 0 || wind
 
         document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/range-slider.js'), 'body'), false);//nao sei pra que serve ainda
         document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/dayjs.min.js'), 'body'), false);// arquivo importante de data
-        //document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/dayjs-plugins/toObject.min.js'), 'body'), false);
         
         (async () => {
             await asyncInjectScript(chrome.runtime.getURL('src/libs/popper.min.js'), 'body');
             await asyncInjectScript(chrome.runtime.getURL('src/libs/tippy-bundle.umd.min.js'), 'body');
-            // Finally, load eameli.js after all dependencies
             await asyncInjectScript(chrome.runtime.getURL('src/eameli.js'), 'body');
         })();
-
-        // Listen for the request event from the DOM
-        document.addEventListener('requestMfyGlobals', function () {
+        document.addEventListener('requestnvaiGlobals', function () {
             sendResponseToDOM();
         });
-
-        // Function to dispatch the response event with the extension's URL path
         function sendResponseToDOM() {
             const extensionUrlPath = chrome.runtime.getURL("/");
-            const responseEvent = new CustomEvent('responseMfyGlobals', { detail: { extensionUrlPath } });
+            const responseEvent = new CustomEvent('responsenvaiGlobals', { detail: { extensionUrlPath } });
 
             document.dispatchEvent(responseEvent);
         }

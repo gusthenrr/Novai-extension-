@@ -1,11 +1,10 @@
 {
    "action": {
       "default_popup": "pop.html",
-      "default_title": "N"
+      "default_title": "NOVAI"
    },
-   "author": "N",
    "background": {
-      "service_worker": "worker.js"
+      "service_worker": "inject.js"
    },
    "content_scripts": [ {
       "all_frames": true,
@@ -13,22 +12,15 @@
       "js": [ "inject.js" ],
       "matches": [ "https://www.mercadolivre.com.br/*", "https://produto.mercadolivre.com.br/*", "https://lista.mercadolivre.com.br/*" ]
    } ],
-   "description": "Ferramenta de análise de marketplaces.",
-   "host_permissions": [ "https://*.mercadolivre.com.br/*", "https://*.mercadolibre.com/*", "https://api.mercadolibre.com/*", "https://shopee.com.br/*" ],
-   "icons": {
-      "128": "images/icon.png",
-      "16": "images/icon16.png",
-      "24": "images/icon24.png",
-      "32": "images/icon32.png"
-   },
-   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAii6H0QnqS88vDOx8UMWdcieb4WkcuqQbB3hEAcHwinKfnvSuVbtcCiWrMLpqxjV33GR9LUb8iKHNw2G0+JdZthL/Jrm1pt9hzyiwOK4xo9WRL7SFTi8YiNioOZfl16n3F9mJG+Ay233K0cHR2dUrfpMLqJDlW7wwXWb7+d0Bd0kBT4nrTmLleJGPXpa2K5CvIjp1mBLZRUOmPRxqqNk8/67TW/iXD1CUEA+ZVdnWDY3/yTe/xrrDXb8zgQX5GDMnaQWU61mE3LyuPuxStIITv2HhP3hIusA2DTHb4W0pufOC2aVpiP8cAEb4B3mekHrszFX1BJKKKDYqrvysUZnHrQIDAQAB",
+   "description": "Extensão que permite a analise das metricas dos anuncios de concorrentes no mercadolivre",
+   "host_permissions": [ "https://*.mercadolivre.com.br/*", "https://*.mercadolibre.com/*", "https://api.mercadolibre.com/*"],
    "manifest_version": 3,
-   "name": "N",
    "permissions": [ "storage" ],
-   "update_url": "https://clients2.google.com/service/update2/crx",
-   "version": "1.8.7",
+   "version": "2.0",
+   "name": "NOVAI",
+   "author": "NOVAI",
    "web_accessible_resources": [ {
-      "matches": [ "https://*.mercadolivre.com.br/*", "https://shopee.com.br/*" ],
+      "matches": [ "https://*.mercadolivre.com.br/*"],
       "resources": ["src/libs/*", "src/eameli.js", "src/eashopee.js", "inject.js", "src/lotties/*" ]
    } ]
 }
