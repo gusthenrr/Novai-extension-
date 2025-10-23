@@ -2133,8 +2133,40 @@ function s() {
         }
         l();
         const L = Date.now();
+        function M(e) {
+          if (null == e) return null;
+          if (typeof e == "number" && !Number.isNaN(e)) return e;
+          if (typeof e == "string") {
+            const n = parseFloat(e.replace(/[^0-9.,-]/g, "").replace(",", "."));
+            return Number.isNaN(n) ? null: n;
+          }
+          if (Array.isArray(e)) {
+            for (const o of e) {
+              const r = M(o);
+              if (null !== r && !Number.isNaN(r)) return r;
+            }
+            return null;
+          }
+          if ("object" == typeof e) {
+            if (typeof e.total_visits == "number") return e.total_visits;
+            if (typeof e.total == "number") return e.total;
+            if (typeof e.visits == "number") return e.visits;
+            const s = Object.keys(e);
+            for (const c of s) {
+              const l = M(e[c]);
+              if (null !== l && !Number.isNaN(l)) return l;
+            }
+          }
+          return null;
+        }
         function d(e) {
-          visitastotais = e[Object.keys(e)[0]], conversaototal = isNaN(vendas / visitastotais) ? 0: vendas / visitastotais, visitaporvenda = visitastotais / (vendas > 0 ? vendas: 1), visitaporvenda_fix = isNaN(visitaporvenda) ? "?": parseFloat(visitaporvenda).toFixed(0), visitasparavender = parseFloat(visitaporvenda_fix);
+          console.groupCollapsed("[Novai] Visits payload");
+          console.log("Raw visits payload:", e);
+          const n = M(e);
+          console.log("Parsed total visits:", n);
+          console.groupEnd();
+          visitastotais = typeof n == "number" && !Number.isNaN(n) ? n: NaN,
+          conversaototal = isNaN(vendas / visitastotais) ? 0: vendas / visitastotais, visitaporvenda = visitastotais / (vendas > 0 ? vendas: 1), visitaporvenda_fix = isNaN(visitaporvenda) ? "?": parseFloat(visitaporvenda).toFixed(0), visitasparavender = parseFloat(visitaporvenda_fix);
           const t = function ({
             isCatalog: e,
             totalVisits: t,
@@ -2152,7 +2184,7 @@ function s() {
             visitsPerSale: visitasparavender,
             hasSales: vendas > 0
           }
-          ), n = Date.now() - L, a = Math.max(0, 800 - n);
+          ), n_p= Date.now() - L, a = Math.max(0, 800 - n);
           setTimeout((() => {
             const e = document.getElementById("visits-component");
             e && (e.outerHTML = t, setTimeout(l, 250))
@@ -2170,7 +2202,9 @@ function s() {
             itemId: t, visitsData: n
           }
           = e.detail;
+          console.debug("[Novai] VisitsDataResponse event", e.detail);
           t === item_ID && n ? d(n): fetch(`${mfyProxyLessRestricted}https://api.mercadolibre.com/visits/items?ids=${item_ID}`, eaInit).then((e => e.json())).then((e => {
+            console.debug("[Novai] Visits API response", e),
             d(e), document.dispatchEvent(new CustomEvent("StoreVisitsData", {
               detail: {
                 itemId: item_ID,
@@ -2179,9 +2213,10 @@ function s() {
             }
             ))
           }
-          )).catch ((function (e) {
-            const t = document.getElementById("visits-component");
-            t && (t.innerHTML = '\n                      <div style="opacity: 0.5;">\n                        <span>-</span>\n                      </div>')
+          )).catch ((function (t) {
+            console.error("[Novai] Visits API error", t);
+            const n = document.getElementById("visits-component");
+            n && (n.innerHTML = '<div style="opacity: 0.5;"><span>-</span></div>')
           }
           )), document.removeEventListener("VisitsDataResponse", T)
         }
