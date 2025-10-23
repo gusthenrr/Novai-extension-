@@ -274,6 +274,7 @@ function eadataRetrieve(e) {
 }
 // Default TTL (time-to-live) for local cached values: 30 days
 var TTL1 = 30 * 24 * 60 * 60 * 1e3;
+const LOCAL_ACCESS_TOKEN_KEY = "local_usertkn";
 const LOCAL_REFRESH_TOKEN_KEY = "local_user_refresh";
 // Ensure a global user id binding exists to avoid ReferenceError on read
 var uid = typeof uid === "undefined" ? null : uid;
@@ -1123,8 +1124,7 @@ async function getnewToken(e) {
       refreshToken = null;
     }
     if (!refreshToken) {
-      findPermission();
-      return;
+      return !1;
     }
   }
 
@@ -1151,12 +1151,11 @@ async function getnewToken(e) {
     }
 
     if (response.ok && body?.access_token) {
-      appendToken(body.access_token, body.refresh_token);
-      return;
+      return appendToken(body.access_token, body.refresh_token);
     }
   } catch (_) {}
 
-  findPermission();
+  return !1;
 }
 function confirmAuth(e, t) {
   // Avoid showing confirmation modals or forcing reloads
@@ -1234,8 +1233,7 @@ async function findPermission() {
   const { sellerId, sellerName } = resolveSellerIdentity();
 
   if (!sellerId && !sellerName) {
-    initializeExtensionFeatures();
-    return;
+    return !1;
   }
 
   const headers = new Headers;
@@ -1261,17 +1259,15 @@ async function findPermission() {
     }
 
     if (accessToken) {
-      appendToken(accessToken, refreshToken);
-      return;
+      return appendToken(accessToken, refreshToken);
     }
 
     if (refreshToken) {
-      await getnewToken(refreshToken);
-      return;
+      return await getnewToken(refreshToken);
     }
   } catch (_) {}
 
-  initializeExtensionFeatures();
+  return !1;
 }
 function requestData(e, t = {}) {
   return new Promise(((n, a) => {
@@ -2378,8 +2374,40 @@ function s() {
 }
 ()
 }
+async function ensureAuthorizationToken() {
+  if (eaHeaders.get("Authorization")) return !0;
+
+  const storedAccess = getStoredAccessToken();
+  const storedRefresh = getStoredRefreshToken();
+
+  if (storedAccess && !isAccessTokenExpired(storedAccess)) {
+    return appendToken({
+      access_token: storedAccess,
+      refresh_token: storedRefresh
+    });
+  }
+
+  if (storedRefresh) {
+    const refreshed = await getnewToken(storedRefresh);
+    if (refreshed) return refreshed;
+  }
+
+  return await findPermission();
+}
+
 function initializeExtensionFeatures() {
-  dataCleanup()
+  if (eaHeaders.get("Authorization")) {
+    dataCleanup();
+    return;
+  }
+
+  if (!ensureAuthPromise) {
+    ensureAuthPromise = ensureAuthorizationToken().catch((() => !1)).then((() => {
+      dataCleanup();
+    })).finally((() => {
+      ensureAuthPromise = null;
+    }));
+  }
 }
 function storeFresh() {
   initializeExtensionFeatures()
@@ -2397,19 +2425,18 @@ function appendToken(tokenOrPayload, maybeRefreshToken) {
   }
 
   if (!accessToken) {
-    initializeExtensionFeatures();
-    return;
+    return !1;
   }
   try {
     eaHeaders.set("Authorization", `Bearer ${accessToken}`);
   } catch (_) {}
   try {
-    eadataStore("local_usertkn", accessToken, TTL1);
+    eadataStore(LOCAL_ACCESS_TOKEN_KEY, accessToken, TTL1);
   } catch (_) {}
   if (refreshToken) {
     try { eadataStore(LOCAL_REFRESH_TOKEN_KEY, refreshToken, TTL1); } catch (_) {}
   }
-  initializeExtensionFeatures();
+  return !0;
 }
 function dataCleanup() {
   if ("anuncio" === paginaAtual) {
@@ -2442,6 +2469,35 @@ const kFormatter = e => {
   return e.toString()
 }
 ;
+const TOKEN_EXPIRY_SKEW_MS = 6e4;
+let ensureAuthPromise = null;
+
+function getStoredAccessToken() {
+  try {
+    return eadataRetrieve(LOCAL_ACCESS_TOKEN_KEY);
+  } catch (_) {
+    return null;
+  }
+}
+
+function getStoredRefreshToken() {
+  try {
+    return eadataRetrieve(LOCAL_REFRESH_TOKEN_KEY);
+  } catch (_) {
+    return null;
+  }
+}
+
+function isAccessTokenExpired(token) {
+  try {
+    const payload = parseJwt(token);
+    if (!payload || !payload.exp) return !1;
+    const expiry = 1e3 * payload.exp;
+    return Date.now() + TOKEN_EXPIRY_SKEW_MS >= expiry;
+  } catch (_) {
+    return !1;
+  }
+}
 function runOnList() {
   if ("lista" === paginaAtual) {
     preLoadedState = "object" != typeof window.__PRELOADED_STATE__ || null === window.__PRELOADED_STATE__ || window.__PRELOADED_STATE__.tagName ? altPreloadedState?.pageState: window.__PRELOADED_STATE__, listView = preLoadedState?.initialState.analytics_track.pageLayout;
