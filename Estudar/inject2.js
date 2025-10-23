@@ -295,5 +295,3 @@ if (window.location.href.indexOf("https://www.mercadolivre.com.br") == 0 || wind
     }
 
 }
-
-
