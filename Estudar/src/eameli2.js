@@ -487,7 +487,6 @@ Criado em: ${data_br}  |  Há cerca de: ${dias} dias
 <span id="mediabtn" class="andes-button--loud mfy-main-bg andes-button" style="margin-top: 0.35em;font-size: 12px!important;display:inline!important;padding-top: 1em;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;">
   Média: ${media_vendas} vendas/mês
 </span>
-<img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;" src="https://i.ibb.co/Y8mQ2MT/metrifylogo.png">
 <div id="plusf_wrap" class="hdn smooth transp" style=";font-size:14px;padding: 1.35em;margin: 0.7em 0em -2.35em 0em;width: 110%;">
   <div id="plusf" style="margin-left: 0.5em;">
     <img alt="icon" src="https://ci3.googleusercontent.com/proxy/4AHE0GSzeLFc0tuceXt2Hib-rWVbcK8yqriCrBnrQFdt3LpCrH-NA3nyDKu-IO-65xO2yjlS7rsjGiJWV6QunadzFZlJPWqeb2Shj_fYgwagdLoTOAljMen83VI1eloEUOdeZcR4Su7DrJRWooeRNOF5nZ2fJv2BE06zEE2uKHkiVrr1vOvtY78kR28=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-mail.png"
@@ -833,16 +832,47 @@ function parseSalesText(e) {
     thisItemSales: a
   }
 }
-async function fetchProductDataFromPage(e, t) {
+async function fetchProductDataFromPage(rawItemId, t) {
+  const altPS = (typeof window !== "undefined" && window.altPreloadedState) ? window.altPreloadedState : altPreloadedState;
+  let normalizedItemId = rawItemId ?? dataLayer[0]?.itemId ?? dataLayer[0]?.catalogProductId;
+
+  if (!normalizedItemId) {
+    normalizedItemId = altPS?.pageState?.itemId ?? altPS?.pageState?.catalogProductId ?? altPS?.pageState?.components?.track?.gtm_event?.itemId ?? null;
+  }
+
+  if (typeof normalizedItemId === "number") {
+    normalizedItemId = `MLB${normalizedItemId}`;
+  }
+
+  if (typeof normalizedItemId === "string") {
+    normalizedItemId = normalizedItemId.trim();
+  }
+
+  const idMatch = typeof normalizedItemId === "string" ? normalizedItemId.match(/MLB-?(\d+)/i) : null;
+  if (idMatch) {
+    normalizedItemId = `MLB${idMatch[1]}`;
+  } else if (typeof normalizedItemId === "string" && /^\d+$/.test(normalizedItemId)) {
+    normalizedItemId = `MLB${normalizedItemId}`;
+  }
+
+  if (!normalizedItemId) {
+    console.warn("fetchProductDataFromPage: unable to determine MLB item id", { rawItemId, dataLayerSnapshot: dataLayer[0] });
+    typeof t === "function" && t();
+    return;
+  }
+
+  const productNumericId = normalizedItemId.replace(/^MLB-?/i, "");
+  const productUrl = `https://produto.mercadolivre.com.br/MLB-${productNumericId}`;
+
   let n = document.getElementsByClassName("ui-pdp-header");
   n.length > 0 && n[0].insertAdjacentHTML("afterbegin", buildMainComponentSkeleton());
-  if (iscatalog = !0, itemsLocalData[e] || (document.dispatchEvent(new CustomEvent("GetProductData", {
+  if (iscatalog = !0, itemsLocalData[normalizedItemId] || (document.dispatchEvent(new CustomEvent("GetProductData", {
     detail: {
-      itemIds: [e]
+      itemIds: [normalizedItemId]
     }
   }
-  )), await new Promise((e => setTimeout(e, 100)))), itemsLocalData[e] && itemsLocalData[e].startTime && void 0 !== itemsLocalData[e].itemSales) {
-    const n = itemsLocalData[e];
+  )), await new Promise((e => setTimeout(e, 100)))), itemsLocalData[normalizedItemId] && itemsLocalData[normalizedItemId].startTime && void 0 !== itemsLocalData[normalizedItemId].itemSales) {
+    const n = itemsLocalData[normalizedItemId];
     vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
     let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
     if (a && vendas > 0) {
@@ -1408,7 +1438,7 @@ function contentScpt() {
     function t() {
       earanksearchBtn = document.getElementById("eaadvsearchBtn"), earanksearchForm = document.getElementById("eaadvsearchForm"), earanksearchResult = document.getElementById("eaadvsearchResult"), earanksearchGo = earanksearchForm.getElementsByTagName("button")[0], earanksearchValue = earanksearchForm.getElementsByTagName("input")[0];
       var t = earanksearchBtn.getElementsByTagName("img")[0];
-      iscatalog || dataLayer[0].catalogProductId, earanksearchForm.setAttribute("style", "display: none;"), earanksearchBtn.addEventListener("click", (function () {
+      iscatalog || dataLayer[0]?.catalogProductId, earanksearchForm.setAttribute("style", "display: none;"), earanksearchBtn.addEventListener("click", (function () {
         e = [], [], earanksearchForm.getElementsByTagName("input")[0].value = "", earanksearchResult.setAttribute("style", "display:none;"), "rgb(52, 131, 250)" != earanksearchBtn.style.backgroundColor ? (earanksearchForm.setAttribute("style", "position: relative;top: 2.7em;z-index: 0;"), earanksearchBtn.style.backgroundColor = "rgb(52, 131, 250)", t.setAttribute("style", "width: 1.5em;height: 1.5em;position: relative;top: 0.21em;filter: brightness(11);"), earanksearchBtn.getElementsByClassName("eahiddenlabel")[0].setAttribute("style", "display:none;")): (earanksearchBtn.getElementsByClassName("eahiddenlabel")[0].removeAttribute("style"), earanksearchForm.setAttribute("style", "display:none;"), t.setAttribute("style", "width: 1.5em;height: 1.5em;position: relative;top: 0.21em;margin-right: 0.5em;"), earanksearchBtn.removeAttribute("style"))
       }
       )), earanksearchGo.addEventListener("click", (function () {
@@ -1444,8 +1474,11 @@ function contentScpt() {
         let e = isNaN(media_vendas * preco_Local) ? 0: media_vendas * preco_Local, t = parseSalesText(document.getElementsByClassName("ui-pdp-subtitle")[0].innerText).thisItemSales, n = isNaN(t * preco_Local) ? 0: t * preco_Local, a = document.getElementsByClassName("eagrossrev-title")[0], i = document.getElementsByClassName("earevstats")[0], s = document.getElementsByClassName("eagrossrev-catalog-title");
         if (iscatalog) {
           a.setAttribute("class", ""), a.parentElement.lastChild.remove(), a.parentElement.setAttribute("style", "font-size: 0.92em;display: flex;font-weight: 900;");
-          let t = a.parentElement.previousSibling;
-          a.parentElement.previousSibling.remove(), a.parentElement.insertAdjacentElement("afterbegin", t), a.parentElement.parentElement.setAttribute("style", "display: flex;flex-direction: column;"), a.innerHTML = '<div style="padding: 0rem 1rem;margin: 0 .75rem;font-size: .85rem;width: fit-content;border-radius:1rem;border:1px solid #ebebeb;">Catálogo & Anúncio vencedor</div>', i && i.insertAdjacentHTML("beforeend", '<div style="display:flex;flex-direction:column;margin-top:1rem;"><span style="font-size: 0.92em;font-weight: 900;"><span class="ui-pdp-review__amount">-Anúncio</span> <span class="eagrossrev-catalog-title" style="font-size: 1.35em;">R$0</span><span class="revtitle revperiod">/mês</span></span>\n            <span style="font-size: 0.92em;font-weight: 900;"><span class="ui-pdp-review__amount">- Catálogo:</span> <span class="eagrossrev-catalog-title" style="font-size: 1.35em;">R$0</span><span class="revtitle"> Total</span></span></div>'), s?.length > 0 && (s[1].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`), document.getElementsByClassName("eagrossrev-catalog-title")[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`
+          let t = a.parentElement.previousElementSibling || a.parentElement.previousSibling;
+          if (t instanceof Element) {
+          t.remove(), a.parentElement.insertAdjacentElement("afterbegin", t);
+          }
+          a.parentElement.parentElement.setAttribute("style", "display: flex;flex-direction: column;"), a.innerHTML = '<div style="padding: 0rem 1rem;margin: 0 .75rem;font-size: .85rem;width: fit-content;border-radius:1rem;border:1px solid #ebebeb;">Catálogo & Anúncio vencedor</div>', i && i.insertAdjacentHTML("beforeend", '<div style="display:flex;flex-direction:column;margin-top:1rem;"><span style="font-size: 0.92em;font-weight: 900;"><span class="ui-pdp-review__amount">-Anúncio</span> <span class="eagrossrev-catalog-title" style="font-size: 1.35em;">R$0</span><span class="revtitle revperiod">/mês</span></span>\n            <span style="font-size: 0.92em;font-weight: 900;"><span class="ui-pdp-review__amount">- Catálogo:</span> <span class="eagrossrev-catalog-title" style="font-size: 1.35em;">R$0</span><span class="revtitle"> Total</span></span></div>'), s?.length > 0 && (s[1].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`), document.getElementsByClassName("eagrossrev-catalog-title")[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`
         }
         else a.innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`;
         i.setAttribute("style", "transition:all 0.35s;padding: 0em 1em 0.35em 1.7em;color: gray;display: none;margin-top: -4em;opacity: 0");
@@ -1962,7 +1995,7 @@ function s() {
     }
     function o() {
       if (null != verif && "pro" == verif) {
-        eaSince = '<div style="font-size: 0.95rem;font-weight: 700;display: inline-flex;border-radius: 1em;color: rgb(90, 90, 90);box-shadow: rgb(0, 0, 0) 0px 2px 11px -7px;padding: 0.35em 1em;position: relative;transition: 0.35s;min-width: fit-content;cursor:default" id="easince"><span style=" margin-top: 0.2em;">Criado há: ' + (isNaN(dias) ? "?": dias) + ' dia(s)</span><span style="position: absolute;top: 1.75em;font-size: 0.92em;font-weight: 200;opacity: 0;transition: all 0.35s;">(' + (data_br ?? "--/--/----") + ")</span></div>", btn = !alert_media_vendas && dias > 30 ? `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <span id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;cursor:default">\n                Média: ${iscatalog&&0==media_vendas?"-":media_vendas} vendas/mês\n              </span>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;" src="https://i.ibb.co/Y8mQ2MT/metrifylogo.png">`: `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <div id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;gap: 0.25rem;">\n                Média:  <div style="min-width: fit-content;font-size: 1.2rem;">${iscatalog&&0==media_vendas?"-":media_vendas}</div> <span style="font-size: .9rem;">vendas/mês</span>\n              </div>\n              <div class="easalesavg-alert" style="display: inline-flex;background: var(--mfy-main);position: relative;z-index: 11;height: 1.75em;border-radius: 100%;padding: 5px;margin-left: -0.5rem;">\n                <img src="https://img.icons8.com/material-outlined/24/ffffff/clock-alert.png">\n              </div>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;" src="https://i.ibb.co/Y8mQ2MT/metrifylogo.png"> `, visits = '<span>? Visitas totais <span class="andes-button--loud mfy-main-bg  andes-button" style="margin-left: 0.5em;margin-top: 0.35em;font-size:14px!important;display: inherit;padding: 0.1em 0.4em;"> Conversão de <strong>?%</strong></span></span><br><span class="ui-pdp-subtitle" id="vendaporvisitas" style="position: relative;top: -0.86em;">Vende a cada x Visitas</span>';
+        eaSince = '<div style="font-size: 0.95rem;font-weight: 700;display: inline-flex;border-radius: 1em;color: rgb(90, 90, 90);box-shadow: rgb(0, 0, 0) 0px 2px 11px -7px;padding: 0.35em 1em;position: relative;transition: 0.35s;min-width: fit-content;cursor:default" id="easince"><span style=" margin-top: 0.2em;">Criado há: ' + (isNaN(dias) ? "?": dias) + ' dia(s)</span><span style="position: absolute;top: 1.75em;font-size: 0.92em;font-weight: 200;opacity: 0;transition: all 0.35s;">(' + (data_br ?? "--/--/----") + ")</span></div>", btn = !alert_media_vendas && dias > 30 ? `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <span id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;cursor:default">\n                Média: ${iscatalog&&0==media_vendas?"-":media_vendas} vendas/mês\n              </span>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;"`: `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <div id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;gap: 0.25rem;">\n                Média:  <div style="min-width: fit-content;font-size: 1.2rem;">${iscatalog&&0==media_vendas?"-":media_vendas}</div> <span style="font-size: .9rem;">vendas/mês</span>\n              </div>\n              <div class="easalesavg-alert" style="display: inline-flex;background: var(--mfy-main);position: relative;z-index: 11;height: 1.75em;border-radius: 100%;padding: 5px;margin-left: -0.5rem;">\n                <img src="https://img.icons8.com/material-outlined/24/ffffff/clock-alert.png">\n              </div>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;"`, visits = '<span>? Visitas totais <span class="andes-button--loud mfy-main-bg  andes-button" style="margin-left: 0.5em;margin-top: 0.35em;font-size:14px!important;display: inherit;padding: 0.1em 0.4em;"> Conversão de <strong>?%</strong></span></span><br><span class="ui-pdp-subtitle" id="vendaporvisitas" style="position: relative;top: -0.86em;">Vende a cada x Visitas</span>';
         const c = e => e.charAt(0).toUpperCase() + e.slice(1), p = dayjs(), g = 6;
         let f = p.month() - g, u = p.year();
         f < 0 && (u -= 1, f += 12);
@@ -2303,7 +2336,7 @@ function s() {
       }
       else btn = "", spot[0].insertAdjacentHTML("afterbegin", btn)
     }
-    spot3 = document.getElementsByClassName("ui-pdp-title"), reflow = document.getElementsByClassName("ui-pdp-header__title-container"), maisFunc = document.getElementById("plusf"), document.getElementsByClassName("ui-pdp-header")[0].parentNode.parentNode.setAttribute("style", "max-width:352px;margin:auto;margin-right:1em;"), iscatalog ? document.getElementsByClassName("ui-pdp-bookmark")[0]?.setAttribute("style", "transform: scale(0.77);top: 1.21em!important;position: absolute;left: 22.5em!important;"): document.getElementsByClassName("ui-pdp-bookmark")[0]?.setAttribute("style", "transform: scale(0.77);top: 1.21em!important;position: absolute;left: 21.5em!important;"), dataLayer && (condicao_produto = dataLayer[0]?.condition, preco_Local = dataLayer[0]?.localItemPrice, categoria_Local = dataLayer[0]?.categoryId, tipo_anuncio = dataLayer[0]?.listingType ?? document.documentElement.innerHTML.split("listing_type_id")[1]?.split('"')[2], comprador = dataLayer[0]?.buyerId, vendedor = dataLayer[0]?.sellerId, dLayer = dataLayer[0]?.startTime, item_ID = dataLayer[0]?.itemId ?? dataLayer[0].catalogProductId);
+    spot3 = document.getElementsByClassName("ui-pdp-title"), reflow = document.getElementsByClassName("ui-pdp-header__title-container"), maisFunc = document.getElementById("plusf"), document.getElementsByClassName("ui-pdp-header")[0].parentNode.parentNode.setAttribute("style", "max-width:352px;margin:auto;margin-right:1em;"), iscatalog ? document.getElementsByClassName("ui-pdp-bookmark")[0]?.setAttribute("style", "transform: scale(0.77);top: 1.21em!important;position: absolute;left: 22.5em!important;"): document.getElementsByClassName("ui-pdp-bookmark")[0]?.setAttribute("style", "transform: scale(0.77);top: 1.21em!important;position: absolute;left: 21.5em!important;"), dataLayer && (condicao_produto = dataLayer[0]?.condition, preco_Local = dataLayer[0]?.localItemPrice, categoria_Local = dataLayer[0]?.categoryId, tipo_anuncio = dataLayer[0]?.listingType ?? document.documentElement.innerHTML.split("listing_type_id")[1]?.split('"')[2], comprador = dataLayer[0]?.buyerId, vendedor = dataLayer[0]?.sellerId, dLayer = dataLayer[0]?.startTime, item_ID = dataLayer[0]?.itemId ?? dataLayer[0]?.catalogProductId ?? null);
     let d = document.getElementsByClassName("ui-pdp-header__subtitle")[0].innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
     d?.endsWith("mil") && (d = d.replace("mil", ""), d = 1e3 * parseFloat(d)), vendas = 0 == vendas.length ? d: vendas, dLayer && "" == data_br ? (data_br = dayjs(dLayer).locale("pt-br").format("DD/MM/YYYY"), dataMilisec = Date.parse(dLayer), eadiff = eanow - dataMilisec, dias = Math.round(eadiff / (8.64 * Math.pow(10, 7))), media_vendas = 0 == dias || isNaN(vendas) ? "Indisponível (0 dias)": Math.round(vendas / (dias / 30)), o()): o()
   }
