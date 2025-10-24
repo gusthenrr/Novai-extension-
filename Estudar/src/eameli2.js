@@ -276,6 +276,100 @@ function eadataRetrieve(e) {
 var TTL1 = 30 * 24 * 60 * 60 * 1e3;
 const LOCAL_ACCESS_TOKEN_KEY = "local_usertkn";
 const LOCAL_REFRESH_TOKEN_KEY = "local_user_refresh";
+const AUTH_REQUEST_EVENT = "NovaiRequestAuthState";
+const AUTH_STATE_EVENT = "NovaiAuthState";
+const AUTH_UPDATE_EVENT = "NovaiAuthTokensUpdated";
+let pendingAuthSyncPromise = null;
+
+function persistAuthState(detail = {}) {
+  const { accessToken, refreshToken, clear, source } = detail || {};
+  const ttl = "number" == typeof detail.ttl && detail.ttl > 0 ? detail.ttl : TTL1;
+
+  if (clear) {
+    try {
+      localStorage.removeItem(LOCAL_ACCESS_TOKEN_KEY);
+    } catch (_) {}
+    try {
+      localStorage.removeItem(LOCAL_REFRESH_TOKEN_KEY);
+    } catch (_) {}
+    try {
+      eaHeaders.delete("Authorization");
+    } catch (_) {}
+    return;
+  }
+
+  if ("string" == typeof accessToken && accessToken.trim()) {
+    try {
+      eadataStore(LOCAL_ACCESS_TOKEN_KEY, accessToken, ttl);
+    } catch (_) {}
+    const canReadHeader = eaHeaders && "function" == typeof eaHeaders.get;
+    const canWriteHeader = eaHeaders && "function" == typeof eaHeaders.set;
+    let shouldSetHeader = !1;
+    try {
+      shouldSetHeader = !canReadHeader || !eaHeaders.get("Authorization") || "background" === source;
+    } catch (_) {
+      shouldSetHeader = !0;
+    }
+    if (shouldSetHeader && canWriteHeader) {
+      try {
+        eaHeaders.set("Authorization", `Bearer ${accessToken}`);
+      } catch (_) {}
+    }
+  }
+
+  if ("string" == typeof refreshToken && refreshToken.trim()) {
+    try {
+      eadataStore(LOCAL_REFRESH_TOKEN_KEY, refreshToken, ttl);
+    } catch (_) {}
+  }
+}
+
+document.addEventListener(AUTH_STATE_EVENT, (event => {
+  persistAuthState(event.detail || {});
+}));
+
+function requestAuthStateFromBackground() {
+  if (pendingAuthSyncPromise) return pendingAuthSyncPromise;
+
+  pendingAuthSyncPromise = new Promise((resolve => {
+    const handler = event => {
+      clearTimeout(timer);
+      resolve(event?.detail || {});
+    };
+    const timer = setTimeout((() => {
+      document.removeEventListener(AUTH_STATE_EVENT, handler);
+      resolve(null);
+    }), 1e3);
+
+    document.addEventListener(AUTH_STATE_EVENT, handler, { once: !0 });
+
+    try {
+      document.dispatchEvent(new CustomEvent(AUTH_REQUEST_EVENT));
+    } catch (_) {
+      clearTimeout(timer);
+      document.removeEventListener(AUTH_STATE_EVENT, handler);
+      resolve(null);
+    }
+  })).finally((() => {
+    pendingAuthSyncPromise = null;
+  }));
+
+  return pendingAuthSyncPromise;
+}
+
+function broadcastAuthTokens(accessToken, refreshToken) {
+  if (!accessToken && !refreshToken) return;
+  try {
+    document.dispatchEvent(new CustomEvent(AUTH_UPDATE_EVENT, {
+      detail: {
+        accessToken,
+        refreshToken,
+        ttl: TTL1,
+        source: "page"
+      }
+    }));
+  } catch (_) {}
+}
 // Ensure a global user id binding exists to avoid ReferenceError on read
 var uid = typeof uid === "undefined" ? null : uid;
 // Ensure theme color variables exist for CSS and icon URLs
@@ -1168,107 +1262,7 @@ async function checkDatalayer() {
   // Do not prompt for permissions; proceed directly
   initializeExtensionFeatures()
 }
-function resolveSellerIdentity() {
-  const identity = { sellerId: void 0, sellerName: void 0 };
 
-  try {
-    if ("string" == typeof vendedor || "number" == typeof vendedor) {
-      const normalized = String(vendedor).trim();
-      if (normalized) identity.sellerId = normalized;
-    }
-  } catch (_) {}
-
-  const dl = Array.isArray(dataLayer) && dataLayer.length ? dataLayer[0] : void 0;
-  if (!identity.sellerId) {
-    const dlId = dl?.sellerId ?? dl?.seller_id;
-    if ("string" == typeof dlId || "number" == typeof dlId) {
-      const normalized = String(dlId).trim();
-      if (normalized) identity.sellerId = normalized;
-    }
-  }
-
-  const preloadedCandidates = [
-    dl?.sellerNickname,
-    dl?.sellerName,
-    preLoadedState?.vip?.seller?.nickname,
-    preLoadedState?.seller?.nickname,
-    preLoadedState?.pageState?.seller?.nickname,
-    altPreloadedState?.seller?.nickname,
-    altPreloadedState?.pageState?.seller?.nickname
-  ];
-
-  for (const candidate of preloadedCandidates) {
-    if ("string" == typeof candidate || "number" == typeof candidate) {
-      const normalized = String(candidate).trim();
-      if (!normalized) continue;
-      identity.sellerName = normalized;
-      break;
-    }
-  }
-
-  if (!identity.sellerName && "object" == typeof document && document) {
-    const selectors = [
-      "[data-testid=\"seller-name\"]",
-      ".ui-pdp-seller__header__info h3",
-      ".ui-pdp-seller__header__info span",
-      ".ui-pdp-color--BLACK",
-      ".ui-seller__name"
-    ];
-    for (const selector of selectors) {
-      const el = document.querySelector(selector);
-      if (el && "string" == typeof el.textContent) {
-        const text = el.textContent.trim();
-        if (text) {
-          identity.sellerName = text;
-          break;
-        }
-      }
-    }
-  }
-
-  return identity;
-}
-
-async function findPermission() {
-  const { sellerId, sellerName } = resolveSellerIdentity();
-
-  if (!sellerId && !sellerName) {
-    return !1;
-  }
-
-  const headers = new Headers;
-  headers.append("accept", "application/json");
-  headers.append("content-type", "application/json");
-
-  const payload = {};
-  sellerId && (payload.seller_id = sellerId);
-  sellerName && (payload.seller_name = sellerName);
-
-  try {
-    const response = await fetch("https://nossopoint-backend-flask-server.com/token_access", {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const body = await response.json();
-    const { access_token: accessToken, refresh_token: refreshToken } = body || {};
-
-    if (refreshToken) {
-      try { eadataStore(LOCAL_REFRESH_TOKEN_KEY, refreshToken, TTL1); } catch (_) {}
-    }
-
-    if (accessToken) {
-      return appendToken(accessToken, refreshToken);
-    }
-
-    if (refreshToken) {
-      return await getnewToken(refreshToken);
-    }
-  } catch (_) {}
-
-  return !1;
-}
 function requestData(e, t = {}) {
   return new Promise(((n, a) => {
     const {
@@ -2375,10 +2369,16 @@ function s() {
 ()
 }
 async function ensureAuthorizationToken() {
-  if (eaHeaders.get("Authorization")) return !0;
+  if (eaHeaders && "function" == typeof eaHeaders.get && eaHeaders.get("Authorization")) return !0;
 
-  const storedAccess = getStoredAccessToken();
-  const storedRefresh = getStoredRefreshToken();
+  let storedAccess = getStoredAccessToken();
+  let storedRefresh = getStoredRefreshToken();
+
+  if (!storedAccess && !storedRefresh) {
+    await requestAuthStateFromBackground();
+    storedAccess = getStoredAccessToken();
+    storedRefresh = getStoredRefreshToken();
+  }
 
   if (storedAccess && !isAccessTokenExpired(storedAccess)) {
     return appendToken({
@@ -2392,11 +2392,12 @@ async function ensureAuthorizationToken() {
     if (refreshed) return refreshed;
   }
 
-  return await findPermission();
+  console.warn("NOVAI: Nenhum token de acesso válido encontrado. Conclua o login na extensão para habilitar as métricas.");
+  return !1;
 }
 
 function initializeExtensionFeatures() {
-  if (eaHeaders.get("Authorization")) {
+  if (eaHeaders && "function" == typeof eaHeaders.get && eaHeaders.get("Authorization")) {
     dataCleanup();
     return;
   }
@@ -2436,6 +2437,7 @@ function appendToken(tokenOrPayload, maybeRefreshToken) {
   if (refreshToken) {
     try { eadataStore(LOCAL_REFRESH_TOKEN_KEY, refreshToken, TTL1); } catch (_) {}
   }
+  broadcastAuthTokens(accessToken, refreshToken);
   return !0;
 }
 function dataCleanup() {

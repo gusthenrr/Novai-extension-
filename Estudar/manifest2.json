@@ -39,7 +39,7 @@
    "host_permissions": ["https://api.mercadolibre.com/*", "https://*.mercadolivre.com.br/*", "https://*.mercadolibre.com/*"],
    "description": "Extensão que permite a analise das metricas dos anuncios de concorrentes no mercadolivre",
    "manifest_version": 3,
-   "permissions": [ "storage" ],
+   "permissions": [ "storage", "tabs"],
    "version": "2.0",
    "name": "NOVAI",
    "author": "NOVAI",

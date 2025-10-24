@@ -46,6 +46,104 @@ const SCRIPT_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 // Deduplicate concurrent FETCH_URL requests for the same resource
 const inFlightRequests = new Map(); // key: composed by url+flags, value: { consumers: sendResponse[] }
 
+const LOCAL_ACCESS_TOKEN_KEY = 'local_usertkn';
+const LOCAL_REFRESH_TOKEN_KEY = 'local_user_refresh';
+const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+function writeTokenToStorage(key, token, ttl = TOKEN_TTL_MS) {
+  if (!token) {
+    return new Promise((resolve) => {
+      chrome.storage.local.remove([key], () => resolve());
+    });
+  }
+
+  const entry = JSON.stringify({ value: token, expiry: Date.now() + ttl });
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ [key]: entry }, () => resolve());
+  });
+}
+
+function readTokenFromStorage(key) {
+  return new Promise((resolve) => {
+    chrome.storage.local.get([key], (result) => {
+      const raw = result?.[key];
+      if (!raw) {
+        resolve(null);
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.expiry === 'number') {
+          if (Date.now() < parsed.expiry) {
+            resolve(parsed.value ?? null);
+            return;
+          }
+
+          chrome.storage.local.remove([key], () => resolve(null));
+          return;
+        }
+      } catch (_) {}
+
+      // Fallback if parsing falha
+      resolve(null);
+    });
+  });
+}
+
+async function getAuthTokens() {
+  const [accessToken, refreshToken] = await Promise.all([
+    readTokenFromStorage(LOCAL_ACCESS_TOKEN_KEY),
+    readTokenFromStorage(LOCAL_REFRESH_TOKEN_KEY),
+  ]);
+  return { accessToken, refreshToken };
+}
+
+async function setAuthTokens({ accessToken, refreshToken, ttl }) {
+  const effectiveTtl = typeof ttl === 'number' && ttl > 0 ? ttl : TOKEN_TTL_MS;
+  await Promise.all([
+    writeTokenToStorage(LOCAL_ACCESS_TOKEN_KEY, accessToken, effectiveTtl),
+    writeTokenToStorage(LOCAL_REFRESH_TOKEN_KEY, refreshToken, effectiveTtl),
+  ]);
+  return { accessToken, refreshToken, ttl: effectiveTtl };
+}
+
+function broadcastAuthTokensToTabs(tokens) {
+  if (!chrome?.tabs?.query) {
+    return;
+  }
+
+  try {
+    chrome.tabs.query({}, (tabs) => {
+      if (chrome.runtime.lastError) {
+        console.warn('NOVAI: falha ao consultar abas para propagar tokens.', chrome.runtime.lastError.message);
+        return;
+      }
+
+      (tabs || []).forEach((tab) => {
+        if (!tab || typeof tab.id !== 'number') {
+          return;
+        }
+        try {
+          chrome.tabs.sendMessage(tab.id, {
+            type: 'AUTH_TOKENS_UPDATED',
+            ...tokens,
+          }, () => {
+            const err = chrome.runtime.lastError;
+            if (err && !err.message?.includes('Receiving end does not exist')) {
+              console.warn(`NOVAI: não foi possível enviar tokens para a aba ${tab.id}:`, err.message);
+            }
+          });
+        } catch (error) {
+          console.warn(`NOVAI: erro ao enviar tokens para a aba ${tab.id}`, error);
+        }
+      });
+    });
+  } catch (error) {
+    console.warn('NOVAI: erro ao propagar tokens para as abas', error);
+  }
+}
+
 function getFetchKey(url, noRedirect, extractScriptsOnly) {
   return `${url}|nr:${noRedirect ? '1' : '0'}|s:${extractScriptsOnly ? '1' : '0'}`;
 }
@@ -177,6 +275,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     });
     return true; // Will respond asynchronously
+    } else if (request.type === 'SET_AUTH_TOKENS') {
+    setAuthTokens(request).then((tokens) => {
+      broadcastAuthTokensToTabs(tokens);
+      sendResponse({ success: true });
+    }).catch((error) => {
+      console.error('NOVAI: falha ao salvar tokens de acesso.', error);
+      sendResponse({ success: false, error: error?.message || 'Erro ao salvar tokens' });
+    });
+    return true;
+  } else if (request.type === 'GET_AUTH_TOKENS') {
+    getAuthTokens().then((tokens) => {
+      sendResponse(tokens);
+    }).catch((error) => {
+      console.error('NOVAI: falha ao recuperar tokens armazenados.', error);
+      sendResponse({ accessToken: null, refreshToken: null, error: error?.message || 'Erro ao recuperar tokens' });
+    });
+    return true;
   } else if (request.type === 'STORE_CATEGORY') {
     const { categoryId, categoryData } = request;
     const now = new Date();

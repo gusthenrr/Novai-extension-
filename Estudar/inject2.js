@@ -1,3 +1,15 @@
+const AUTH_STATE_EVENT = 'NovaiAuthState';
+const AUTH_UPDATE_EVENT = 'NovaiAuthTokensUpdated';
+const AUTH_REQUEST_EVENT = 'NovaiRequestAuthState';
+
+function dispatchNovaiAuthState(detail) {
+    try {
+        document.dispatchEvent(new CustomEvent(AUTH_STATE_EVENT, { detail }));
+    } catch (error) {
+        console.warn('NOVAI: falha ao propagar estado de autenticação', error);
+    }
+}
+
 function injectScript(file_path, tag) {
     var node = document.getElementsByTagName(tag)[0];
     var script = document.createElement('script');
@@ -24,6 +36,48 @@ function dispatchResponseToPage(response) {
     const detail = response;
     document.dispatchEvent(new CustomEvent('MetrifyExtensionResponse', { detail }));
 }
+
+function requestBackgroundAuthState() {
+    try {
+        chrome.runtime.sendMessage({ type: 'GET_AUTH_TOKENS' }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.warn('NOVAI: não foi possível sincronizar tokens com o background.', chrome.runtime.lastError.message);
+                return;
+            }
+            if (response) {
+                dispatchNovaiAuthState({ ...response, source: 'background' });
+            }
+        });
+    } catch (error) {
+        console.warn('NOVAI: erro ao solicitar tokens ao background', error);
+    }
+}
+
+document.addEventListener(AUTH_UPDATE_EVENT, (event) => {
+    const detail = event?.detail || {};
+    const accessToken = detail.accessToken;
+    const refreshToken = detail.refreshToken;
+    if (!accessToken && !refreshToken) {
+        return;
+    }
+
+    try {
+        chrome.runtime.sendMessage({
+            type: 'SET_AUTH_TOKENS',
+            accessToken,
+            refreshToken,
+            ttl: detail.ttl,
+        });
+    } catch (error) {
+        console.warn('NOVAI: não foi possível encaminhar tokens para o background', error);
+    }
+});
+
+document.addEventListener(AUTH_REQUEST_EVENT, () => {
+    requestBackgroundAuthState();
+});
+
+requestBackgroundAuthState();
 
 // Function to handle sending messages to the background service worker safely
 function sendMessageToBackground(message) {
@@ -166,6 +220,13 @@ document.addEventListener('RequestDataEvent', function(event) {
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.type === 'RESPONSE') {
         dispatchResponseToPage(request);
+        } else if (request.type === 'AUTH_TOKENS_UPDATED') {
+        dispatchNovaiAuthState({
+            accessToken: request.accessToken,
+            refreshToken: request.refreshToken,
+            ttl: request.ttl,
+            source: 'background'
+        });
     }
 });
 
