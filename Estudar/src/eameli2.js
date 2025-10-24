@@ -1,12 +1,36 @@
-function getRandomProxy() {
-  const e = ["https://nvai-proxy-production.up.railway.app/"];
-  console.log(' Using random CORS proxy:', e);
-  const a=e[Math.floor(Math.random() * e.length)]
-  console.log(' Selected CORS proxy:', a);
-// ou: const proxy = 'https://nossopoint-backend-flask-server.com';
-  return a;
+// --- Locale pt-BR para ApexCharts ---
+var localePTBR = [{
+  name: 'pt-BR',
+  options: {
+    months: [
+      'janeiro','fevereiro','março','abril','maio','junho',
+      'julho','agosto','setembro','outubro','novembro','dezembro'
+    ],
+    shortMonths: [
+      'jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'
+    ],
+    days: [
+      'domingo','segunda-feira','terça-feira','quarta-feira',
+      'quinta-feira','sexta-feira','sábado'
+    ],
+    shortDays: ['dom','seg','ter','qua','qui','sex','sáb'],
+    toolbar: {
+      download: 'Baixar',
+      selection: 'Selecionar',
+      selectionZoom: 'Zoom por seleção',
+      zoomIn: 'Aproximar',
+      zoomOut: 'Afastar',
+      pan: 'Arrastar',
+      reset: 'Redefinir zoom'
+    }
+  }
+}];
+
+// (Opcional) fallback defensivo se alguém renomear por engano
+if (typeof localePTBR === 'undefined' || !Array.isArray(localePTBR)) {
+  var localePTBR = [];
 }
-var mfyProxy = getRandomProxy()
+var mfyProxy = "https://nvai-proxy-production.up.railway.app/"
 var mfyProxyLessRestricted = "https://mfy.herokuapp.com/";
 // Derive the extension base URL from the current script tag (reliable in page context)
 var extensionBaseUrl = (function(){
@@ -1159,14 +1183,14 @@ function buildMainComponentSkeleton() {
           <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width:1.35em; margin:auto;">
         </div>
         <div>
-          <div class="mfy-title"><span class="skeleton">30884</span> Visitas totais</div>
+          <div class="mfy-title"><span class="skeleton"></span> Visitas totais</div>
           <div class="skeleton-pill mfy-conv">Conversão: 3.2%</div>
         </div>
       </div>
 
       <div class="mfy-right">
         <div class="mfy-label">Vende a cada:</div>
-        <div class="mfy-value"><span class="skeleton">000</span> Visitas</div>
+        <div class="mfy-value"><span class="skeleton"></span> Visitas</div>
       </div>
     </div>
 
@@ -1174,7 +1198,7 @@ function buildMainComponentSkeleton() {
       <img src="https://img.icons8.com/windows/32/c7c7c7/old-cash-register.png"
            style="width:1.5em; height:1.5em; position:relative; top:.21em; margin-right:.5em;">
       <div class="mfy-rev-text">
-        Faturando: <strong style="font-size:15px;"><span class="skeleton">R$ 1.932,56</span>/mês</strong>
+        Faturando: <strong style="font-size:15px;"><span class="skeleton"></span>/mês</strong>
       </div>
       <div class="mfy-dropdown">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
@@ -1186,7 +1210,7 @@ function buildMainComponentSkeleton() {
     </div>
 
     <div class="mfy-footer">
-      <div class="mfy-created">Criado há: <span class="skeleton">520</span> dia(s)</div>
+      <div class="mfy-created">Criado há: <span class="skeleton"></span> dia(s)</div>
       <div class="skeleton-pill mfy-avg">Média: 58 vendas/mês</div>
     </div>
   </div>
@@ -2174,12 +2198,13 @@ function s() {
             visitsPerSale: visitasparavender,
             hasSales: vendas > 0
           }
-          ), n_p= Date.now() - L, a = Math.max(0, 800 - n);
-          setTimeout((() => {
-            const e = document.getElementById("visits-component");
-            e && (e.outerHTML = t, setTimeout(l, 250))
-          }
-          ), a)
+          )
+           const elapsed = Date.now() - L;
+const delay = Math.max(0, 0 - elapsed); // sem espera mínima; queremos mostrar assim que tiver dado
+setTimeout(() => {
+  const holder = document.getElementById("visits-component");
+  if (holder) { holder.outerHTML = t; setTimeout(l, 250); }
+}, delay);
         }
         document.dispatchEvent(new CustomEvent("GetVisitsData", {
           detail: {
@@ -2350,7 +2375,171 @@ function s() {
           if (spot0[0]) {
             spot0[0].insertAdjacentHTML("afterbegin", function () {
               const e = "background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite;";
-              return `\n              <div id="visits-component">\n                <style>\n                  @keyframes loading {\n                    0% { background-position: 200% 0; }\n                    100% { background-position: -200% 0; }\n                  }\n                  .skeleton-text {\n                    ${e}\n                    border-radius: 4px;\n                    height: 1em;\n                    display: inline-block;\n                  }\n                  .skeleton-pill {\n                    ${e}\n                    border-radius: 12px;\n                    height: 1.2em;\n                    display: inline-block;\n                  }\n                </style>\n                ${iscatalog?'\n                <div style="display:flex">\n                    <div id="eabtn-chart" style="border-radius: 2rem; width: 2.35em; padding: 0.14em 0.5em; height: 2.35em; display: inline-flex; position: relative; z-index: 10; transition: 0.35s; align-items: center;" class="andes-button--loud mfy-main-bg andes-button">\n                    <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width: 1.35em; margin: auto;">\n                      <div id="eabtn-chart-tooltip" style="width: fit-content; display: none; flex-direction: column; text-align: start; line-height: 1; font-size: 1rem; color:var(--mfy-main); padding: 1rem; opacity: 0;">\n                        Anúncio com menos de 30 dias,<span style="opacity: .5;">gráfico sem dados suficientes.</span>\n                  </div>\n                    </div>\n                    <span style="margin-left: 3.1em;position: absolute;top: 0.45em;font-weight: 400;"><span class="skeleton-text" style="width: 80px;"></span> Visitas totais</span>\n                  <div id="eadivider"></div>\n                </div>\n                ':'\n                  <div style="display:flex;margin: 0rem 0 1.25rem 0;gap: 1rem;">\n                    <div id="eabtn-chart" style="border-radius: 2rem; width: 2.35em; padding: 0.14em 0.5em; height: 2.35em; display: inline-flex; position: relative; z-index: 10; transition: 0.35s; align-items: center;" class="andes-button--loud mfy-main-bg andes-button">\n                      <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width: 1.35em; margin: auto;">\n                      <div id="eabtn-chart-tooltip" style="width: fit-content; display: none; flex-direction: column; text-align: start; line-height: 1; font-size: 1rem; color:var(--mfy-main); padding: 1rem; opacity: 0;">\n                        Anúncio com menos de 30 dias,<span style="opacity: .5;">gráfico sem dados suficientes.</span>\n                      </div>\n                    </div>\n                    <div style="display: flex;gap: 1rem;min-width: fit-content;justify-content: space-between;">\n                      <div style="display: flex; flex-direction: column;">\n                        <div style="display: flex;gap: 0.5rem;">\n                          <span class="skeleton-text" style="width: 25px;"></span> \n                          <span>Visitas totais</span>\n                        </div>\n                        <div class="mfy-main-bg" style="position:relative;font-size:14px!important;min-width: fit-content;padding: 0.2rem 1em;display: flex;gap: .25rem;color: #fff;border-radius: 1rem;">\n                          <span style="min-width: fit-content;">Conversão:</span> <span style="opacity: 0.25;font-weight: 700;"><span class="skeleton-text" style="width: 30px;"></span>%</span>\n                        </div>\n                      </div>\n                      <div id="vendaporvisitas" style="position: relative;text-align: end;">\n                        Vende a cada:<br>\n                        <span class="skeleton-text" style="width: 80px;"></span>\n                      </div>\n                    </div>\n                  </div>\n                  <div id="eadivider" style="background-color: #00000014;height: 1px;width: 22.7em;margin: 0rem 0rem 1rem 0rem;"></div>\n                '}\n              </div>`
+              return `
+  <div id="visits-component">
+    <style>
+      @keyframes loading {
+        0%   { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-text {
+        ${e}
+        border-radius: 4px;
+        height: 1em;
+        display: inline-block;
+      }
+      .skeleton-pill {
+        ${e}
+        border-radius: 12px;
+        height: 1.2em;
+        display: inline-block;
+      }
+    </style>
+
+    ${
+      iscatalog
+        ? `
+      <div style="display:flex">
+        <div
+          id="eabtn-chart"
+          class="andes-button--loud mfy-main-bg andes-button"
+          style="
+            border-radius: 2rem;
+            width: 2.35em;
+            height: 2.35em;
+            padding: 0.14em 0.5em;
+            display: inline-flex;
+            position: relative;
+            z-index: 10;
+            transition: 0.35s;
+            align-items: center;
+          "
+        >
+          <img
+            src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png"
+            style="width: 1.35em; margin: auto;"
+          >
+          <div
+            id="eabtn-chart-tooltip"
+            style="
+              width: fit-content;
+              display: none;
+              flex-direction: column;
+              text-align: start;
+              line-height: 1;
+              font-size: 1rem;
+              color: var(--mfy-main);
+              padding: 1rem;
+              opacity: 0;
+            "
+          >
+            Anúncio com menos de 30 dias,
+            <span style="opacity: .5;">gráfico sem dados suficientes.</span>
+          </div>
+        </div>
+
+        <span
+          style="
+            margin-left: 3.1em;
+            position: absolute;
+            top: 0.45em;
+            font-weight: 400;
+          "
+        >
+          <span class="skeleton-text" style="width: 80px;"></span>
+          Visitas totais
+        </span>
+
+        <div id="eadivider"></div>
+      </div>
+      `
+        : `
+      <div style="display:flex; margin: 0 0 1.25rem 0; gap: 1rem;">
+        <div
+          id="eabtn-chart"
+          class="andes-button--loud mfy-main-bg andes-button"
+          style="
+            border-radius: 2rem;
+            width: 2.35em;
+            height: 2.35em;
+            padding: 0.14em 0.5em;
+            display: inline-flex;
+            position: relative;
+            z-index: 10;
+            transition: 0.35s;
+            align-items: center;
+          "
+        >
+          <img
+            src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png"
+            style="width: 1.35em; margin: auto;"
+          >
+          <div
+            id="eabtn-chart-tooltip"
+            style="
+              width: fit-content;
+              display: none;
+              flex-direction: column;
+              text-align: start;
+              line-height: 1;
+              font-size: 1rem;
+              color: var(--mfy-main);
+              padding: 1rem;
+              opacity: 0;
+            "
+          >
+            Anúncio com menos de 30 dias,
+            <span style="opacity: .5;">gráfico sem dados suficientes.</span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; min-width: fit-content; justify-content: space-between;">
+          <div style="display: flex; flex-direction: column;">
+            <div style="display: flex; gap: 0.5rem;">
+              <span class="skeleton-text" style="width: 25px;"></span>
+              <span>Visitas totais</span>
+            </div>
+
+            <div
+              class="mfy-main-bg"
+              style="
+                position: relative;
+                font-size: 14px !important;
+                min-width: fit-content;
+                padding: 0.2rem 1em;
+                display: flex;
+                gap: .25rem;
+                color: #fff;
+                border-radius: 1rem;
+              "
+            >
+              <span style="min-width: fit-content;">Conversão:</span>
+              <span style="opacity: 0.25; font-weight: 700;">
+                <span class="skeleton-text" style="width: 30px;"></span>%
+              </span>
+            </div>
+          </div>
+
+          <div id="vendaporvisitas" style="position: relative; text-align: end;">
+            Vende a cada:<br>
+            <span class="skeleton-text" style="width: 80px;"></span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="eadivider"
+        style="
+          background-color: #00000014;
+          height: 1px;
+          width: 22.7em;
+          margin: 0 0 1rem 0;
+        "
+      ></div>
+      `
+    }
+  </div>
+`;
             }
             ());
             let e = spot0[0].parentElement;
