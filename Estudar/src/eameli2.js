@@ -92,6 +92,33 @@ var uid = typeof uid !== 'undefined' ? uid : null;
 meliCurrentFee = (typeof meliCurrentFee === 'number' && !isNaN(meliCurrentFee)) ? meliCurrentFee : 6.5;
 var catalogRemoteLookupData = Array.isArray(typeof catalogRemoteLookupData !== 'undefined' ? catalogRemoteLookupData : undefined) ? catalogRemoteLookupData : [];
 var eaAPIHeaders = (function(){ try { const h = new Headers(); h.append('X-Api-Key','Ps-RXiTdFgN62dmQhZ9bsoHMCEyT2!ypg!ov%7MEFR#jP3mtZWbDoSvEdctMgF6a'); return h; } catch(_) { return null; } })();
+
+function removeDuplicateElementsById(id) {
+  try {
+    const nodes = document.querySelectorAll(`[id="${id}"]`);
+    nodes.forEach((node, index) => {
+      if (index > 0) {
+        node.remove();
+      }
+    });
+  } catch (_) {}
+}
+
+function ensureMainComponentSkeleton(container) {
+  if (!container) return;
+  removeDuplicateElementsById("main-component-skeleton");
+  if (!container.querySelector("#main-component-skeleton")) {
+    container.insertAdjacentHTML("afterbegin", buildMainComponentSkeleton());
+  }
+}
+
+function ensureVisitsComponentSkeleton(container) {
+  if (!container) return;
+  removeDuplicateElementsById("visits-component");
+  if (!container.querySelector("#visits-component")) {
+    container.insertAdjacentHTML("afterbegin", buildVisitsComponentSkeleton());
+  }
+}
 // ===== NVAI LOADER TOTAL (drop-in) =====
 class NvaiLoaderTotal {
   constructor(defaults = {}) {
@@ -986,7 +1013,7 @@ async function fetchProductDataFromPage(rawItemId, t) {
   const productUrl = `https://produto.mercadolivre.com.br/MLB-${productNumericId}`;
 
   let n = document.getElementsByClassName("ui-pdp-header");
-  n.length > 0 && n[0].insertAdjacentHTML("afterbegin", buildMainComponentSkeleton());
+  n.length > 0 && ensureMainComponentSkeleton(n[0]);
   if (iscatalog = !0, itemsLocalData[normalizedItemId] || (document.dispatchEvent(new CustomEvent("GetProductData", {
     detail: {
       itemIds: [normalizedItemId]
@@ -1217,6 +1244,175 @@ function buildMainComponentSkeleton() {
   </div>
 `;
 
+}
+
+function buildVisitsComponentSkeleton() {
+  const shimmer = "background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite;";
+  return `
+  <div id="visits-component">
+    <style>
+      @keyframes loading {
+        0%   { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      .skeleton-text {
+        ${shimmer}
+        border-radius: 4px;
+        height: 1em;
+        display: inline-block;
+      }
+      .skeleton-pill {
+        ${shimmer}
+        border-radius: 12px;
+        height: 1.2em;
+        display: inline-block;
+      }
+    </style>
+
+    ${
+      iscatalog
+        ? `
+      <div style="display:flex">
+        <div
+          id="eabtn-chart"
+          class="andes-button--loud mfy-main-bg andes-button"
+          style="
+            border-radius: 2rem;
+            width: 2.35em;
+            height: 2.35em;
+            padding: 0.14em 0.5em;
+            display: inline-flex;
+            position: relative;
+            z-index: 10;
+            transition: 0.35s;
+            align-items: center;
+          "
+        >
+          <img
+            src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png"
+            style="width: 1.35em; margin: auto;"
+          >
+          <div
+            id="eabtn-chart-tooltip"
+            style="
+              width: fit-content;
+              display: none;
+              flex-direction: column;
+              text-align: start;
+              line-height: 1;
+              font-size: 1rem;
+              color: var(--mfy-main);
+              padding: 1rem;
+              opacity: 0;
+            "
+          >
+            Anúncio com menos de 30 dias,
+            <span style="opacity: .5;">gráfico sem dados suficientes.</span>
+          </div>
+        </div>
+
+        <span
+          style="
+            margin-left: 3.1em;
+            position: absolute;
+            top: 0.45em;
+            font-weight: 400;
+          "
+        >
+          <span class="skeleton-text" style="width: 80px;"></span>
+          Visitas totais
+        </span>
+
+        <div id="eadivider"></div>
+      </div>
+      `
+        : `
+      <div style="display:flex; margin: 0 0 1.25rem 0; gap: 1rem;">
+        <div
+          id="eabtn-chart"
+          class="andes-button--loud mfy-main-bg andes-button"
+          style="
+            border-radius: 2rem;
+            width: 2.35em;
+            height: 2.35em;
+            padding: 0.14em 0.5em;
+            display: inline-flex;
+            position: relative;
+            z-index: 10;
+            transition: 0.35s;
+            align-items: center;
+          "
+        >
+          <img
+            src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png"
+            style="width: 1.35em; margin: auto;"
+          >
+          <div
+            id="eabtn-chart-tooltip"
+            style="
+              width: fit-content;
+              display: none;
+              flex-direction: column;
+              text-align: start;
+              line-height: 1;
+              font-size: 1rem;
+              color: var(--mfy-main);
+              padding: 1rem;
+              opacity: 0;
+            "
+          >
+            Anúncio com menos de 30 dias,
+            <span style="opacity: .5;">gráfico sem dados suficientes.</span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem; min-width: fit-content; justify-content: space-between;">
+          <div style="display: flex; flex-direction: column;">
+            <div style="display: flex; gap: 0.5rem;">
+              <span class="skeleton-text" style="width: 25px;"></span>
+              <span>Visitas totais</span>
+            </div>
+
+            <div
+              class="mfy-main-bg"
+              style="
+                position: relative;
+                font-size: 14px !important;
+                min-width: fit-content;
+                padding: 0.2rem 1em;
+                display: flex;
+                gap: .25rem;
+                color: #fff;
+                border-radius: 1rem;
+              "
+            >
+              <span style="min-width: fit-content;">Conversão:</span>
+              <span style="opacity: 0.25; font-weight: 700;">
+                <span class="skeleton-text" style="width: 30px;"></span>%
+              </span>
+            </div>
+          </div>
+
+          <div id="vendaporvisitas" style="position: relative; text-align: end;">
+            Vende a cada:<br>
+            <span class="skeleton-text" style="width: 80px;"></span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="eadivider"
+        style="
+          background-color: #00000014;
+          height: 1px;
+          width: 22.7em;
+          margin: 0 0 1rem 0;
+        "
+      ></div>
+      `
+    }
+  </div>
+`;
 }
 async function altInfo(e) {
   function t() {
@@ -2389,176 +2585,9 @@ function s() {
         }
         )), setTimeout(i, 50), setTimeout(e, 150), setTimeout(a, 175), setTimeout(s, 500), setTimeout((function () {
           if (spot0[0]) {
-            spot0[0].insertAdjacentHTML("afterbegin", function () {
-              const e = "background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite;";
-              return `
-  <div id="visits-component">
-    <style>
-      @keyframes loading {
-        0%   { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-      }
-      .skeleton-text {
-        ${e}
-        border-radius: 4px;
-        height: 1em;
-        display: inline-block;
-      }
-      .skeleton-pill {
-        ${e}
-        border-radius: 12px;
-        height: 1.2em;
-        display: inline-block;
-      }
-    </style>
-
-    ${
-      iscatalog
-        ? `
-      <div style="display:flex">
-        <div
-          id="eabtn-chart"
-          class="andes-button--loud mfy-main-bg andes-button"
-          style="
-            border-radius: 2rem;
-            width: 2.35em;
-            height: 2.35em;
-            padding: 0.14em 0.5em;
-            display: inline-flex;
-            position: relative;
-            z-index: 10;
-            transition: 0.35s;
-            align-items: center;
-          "
-        >
-          <img
-            src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png"
-            style="width: 1.35em; margin: auto;"
-          >
-          <div
-            id="eabtn-chart-tooltip"
-            style="
-              width: fit-content;
-              display: none;
-              flex-direction: column;
-              text-align: start;
-              line-height: 1;
-              font-size: 1rem;
-              color: var(--mfy-main);
-              padding: 1rem;
-              opacity: 0;
-            "
-          >
-            Anúncio com menos de 30 dias,
-            <span style="opacity: .5;">gráfico sem dados suficientes.</span>
-          </div>
-        </div>
-
-        <span
-          style="
-            margin-left: 3.1em;
-            position: absolute;
-            top: 0.45em;
-            font-weight: 400;
-          "
-        >
-          <span class="skeleton-text" style="width: 80px;"></span>
-          Visitas totais
-        </span>
-
-        <div id="eadivider"></div>
-      </div>
-      `
-        : `
-      <div style="display:flex; margin: 0 0 1.25rem 0; gap: 1rem;">
-        <div
-          id="eabtn-chart"
-          class="andes-button--loud mfy-main-bg andes-button"
-          style="
-            border-radius: 2rem;
-            width: 2.35em;
-            height: 2.35em;
-            padding: 0.14em 0.5em;
-            display: inline-flex;
-            position: relative;
-            z-index: 10;
-            transition: 0.35s;
-            align-items: center;
-          "
-        >
-          <img
-            src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png"
-            style="width: 1.35em; margin: auto;"
-          >
-          <div
-            id="eabtn-chart-tooltip"
-            style="
-              width: fit-content;
-              display: none;
-              flex-direction: column;
-              text-align: start;
-              line-height: 1;
-              font-size: 1rem;
-              color: var(--mfy-main);
-              padding: 1rem;
-              opacity: 0;
-            "
-          >
-            Anúncio com menos de 30 dias,
-            <span style="opacity: .5;">gráfico sem dados suficientes.</span>
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 1rem; min-width: fit-content; justify-content: space-between;">
-          <div style="display: flex; flex-direction: column;">
-            <div style="display: flex; gap: 0.5rem;">
-              <span class="skeleton-text" style="width: 25px;"></span>
-              <span>Visitas totais</span>
-            </div>
-
-            <div
-              class="mfy-main-bg"
-              style="
-                position: relative;
-                font-size: 14px !important;
-                min-width: fit-content;
-                padding: 0.2rem 1em;
-                display: flex;
-                gap: .25rem;
-                color: #fff;
-                border-radius: 1rem;
-              "
-            >
-              <span style="min-width: fit-content;">Conversão:</span>
-              <span style="opacity: 0.25; font-weight: 700;">
-                <span class="skeleton-text" style="width: 30px;"></span>%
-              </span>
-            </div>
-          </div>
-
-          <div id="vendaporvisitas" style="position: relative; text-align: end;">
-            Vende a cada:<br>
-            <span class="skeleton-text" style="width: 80px;"></span>
-          </div>
-        </div>
-      </div>
-
-      <div
-        id="eadivider"
-        style="
-          background-color: #00000014;
-          height: 1px;
-          width: 22.7em;
-          margin: 0 0 1rem 0;
-        "
-      ></div>
-      `
-    }
-  </div>
-`;
-            }
-            ());
-            let e = spot0[0].parentElement;
+            const headerNode = spot0[0];
+            ensureVisitsComponentSkeleton(headerNode);
+            let e = headerNode.parentElement;
             e.parentElement.firstElementChild
           }
         }
