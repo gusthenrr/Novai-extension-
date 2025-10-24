@@ -2149,26 +2149,36 @@ function s() {
         const L = Date.now();
         function M(e) {
           if (null == e) return null;
-          if (typeof e == "number" && !Number.isNaN(e)) return e;
+          if (typeof e == "number" && Number.isFinite(e)) return e;
           if (typeof e == "string") {
-            const n = parseFloat(e.replace(/[^0-9.,-]/g, "").replace(",", "."));
-            return Number.isNaN(n) ? null: n;
+            const t = e.trim();
+            if (!t) return null;
+            try {
+              return M(JSON.parse(t));
+            }
+            catch (n) {
+              const a = t.match(/-?\d[\d.,]*/);
+              if (!a) return null;
+              const i = a[0].replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".");
+              const s = parseFloat(i);
+              return Number.isFinite(s) ? s: null;
+            }
           }
           if (Array.isArray(e)) {
-            for (const o of e) {
-              const r = M(o);
-              if (null !== r && !Number.isNaN(r)) return r;
+            for (const t of e) {
+              const n = M(t);
+              if (null !== n && Number.isFinite(n)) return n;
             }
             return null;
           }
           if ("object" == typeof e) {
-            if (typeof e.total_visits == "number") return e.total_visits;
-            if (typeof e.total == "number") return e.total;
-            if (typeof e.visits == "number") return e.visits;
-            const s = Object.keys(e);
-            for (const c of s) {
-              const l = M(e[c]);
-              if (null !== l && !Number.isNaN(l)) return l;
+            if (typeof e.total_visits == "number" && Number.isFinite(e.total_visits)) return e.total_visits;
+            if (typeof e.total == "number" && Number.isFinite(e.total)) return e.total;
+            if (typeof e.visits == "number" && Number.isFinite(e.visits)) return e.visits;
+            const t = Object.keys(e);
+            for (const n of t) {
+              const a = M(e[n]);
+              if (null !== a && Number.isFinite(a)) return a;
             }
           }
           return null;
@@ -2179,8 +2189,12 @@ function s() {
           const n = M(e);
           console.log("Parsed total visits:", n);
           console.groupEnd();
-          visitastotais = typeof n == "number" && !Number.isNaN(n) ? n: NaN,
-          conversaototal = isNaN(vendas / visitastotais) ? 0: vendas / visitastotais, visitaporvenda = visitastotais / (vendas > 0 ? vendas: 1), visitaporvenda_fix = isNaN(visitaporvenda) ? "?": parseFloat(visitaporvenda).toFixed(0), visitasparavender = parseFloat(visitaporvenda_fix);
+          const a = typeof n == "number" && Number.isFinite(n) ? n: NaN;
+          visitastotais = a;
+          conversaototal = Number.isFinite(a) && a > 0 ? vendas / a: 0;
+          visitaporvenda = Number.isFinite(a) ? a / (vendas > 0 ? vendas: 1): NaN;
+          visitaporvenda_fix = Number.isFinite(visitaporvenda) ? parseFloat(visitaporvenda).toFixed(0): "?";
+          visitasparavender = Number.isFinite(visitaporvenda) ? parseFloat(visitaporvenda_fix): NaN;
           const t = function ({
             isCatalog: e,
             totalVisits: t,
@@ -2193,18 +2207,19 @@ function s() {
           }
           ({
             isCatalog: iscatalog,
-            totalVisits: Number(visitastotais) ?? "-",
+            totalVisits: Number.isFinite(visitastotais) ? visitastotais: NaN,
             conversion: parseFloat(100 * conversaototal).toFixed(1) ?? "-",
             visitsPerSale: visitasparavender,
             hasSales: vendas > 0
           }
-          )
-           const elapsed = Date.now() - L;
-const delay = Math.max(0, 0 - elapsed); // sem espera mínima; queremos mostrar assim que tiver dado
-setTimeout(() => {
-  const holder = document.getElementById("visits-component");
-  if (holder) { holder.outerHTML = t; setTimeout(l, 250); }
-}, delay);
+          );
+          const elapsed = Date.now() - L;
+          const delay = Math.max(0, 800 - elapsed);
+          setTimeout((() => {
+            const holder = document.getElementById("visits-component");
+            holder && (holder.outerHTML = t, setTimeout(l, 250));
+          }
+          ), delay);
         }
         document.dispatchEvent(new CustomEvent("GetVisitsData", {
           detail: {
