@@ -921,9 +921,11 @@ function dlayerFallback() {
   dLayerMainFallback();
 }
 function altContentScpt() {
-  spot0 = document.getElementsByClassName("ui-pdp-header"), spot0[0].insertAdjacentHTML("afterbegin", '<span id="eaoffSwitch" style="top: 0em;left: 0em;background-color:rgb(52, 131, 250);color:#fff;"><img src="https://img.icons8.com/external-gradak-royyan-wijaya/24/3f8afe/external-interface-gradak-interface-gradak-royyan-wijaya-5.png" style="width: 1.5em; height: 1.5em; position: relative; top: 0.21em; margin-right: 0.5em; filter: brightness(5); transform: scaleX(-1);"><span class="eahiddenlabel"> Ligar Análises</span></span>');
-  let e = document.getElementById("eaoffSwitch");
-  e.addEventListener("click", (function (t) {
+  const header = document.getElementsByClassName("ui-pdp-header")[0];
+  if (!header) return;
+  header.insertAdjacentHTML("afterbegin", '<span id="eaoffSwitch" style="top: 0em;left: 0em;background-color:rgb(52, 131, 250);color:#fff;"><img src="https://img.icons8.com/external-gradak-royyan-wijaya/24/3f8afe/external-interface-gradak-interface-gradak-royyan-wijaya-5.png" style="width: 1.5em; height: 1.5em; position: relative; top: 0.21em; margin-right: 0.5em; filter: brightness(5); transform: scaleX(-1);"><span class="eahiddenlabel"> Ligar Análises</span></span>');
+  const e = document.getElementById("eaoffSwitch");
+  e?.addEventListener("click", (function () {
     e.lastChild.innerText = " Desligar Análises", e.firstChild.style.filter = "brightness(1)", e.firstChild.style.transform = "scaleX(1)", e.setAttribute("style", "top: 0em;left: 0em;"), localSwitchState = eadataRetrieve("eaActive"), null === localSwitchState && (localSwitchState = !0), eadataStore("eaActive", !localSwitchState, TTL1), setTimeout((function () {
       try { initializeExtensionFeatures() } catch (err) {}
     }
@@ -1001,9 +1003,8 @@ async function fetchProductDataFromPage(rawItemId, t) {
     t()
   }
   else {
-    const n = `https://produto.mercadolivre.com.br/MLB-${e.split("MLB")[1]}`;
     try {
-      scrapeForScripts(e, n, !0, ((n, a) => {
+      scrapeForScripts(normalizedItemId, productUrl, !0, ((n, a) => {
         if (a) t();
         else try {
           let a, i, s = n || [], o = 0;
@@ -2565,9 +2566,27 @@ function s() {
       }
       else btn = "", spot[0].insertAdjacentHTML("afterbegin", btn)
     }
-    spot3 = document.getElementsByClassName("ui-pdp-title"), reflow = document.getElementsByClassName("ui-pdp-header__title-container"), maisFunc = document.getElementById("plusf"), document.getElementsByClassName("ui-pdp-header")[0].parentNode.parentNode.setAttribute("style", "max-width:352px;margin:auto;margin-right:1em;"), iscatalog ? document.getElementsByClassName("ui-pdp-bookmark")[0]?.setAttribute("style", "transform: scale(0.77);top: 1.21em!important;position: absolute;left: 22.5em!important;"): document.getElementsByClassName("ui-pdp-bookmark")[0]?.setAttribute("style", "transform: scale(0.77);top: 1.21em!important;position: absolute;left: 21.5em!important;"), dataLayer && (condicao_produto = dataLayer[0]?.condition, preco_Local = dataLayer[0]?.localItemPrice, categoria_Local = dataLayer[0]?.categoryId, tipo_anuncio = dataLayer[0]?.listingType ?? document.documentElement.innerHTML.split("listing_type_id")[1]?.split('"')[2], comprador = dataLayer[0]?.buyerId, vendedor = dataLayer[0]?.sellerId, dLayer = dataLayer[0]?.startTime, item_ID = dataLayer[0]?.itemId ?? dataLayer[0]?.catalogProductId ?? null);
-    let d = document.getElementsByClassName("ui-pdp-header__subtitle")[0].innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
-    d?.endsWith("mil") && (d = d.replace("mil", ""), d = 1e3 * parseFloat(d)), vendas = 0 == vendas.length ? d: vendas, dLayer && "" == data_br ? (data_br = dayjs(dLayer).locale("pt-br").format("DD/MM/YYYY"), dataMilisec = Date.parse(dLayer), eadiff = eanow - dataMilisec, dias = Math.round(eadiff / (8.64 * Math.pow(10, 7))), media_vendas = 0 == dias || isNaN(vendas) ? "Indisponível (0 dias)": Math.round(vendas / (dias / 30)), o()): o()
+    spot3 = document.getElementsByClassName("ui-pdp-title"), reflow = document.getElementsByClassName("ui-pdp-header__title-container"), maisFunc = document.getElementById("plusf");
+    const headerEl = document.getElementsByClassName("ui-pdp-header")[0];
+    const headerWrapper = headerEl?.parentNode?.parentNode ?? null;
+    headerWrapper?.setAttribute("style", "max-width:352px;margin:auto;margin-right:1em;");
+    const bookmarkEl = document.getElementsByClassName("ui-pdp-bookmark")[0];
+    if (bookmarkEl) {
+      const bookmarkStyle = "transform: scale(0.77);top: 1.21em!important;position: absolute;left: ";
+      bookmarkEl.setAttribute("style", `${bookmarkStyle}${iscatalog ? "22.5" : "21.5"}em!important;`);
+    }
+    dataLayer && (condicao_produto = dataLayer[0]?.condition, preco_Local = dataLayer[0]?.localItemPrice, categoria_Local = dataLayer[0]?.categoryId, tipo_anuncio = dataLayer[0]?.listingType ?? document.documentElement.innerHTML.split("listing_type_id")[1]?.split('"')[2], comprador = dataLayer[0]?.buyerId, vendedor = dataLayer[0]?.sellerId, dLayer = dataLayer[0]?.startTime, item_ID = dataLayer[0]?.itemId ?? dataLayer[0]?.catalogProductId ?? null);
+    const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
+    let subtitleSales = subtitleEl?.innerHTML?.split(" | ")[1]?.split(" vendidos")[0]?.trim() ?? null;
+    if ("string" == typeof subtitleSales && subtitleSales.endsWith("mil")) {
+      const parsed = parseFloat(subtitleSales.replace("mil", ""));
+      subtitleSales = isNaN(parsed) ? subtitleSales: 1e3 * parsed;
+    } else if ("string" == typeof subtitleSales) {
+      const normalized = parseFloat(subtitleSales.replace(/\./g, "").replace(",", "."));
+      subtitleSales = isNaN(normalized) ? subtitleSales: normalized;
+    }
+    if (("string" == typeof vendas && 0 == vendas.length || null == vendas) && null != subtitleSales) vendas = subtitleSales;
+    dLayer && "" == data_br ? (data_br = dayjs(dLayer).locale("pt-br").format("DD/MM/YYYY"), dataMilisec = Date.parse(dLayer), eadiff = eanow - dataMilisec, dias = Math.round(eadiff / (8.64 * Math.pow(10, 7))), media_vendas = 0 == dias || isNaN(vendas) ? "Indisponível (0 dias)": Math.round(vendas / (dias / 30)), o()): o()
   }
 }
 ()
