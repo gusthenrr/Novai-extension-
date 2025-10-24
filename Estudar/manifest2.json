@@ -36,7 +36,7 @@
       "matches": [ "https://www.mercadolivre.com.br/*","https://lista.mercadolivre.com.br/*" ,"https://produto.mercadolivre.com.br/*"],
       "js": [ "inject.js" ]
       } ],
-   "host_permissions": ["https://api.mercadolibre.com/*", "https://*.mercadolivre.com.br/*", "https://*.mercadolibre.com/*"],
+   "host_permissions": ["https://api.mercadolibre.com/*", "https://*.mercadolivre.com.br/*", "https://*.mercadolibre.com/*","https://nossopoint-backend-flask-server.com/*"],
    "description": "Extensão que permite a analise das metricas dos anuncios de concorrentes no mercadolivre",
    "manifest_version": 3,
    "permissions": [ "storage", "tabs"],

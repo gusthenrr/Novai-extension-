@@ -50,6 +50,71 @@ const LOCAL_ACCESS_TOKEN_KEY = 'local_usertkn';
 const LOCAL_REFRESH_TOKEN_KEY = 'local_user_refresh';
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
+const LOGIN_API_DOMAIN = 'nossopoint-backend-flask-server.com';
+const LOGIN_CORS_RULE_ID = 1001;
+
+function ensureLoginCorsRule() {
+  const dnr = chrome?.declarativeNetRequest;
+  if (!dnr?.updateDynamicRules) {
+    console.warn('NOVAI: API declarativeNetRequest indisponível; não foi possível ajustar cabeçalhos de CORS.');
+    return;
+  }
+
+  const rule = {
+    id: LOGIN_CORS_RULE_ID,
+    priority: 1,
+    action: {
+      type: 'modifyHeaders',
+      responseHeaders: [
+        { header: 'Access-Control-Allow-Origin', operation: 'set', value: '*' },
+        { header: 'Access-Control-Allow-Headers', operation: 'set', value: 'Content-Type, Authorization, X-Requested-With' },
+        { header: 'Access-Control-Allow-Methods', operation: 'set', value: 'GET, POST, PUT, PATCH, DELETE, OPTIONS' },
+      ],
+    },
+    condition: {
+      requestDomains: [LOGIN_API_DOMAIN],
+      resourceTypes: ['xmlhttprequest'],
+    },
+  };
+
+  dnr.updateDynamicRules(
+    {
+      removeRuleIds: [LOGIN_CORS_RULE_ID],
+      addRules: [rule],
+    },
+    () => {
+      if (chrome.runtime.lastError) {
+        console.warn('NOVAI: falha ao registrar regra dinâmica de CORS.', chrome.runtime.lastError.message);
+      }
+    },
+  );
+}
+
+chrome.runtime.onInstalled.addListener((details) => {
+  const installReason = chrome.runtime?.OnInstalledReason?.INSTALL;
+  const reason = details?.reason;
+
+  if (reason === installReason || reason === 'install' || typeof reason === 'undefined') {
+    try {
+      chrome.tabs.create({ url: chrome.runtime.getURL('login.html') }, () => {
+        const err = chrome.runtime.lastError;
+        if (err) {
+          console.warn('NOVAI: não foi possível abrir a página de login após a instalação.', err.message);
+        }
+      });
+    } catch (error) {
+      console.warn('NOVAI: erro ao tentar abrir a página de login após a instalação.', error);
+    }
+  }
+
+  ensureLoginCorsRule();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  ensureLoginCorsRule();
+});
+
+ensureLoginCorsRule();
 function writeTokenToStorage(key, token, ttl = TOKEN_TTL_MS) {
   if (!token) {
     return new Promise((resolve) => {
