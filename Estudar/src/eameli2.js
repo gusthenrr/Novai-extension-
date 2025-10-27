@@ -418,6 +418,7 @@ const LOCAL_REFRESH_TOKEN_KEY = "local_user_refresh";
 const AUTH_REQUEST_EVENT = "NovaiRequestAuthState";
 const AUTH_STATE_EVENT = "NovaiAuthState";
 const AUTH_UPDATE_EVENT = "NovaiAuthTokensUpdated";
+const AUTH_OPEN_LOGIN_EVENT = "NovaiOpenLogin";
 let pendingAuthSyncPromise = null;
 
 function persistAuthState(detail = {}) {
@@ -425,21 +426,16 @@ function persistAuthState(detail = {}) {
   const ttl = "number" == typeof detail.ttl && detail.ttl > 0 ? detail.ttl : TTL1;
 
   if (clear) {
-    try {
-      localStorage.removeItem(LOCAL_ACCESS_TOKEN_KEY);
-    } catch (_) {}
-    try {
-      localStorage.removeItem(LOCAL_REFRESH_TOKEN_KEY);
-    } catch (_) {}
-    try {
-      eaHeaders.delete("Authorization");
-    } catch (_) {}
+    clearStoredAuthTokens();
     return;
   }
 
+  let storedSomething = !1;
+
   if ("string" == typeof accessToken && accessToken.trim()) {
     try {
-      eadataStore(LOCAL_ACCESS_TOKEN_KEY, accessToken, ttl);
+      overwriteStoredToken(LOCAL_ACCESS_TOKEN_KEY, accessToken, ttl);
+      storedSomething = !0;
     } catch (_) {}
     const canReadHeader = eaHeaders && "function" == typeof eaHeaders.get;
     const canWriteHeader = eaHeaders && "function" == typeof eaHeaders.set;
@@ -458,8 +454,13 @@ function persistAuthState(detail = {}) {
 
   if ("string" == typeof refreshToken && refreshToken.trim()) {
     try {
-      eadataStore(LOCAL_REFRESH_TOKEN_KEY, refreshToken, ttl);
+      overwriteStoredToken(LOCAL_REFRESH_TOKEN_KEY, refreshToken, ttl);
+      storedSomething = !0;
     } catch (_) {}
+  }
+
+  if (storedSomething) {
+    clearNovaiLoginPrompt();
   }
 }
 
@@ -496,19 +497,171 @@ function requestAuthStateFromBackground() {
   return pendingAuthSyncPromise;
 }
 
-function broadcastAuthTokens(accessToken, refreshToken) {
-  if (!accessToken && !refreshToken) return;
+function broadcastAuthTokens(accessToken, refreshToken, options = {}) {
+  if (!options.clear && !accessToken && !refreshToken) return;
+  const detail = {
+    accessToken,
+    refreshToken,
+    ttl: TTL1,
+    source: "page"
+  };
+  if (options.clear) {
+    detail.clear = !0;
+  }
   try {
-    document.dispatchEvent(new CustomEvent(AUTH_UPDATE_EVENT, {
-      detail: {
-        accessToken,
-        refreshToken,
-        ttl: TTL1,
-        source: "page"
-      }
-    }));
+    document.dispatchEvent(new CustomEvent(AUTH_UPDATE_EVENT, { detail }));
   } catch (_) {}
 }
+
+function overwriteStoredToken(key, value, ttl) {
+  try {
+    localStorage.removeItem(key);
+  } catch (_) {}
+  eadataStore(key, value, ttl);
+}
+
+function clearStoredAuthTokens() {
+  try {
+    localStorage.removeItem(LOCAL_ACCESS_TOKEN_KEY);
+  } catch (_) {}
+  try {
+    localStorage.removeItem(LOCAL_REFRESH_TOKEN_KEY);
+  } catch (_) {}
+  try {
+    eaHeaders.delete("Authorization");
+  } catch (_) {}
+}
+
+const NOVAI_REAUTH_PROMPT_ID = "novai-login-required";
+let novaiReauthInProgress = !1;
+
+function clearNovaiLoginPrompt() {
+  novaiReauthInProgress = !1;
+  const existing = document.getElementById(NOVAI_REAUTH_PROMPT_ID);
+  if (existing && existing.parentNode) {
+    existing.parentNode.removeChild(existing);
+  }
+}
+
+function renderNovaiLoginPrompt() {
+  if (document.getElementById(NOVAI_REAUTH_PROMPT_ID)) return;
+
+  const render = () => {
+    if (document.getElementById(NOVAI_REAUTH_PROMPT_ID)) return;
+    const container = document.createElement("div");
+    container.id = NOVAI_REAUTH_PROMPT_ID;
+    container.setAttribute("style", "position:fixed;z-index:2147483646;bottom:24px;right:24px;max-width:320px;background:#111111;color:#ffe600;padding:16px 18px;border-radius:16px;box-shadow:0 20px 45px rgba(0,0,0,.2);font-family:Inter,Roboto,system-ui,sans-serif;display:flex;flex-direction:column;gap:12px;");
+
+    const title = document.createElement("strong");
+    title.textContent = "Sessão expirada";
+    title.setAttribute("style", "font-size:1.05rem;letter-spacing:.3px;");
+
+    const description = document.createElement("p");
+    description.textContent = "Faça login novamente na extensão NOVAI para gerar um novo token de acesso.";
+    description.setAttribute("style", "margin:0;font-size:.92rem;line-height:1.45;color:#fef08a;");
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Abrir tela de login";
+    button.setAttribute("style", "appearance:none;border:none;border-radius:12px;background:#ffe600;color:#111111;font-weight:700;padding:10px 14px;font-size:.95rem;cursor:pointer;box-shadow:0 10px 25px rgba(255,230,0,.35);");
+    button.addEventListener("click", (() => {
+      try {
+        document.dispatchEvent(new CustomEvent(AUTH_OPEN_LOGIN_EVENT, { detail: { source: "reauth" } }));
+      } catch (_) {}
+    }));
+
+    container.appendChild(title);
+    container.appendChild(description);
+    container.appendChild(button);
+
+    (document.body || document.documentElement).appendChild(container);
+  };
+
+  if ("loading" === document.readyState) {
+    document.addEventListener("DOMContentLoaded", render, { once: !0 });
+  } else {
+    render();
+  }
+}
+
+function triggerReauthFlow(reason) {
+  if (novaiReauthInProgress) return;
+  novaiReauthInProgress = !0;
+  console.warn(`[NOVAI] ${reason || "sessão inválida"}. Será necessário efetuar o login novamente.`);
+  clearStoredAuthTokens();
+  broadcastAuthTokens(null, null, { clear: !0 });
+  renderNovaiLoginPrompt();
+}
+
+function installNovaiFetchInterceptor() {
+  if (window.__novaiFetchInterceptInstalled) {
+    return;
+  }
+  const originalFetch = window.fetch;
+  if ("function" !== typeof originalFetch) {
+    return;
+  }
+
+  window.__novaiFetchInterceptInstalled = !0;
+
+  const monitoredStatuses = new Set([401, 403]);
+
+  const getHeadersFrom = (input, init) => {
+    if (init && init.headers) return init.headers;
+    if (input && "object" == typeof input && "headers" in input) return input.headers;
+    return null;
+  };
+
+  const headersMatchEa = headers => {
+    if (!headers) return !1;
+    if (headers === eaHeaders || headers === eaInit?.headers) return !0;
+    try {
+      if (headers instanceof Headers) {
+        if (headers === eaHeaders) return !0;
+        const auth = headers.get("Authorization");
+        return !!auth && (!eaHeaders || "function" != typeof eaHeaders.get || auth === eaHeaders.get("Authorization"));
+      }
+    } catch (_) {}
+
+    if (Array.isArray(headers)) {
+      return headers.some((entry => {
+        if (!entry || entry.length < 2) return !1;
+        return "authorization" === String(entry[0]).toLowerCase() && String(entry[1]).startsWith("Bearer ");
+      }));
+    }
+
+    if ("object" == typeof headers) {
+      const auth = headers.Authorization || headers.authorization;
+      if ("string" == typeof auth && auth.startsWith("Bearer ")) {
+        try {
+          return !eaHeaders || "function" != typeof eaHeaders.get || auth === eaHeaders.get("Authorization");
+        } catch (_) {
+          return !0;
+        }
+      }
+    }
+
+    return !1;
+  };
+
+  window.fetch = function(input, init) {
+    const headers = getHeadersFrom(input, init);
+    const shouldMonitor = headersMatchEa(headers);
+    return originalFetch.call(this, input, init).then((response => {
+      if (shouldMonitor && response && monitoredStatuses.has(response.status)) {
+        triggerReauthFlow("Token de acesso inválido ou expirado");
+      }
+      return response;
+    })).catch((error => {
+      if (shouldMonitor) {
+        triggerReauthFlow("Falha ao consultar a API protegida");
+      }
+      throw error;
+    }));
+  };
+}
+
+installNovaiFetchInterceptor();
 // Ensure a global user id binding exists to avoid ReferenceError on read
 var uid = typeof uid === "undefined" ? null : uid;
 // Ensure theme color variables exist for CSS and icon URLs
@@ -2754,6 +2907,7 @@ async function ensureAuthorizationToken() {
   }
 
   console.warn("NOVAI: Nenhum token de acesso válido encontrado. Conclua o login na extensão para habilitar as métricas.");
+  triggerReauthFlow("Nenhum token de acesso válido encontrado");
   return !1;
 }
 
@@ -2766,6 +2920,7 @@ async function ensureAuthHeaderForRequests(context = "requisições protegidas")
 
   if (!ensured || !headerReady) {
     console.warn(`[NOVAI] ${context}: não foi possível preparar um token de acesso válido para consultas à API do Mercado Livre.`);
+    triggerReauthFlow(`Falha ao preparar token para ${context}`);
     return !1;
   }
 
@@ -2808,12 +2963,13 @@ function appendToken(tokenOrPayload, maybeRefreshToken) {
     eaHeaders.set("Authorization", `Bearer ${accessToken}`);
   } catch (_) {}
   try {
-    eadataStore(LOCAL_ACCESS_TOKEN_KEY, accessToken, TTL1);
+    overwriteStoredToken(LOCAL_ACCESS_TOKEN_KEY, accessToken, TTL1);
   } catch (_) {}
   if (refreshToken) {
-    try { eadataStore(LOCAL_REFRESH_TOKEN_KEY, refreshToken, TTL1); } catch (_) {}
+    try { overwriteStoredToken(LOCAL_REFRESH_TOKEN_KEY, refreshToken, TTL1); } catch (_) {}
   }
   broadcastAuthTokens(accessToken, refreshToken);
+  clearNovaiLoginPrompt();
   return !0;
 }
 function dataCleanup() {
