@@ -119,6 +119,40 @@ function ensureVisitsComponentSkeleton(container) {
     container.insertAdjacentHTML("afterbegin", buildVisitsComponentSkeleton());
   }
 }
+
+const ANALYTICS_WRAPPER_ID = "mfy-analytics-ui";
+let analyticsMountObserver = null;
+let suppressAnalyticsObserver = !1;
+
+function replaceAnalyticsUI(container) {
+  if (!container) return;
+  suppressAnalyticsObserver = !0;
+  const existing = container.querySelector(`#${ANALYTICS_WRAPPER_ID}`);
+  existing && existing.remove();
+  container.insertAdjacentHTML("afterbegin", analytics_ui);
+  setTimeout((() => {
+    suppressAnalyticsObserver = !1;
+  }), 0);
+}
+
+function ensureAnalyticsObserver() {
+  if (analyticsMountObserver || "anuncio" !== paginaAtual) return;
+  const target = document.body;
+  if (!target) return;
+  analyticsMountObserver = new MutationObserver((() => {
+    if (suppressAnalyticsObserver) return;
+    const headerNode = document.querySelector(".ui-pdp-header");
+    if (!headerNode) return;
+    let active = eadataRetrieve("eaActive");
+    null === active && (active = !0);
+    if (!active) return;
+    headerNode.querySelector(`#${ANALYTICS_WRAPPER_ID}`) || contentScpt();
+  }));
+  analyticsMountObserver.observe(target, {
+    childList: !0,
+    subtree: !0
+  });
+}
 // ===== NVAI LOADER TOTAL (drop-in) =====
 class NvaiLoaderTotal {
   constructor(defaults = {}) {
@@ -758,27 +792,29 @@ var easwitchoff = `
 `;
 
 var analytics_ui = `
-  ${eagrossrev}
-  ${eamoretools}
-  ${eatoolbox}
-  ${eameter}
-  ${ranksearch}
-  ${easwitchoff}
-  ${eatoolbox_close}
-  ${eameterModal}
-  <span id="eaadvsearchForm" style="position: relative;top: 2.7em;z-index: 0;">
-    <input type="text" class="nav-search-input" name="as_word" placeholder="Posição deste anúncio (busca)" maxlength="120" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" tabindex="3" style=" width: 100%;">
-    <button class="nav-search-btn" tabindex="4" style=" position: relative; top: -1.75em; background-color: #ebebeb; right: -12.7em; border-radius: 0em 0.31em 0.31em 0em;">
-      <div role="img" aria-label="Buscar" class="nav-icon-search"></div>
-    </button>
-  </span>
-  <br>
-  <span id="eaadvsearchResult" style="display: none;position: relative;top: 0.5em;">
-    <span style="color: #333333;display: block;font-weight: bold;position: relative;top: -0.77em;padding: 1em 0.5em 0.7em 0.5em;border: 1px solid #ebebeb;">
-      <img src="https://img.icons8.com/material-rounded/24/7e7e7e/search-property.png" style="width: 1.27em;position: relative;top: 0.27em;opacity: 0.5;">
-      <earesult> - | - <span style=" font-size: 0.7em; color: #00000050; letter-spacing: 0.035em; padding: 0.35em 0.75em; background-color: #ebebeb; border-radius: 1em;">"-"</span></earesult>
+  <div id="${ANALYTICS_WRAPPER_ID}">
+    ${eagrossrev}
+    ${eamoretools}
+    ${eatoolbox}
+    ${eameter}
+    ${ranksearch}
+    ${easwitchoff}
+    ${eatoolbox_close}
+    ${eameterModal}
+    <span id="eaadvsearchForm" style="position: relative;top: 2.7em;z-index: 0;">
+      <input type="text" class="nav-search-input" name="as_word" placeholder="Posição deste anúncio (busca)" maxlength="120" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" tabindex="3" style=" width: 100%;">
+      <button class="nav-search-btn" tabindex="4" style=" position: relative; top: -1.75em; background-color: #ebebeb; right: -12.7em; border-radius: 0em 0.31em 0.31em 0em;">
+        <div role="img" aria-label="Buscar" class="nav-icon-search"></div>
+      </button>
     </span>
-  </span>
+    <br>
+    <span id="eaadvsearchResult" style="display: none;position: relative;top: 0.5em;">
+      <span style="color: #333333;display: block;font-weight: bold;position: relative;top: -0.77em;padding: 1em 0.5em 0.7em 0.5em;border: 1px solid #ebebeb;">
+        <img src="https://img.icons8.com/material-rounded/24/7e7e7e/search-property.png" style="width: 1.27em;position: relative;top: 0.27em;opacity: 0.5;">
+        <earesult> - | - <span style=" font-size: 0.7em; color: #00000050; letter-spacing: 0.035em; padding: 0.35em 0.75em; background-color: #ebebeb; border-radius: 1em;">"-"</span></earesult>
+      </span>
+    </span>
+  </div>
 `;
 
 var btn_preco = `
@@ -1819,11 +1855,15 @@ function contentScpt() {
       let n = document.getElementById("eacattrendsbtn");
       n.addEventListener("click", t)
     }
-    spot0[0].insertAdjacentHTML("afterbegin", analytics_ui), i(), function () {
+    replaceAnalyticsUI(spot0[0]);
+    i();
+    (function () {
       let e = document.getElementById("eahealthmeter"), t = document.getElementById("eameter_modal");
       e && e.remove(), t && t.remove()
     }
-    (), t(), function () {
+    )();
+    t();
+    (function () {
       let e = eadataRetrieve("eaActive");
       const t = document.getElementById("eaoffSwitch");
       if (!t) return;
@@ -1845,14 +1885,19 @@ function contentScpt() {
       }
       ))
     }
-    (), n(), iscatalog && (document.getElementById("eaoffSwitch")?.setAttribute("style", "top: 0.35em;"), document.getElementById("eaadvsearchBtn")?.setAttribute("style", "left: 0.25em;")), a(), function () {
+    )();
+    ensureAnalyticsObserver();
+    n();
+    iscatalog && (document.getElementById("eaoffSwitch")?.setAttribute("style", "top: 0.35em;"), document.getElementById("eaadvsearchBtn")?.setAttribute("style", "left: 0.25em;"));
+    a();
+    (function () {
       const e = document.getElementById("highlights");
       if (e) {
         const t = e.cloneNode(!0);
         t.style.marginBottom = "1rem", e.remove(), document.querySelector(".ui-pdp-header")?.insertAdjacentElement("beforebegin", t)
       }
     }
-    ()
+    )()
   }
   function n(e) {
     taxaML_verif = parseFloat(e) < parseFloat(cota_minima_MLB) ? taxa_mlb - taxa_cota: taxa_mlb, taxa_percentual = (taxaML_verif / preco_Local).toFixed(3)
