@@ -104,6 +104,82 @@ function removeDuplicateElementsById(id) {
   } catch (_) {}
 }
 
+const cssEscape = (typeof CSS !== 'undefined' && typeof CSS.escape === 'function')
+  ? CSS.escape
+  : (value) => String(value).replace(/[^a-zA-Z0-9_\-]/g, match => `\\${match}`);
+
+const NOVAI_INJECTED_ELEMENT_IDS = [
+  "eaadvsearchBtn",
+  "eaadvsearchForm",
+  "eaadvsearchResult",
+  "eabar_adsrate",
+  "eabar_catalograte",
+  "eabar_category",
+  "eabar_competition",
+  "eabar_fullrate",
+  "eabtn-chart",
+  "eacattrends",
+  "eacattrendsbtn",
+  "eachart",
+  "eaclosetrendsbox",
+  "eacopytrends",
+  "eadivider",
+  "eafollow_ad",
+  "eagrossrev",
+  "eahealthmeter",
+  "ealistrequest",
+  "eamediapop",
+  "eameterRate",
+  "eameter_modal",
+  "eameter_tips",
+  "eametersvg",
+  "eamoretools",
+  "eanotify",
+  "eaoffSwitch",
+  "eareset",
+  "easellerbtn",
+  "easince",
+  "easortselect",
+  "eatoolbox",
+  "eatoolsicon",
+  "eatrendsbox",
+  "main-component-skeleton",
+  "mfy-admarker",
+  "mfy-modal-content",
+  "mfy-modal-overlay",
+  "mfy-modal-portal",
+  "mfy-smetrics-status",
+  "mfy-tool-modal",
+  "mfy-track-chart",
+  "preco-btn",
+  "preco-ativar",
+  "preco-img",
+  "price-tool",
+  "pricetool_content",
+  "pricetool_header",
+  "pricetool_loading",
+  "salesestimatebtn",
+  "salesfix",
+  "visits-component"
+];
+
+function removeNovaiInjectedNodes(contextLabel = "manual-cleanup") {
+  try {
+    let removed = 0;
+    for (const id of NOVAI_INJECTED_ELEMENT_IDS) {
+      const nodes = document.querySelectorAll(`#${cssEscape(id)}`);
+      if (!nodes.length) continue;
+      nodes.forEach(node => node.remove());
+      removed += nodes.length;
+    }
+    if (removed > 0) {
+      console.log(`[NOVAI] Limpeza (${contextLabel}): ${removed} elementos reiniciados.`);
+    }
+  } catch (cleanupError) {
+    console.warn("[NOVAI] Falha ao remover elementos injetados:", cleanupError);
+  }
+}
+
 function ensureMainComponentSkeleton(container) {
   if (!container) return;
   removeDuplicateElementsById("main-component-skeleton");
@@ -254,6 +330,18 @@ function _mfyScheduleReinit(reason) {
   const now = Date.now();
   if (now - _mfyLastReinitAt < _mfyMinReinitGapMs) return;
   _mfyLastReinitAt = now;
+  try {
+    const markers = [
+      "eaoffSwitch",
+      "price-tool",
+      "visits-component"
+    ].map(id => {
+      const count = document.querySelectorAll(`#${cssEscape(id)}`).length;
+      return `${id}:${count}`;
+    }).join(" | ");
+    console.log(`[NOVAI] Reinicialização agendada (${reason}) -> ${markers}`);
+  } catch (_) {}
+  try { removeNovaiInjectedNodes(`keep-alive:${reason}`); } catch (_) {}
   try { initializeExtensionFeatures(); } catch (_) {}
 }
 function _mfyKeepAliveTick() {
@@ -1641,6 +1729,11 @@ function fetchCategoryWithCache(e, t) {
   document.addEventListener("CategoryDataResponse", n)
 }
 function contentScpt() {
+  try { removeNovaiInjectedNodes("contentScpt"); } catch (_) {}
+  const headerCandidates = document.getElementsByClassName("ui-pdp-header");
+  if (!headerCandidates || !headerCandidates[0]) {
+    console.warn("[NOVAI] Cabeçalho da PDP não encontrado para injetar os componentes de métricas.");
+  }
   function e() {
     salesSpot = document.getElementsByClassName("ui-pdp-header__subtitle"), newSalesDiv = `<div id="salesfix" style="width: fit-content;display: flex;flex-direction: row;height: 14px;align-items: center;border-radius: 1rem;border: 1px solid rgba(0,0,0,0.14);padding: 1rem;position: relative;top: 8px;margin-left: 1rem;">\n    <img src="https://i.ibb.co/K7Lc6cr/metrify.png" style="width: 14px;height: 14px;position: relative;left: 1px;margin-right: -0.5rem">\n    ${vendas} vendidos\n    </div>`, iscatalog ? salesSpot[0].setAttribute("style", "display: flex;flex-direction: row;gap: 1rem; margin: 1rem 0;align-items: center;"): (salesSpot[0].firstChild.setAttribute("style", "display: flex;flex-direction: row;align-items: center;margin-bottom:1.35rem"), salesSpot[0].firstChild.style.width = "max-content")
   }
@@ -2694,6 +2787,9 @@ function appendToken(tokenOrPayload, maybeRefreshToken) {
 }
 function dataCleanup() {
   if ("anuncio" === paginaAtual) {
+    try {
+      removeNovaiInjectedNodes("data-cleanup");
+    } catch (_) {}
     let e = document.getElementsByTagName("nvailoader");
     if (e) for (loader of e) loader.remove()
   }
