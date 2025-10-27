@@ -2414,7 +2414,11 @@ function s() {
           const delay = Math.max(0, 800 - elapsed);
           setTimeout((() => {
             const holder = document.getElementById("visits-component");
-            holder && (holder.outerHTML = t, setTimeout(l, 250));
+            if (holder) {
+              holder.setAttribute("data-rendered", "true");
+              holder.innerHTML = t;
+              setTimeout(l, 250);
+            }
           }
           ), delay);
         }
