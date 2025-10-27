@@ -1,284 +1,123 @@
-// --- Locale pt-BR para ApexCharts ---
-var localePTBR = [{
-  name: 'pt-BR',
+var mfyMainColor = "#4656f8", mfyMainColorNumbers = mfyMainColor.split("#")[1], extensionPath = "";
+function sendRequestToContentScript() {
+  const e = new CustomEvent("requestMfyGlobals");
+  document.dispatchEvent(e)
+}
+document.addEventListener("responseMfyGlobals", (function (e) {
+  extensionPath = e.detail.extensionUrlPath
+}
+)), sendRequestToContentScript();
+var globalLogs = [], eaOnAdminPanel = !1, listView = void 0, mfy_version = null, trackDataParsed = {}, dataLayer = window.dataLayer, melidata_namespace = window.melidata_namespace, altPreloadedState = Array.from(document.getElementsByTagName("script")).filter((e => "__PRELOADED_STATE__" === e.id)).length > 0 ? JSON.parse(Array.from(document.getElementsByTagName("script")).filter((e => "__PRELOADED_STATE__" === e.id))[0].innerHTML): void 0, preLoadedState = window.__PRELOADED_STATE__, rawID = void 0, userId = null, uid = null, meliCurrentFee = 6.5, catalogRemoteLookupData = [], eaAPIHeaders = new Headers;
+eaAPIHeaders.append("X-Api-Key", "Ps-RXiTdFgN62dmQhZ9bsoHMCEyT2!ypg!ov%7MEFR#jP3mtZWbDoSvEdctMgF6a");
+var registeringAcc = !1, requestOptions = {
+  method: "GET",
+  headers: eaAPIHeaders,
+  redirect: "follow"
+}
+, mfyuser = void 0, mfy_userdata = {}, myHeaders = new Headers;
+myHeaders.append("accept", "application/json"), myHeaders.append("content-type", "application/x-www-form-urlencoded");
+var TTL0 = 9e5, TTL1 = 216e5, TTL2 = 3e4, TTL3 = 72e5, mfyHost = "https://api2.metrify.com.br/api", mfyEndpoints = {
+  api_host: "https://api2.metrify.com.br/api",
+  auth: `${mfyHost}/auth`,
+  register: `${mfyHost}/register`,
+  track: `${mfyHost}/trackworks`,
+  validate: `${mfyHost}/validate`
+}
+;
+function getRandomProxy() {
+  const e = ["https://mfy-cors.up.railway.app/"];
+  return e[Math.floor(Math.random() * e.length)]
+}
+var mfyProxy = getRandomProxy(), mfyProxyLessRestricted = "https://mfy.herokuapp.com/";
+class SpinLoaderManager {
+  constructor() {
+    this.template = null, this.localPath = ""
+  }
+  getLocalPath() {
+    return !this.localPath && extensionPath && (this.localPath = `${extensionPath}src/lotties/lf20_uwR49r.json`), this.localPath || "src/lotties/lf20_uwR49r.json"
+  }
+  createTemplate() {
+    if (this.template) return this.template;
+    const e = document.createElement("div");
+    e.style.cssText = "width: 25px; height: 25px; margin: auto;";
+    const t = document.createElement("lottie-player");
+    return t.setAttribute("src", this.getLocalPath()), t.setAttribute("background", "transparent"), t.setAttribute("speed", "1"), t.setAttribute("loop", ""), t.setAttribute("autoplay", ""), t.style.cssText = "width: 100%; height: 100%;", e.appendChild(t), this.template = e, this.template
+  }
+  getInstance() {
+    return this.createTemplate().cloneNode(!0)
+  }
+  getHTML() {
+    return `<lottie-player src="${this.getLocalPath()}" background="transparent" speed="1" style="width: 25px;height:25px;margin:auto;" loop="" autoplay=""></lottie-player>`
+  }
+  replaceContent(e) {
+    e.innerHTML = "", e.appendChild(this.getInstance())
+  }
+  hasSpinner(e) {
+    return null !== e.querySelector("lottie-player")
+  }
+  getWrappedHTML(e = "") {
+    return `<div style="${e}">${this.getHTML()}</div>`
+  }
+  getInlineHTML() {
+    return `<span style="display: inline-block; vertical-align: middle;">${this.getHTML()}</span>`
+  }
+}
+const spinLoaderManager = new SpinLoaderManager;
+var SpinLoader = spinLoaderManager.getHTML(), localePTBR = [{
+  name: "pt-BR",
   options: {
-    months: [
-      'janeiro','fevereiro','março','abril','maio','junho',
-      'julho','agosto','setembro','outubro','novembro','dezembro'
-    ],
-    shortMonths: [
-      'jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'
-    ],
-    days: [
-      'domingo','segunda-feira','terça-feira','quarta-feira',
-      'quinta-feira','sexta-feira','sábado'
-    ],
-    shortDays: ['dom','seg','ter','qua','qui','sex','sáb'],
+    months: ["Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro"],
+    shortMonths: ["Jan",
+    "Fev",
+    "Mar",
+    "Abr",
+    "Mai",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Set",
+    "Out",
+    "Nov",
+    "Dez"],
+    days: ["Domingo",
+    "Segunda",
+    "Terça",
+    "Quarta",
+    "Quinta",
+    "Sexta",
+    "Sábado"],
+    shortDays: ["Dom",
+    "Seg",
+    "Ter",
+    "Qua",
+    "Qui",
+    "Sex",
+    "Sáb"],
     toolbar: {
-      download: 'Baixar',
-      selection: 'Selecionar',
-      selectionZoom: 'Zoom por seleção',
-      zoomIn: 'Aproximar',
-      zoomOut: 'Afastar',
-      pan: 'Arrastar',
-      reset: 'Redefinir zoom'
+      exportToSVG: "Baixar SVG",
+      exportToPNG: "Baixar PNG",
+      menu: "Menu",
+      selection: "Seleção",
+      selectionZoom: "Zoom na seleção",
+      zoomIn: "Zoom In",
+      zoomOut: "Zoom Out",
+      pan: "Panorâmica",
+      reset: "Resetar Zoom"
     }
   }
-}];
-
-// (Opcional) fallback defensivo se alguém renomear por engano
-if (typeof localePTBR === 'undefined' || !Array.isArray(localePTBR)) {
-  var localePTBR = [];
 }
-var mfyProxy = "https://nvai-proxy-production.up.railway.app/"
-var mfyProxyLessRestricted = "https://mfy.herokuapp.com/";
-// Derive the extension base URL from the current script tag (reliable in page context)
-var extensionBaseUrl = (function(){
-  try {
-    const src = document.currentScript && document.currentScript.src;
-    if (!src) return '';
-    // Build a base like chrome-extension://<id>/src/
-    return new URL('src/', src).href;
-  } catch (_) { return ''; }
-})();
-// Compute the extension root URL (without the trailing 'src/') for legacy template usage
-var extensionRootUrl = (function(){
-  if (!extensionBaseUrl) return '';
-  try {
-    return extensionBaseUrl.endsWith('src/') ? extensionBaseUrl.slice(0, -4) : extensionBaseUrl;
-  } catch(_) { return ''; }
-})();
-// Legacy variable expected by some templates: `${extensionPath}src/...`
-var extensionPath = extensionRootUrl;
-// Mercado Livre fixed fee for items below the minimum price threshold (MLB)
-// Try to read a persisted value, otherwise fallback to a sensible default (BRL 5.00)
-var meliCurrentFee = (function(){
-  try {
-    const v = localStorage.getItem('meliCurrentFee');
-    if (v !== null && !isNaN(parseFloat(v))) return parseFloat(v);
-  } catch (_) {}
-  return 5; // default fixed fee in BRL
-})();
-
-// ---- Consolidated global initializations (preloaded state, flags, ids, headers) ----
-var globalLogs = Array.isArray(typeof globalLogs !== 'undefined' ? globalLogs : undefined) ? globalLogs : [];
-var eaOnAdminPanel = typeof eaOnAdminPanel !== 'undefined' ? eaOnAdminPanel : false;
-var listView = typeof listView !== 'undefined' ? listView : undefined;
-var mfy_version = typeof mfy_version !== 'undefined' ? mfy_version : null;
-var trackDataParsed = (typeof trackDataParsed === 'object' && trackDataParsed) ? trackDataParsed : {};
-var dataLayer = Array.isArray(window.dataLayer) ? window.dataLayer : (window.dataLayer = []);
-var melidata_namespace = window.melidata_namespace || {};
-// Try to get embedded __PRELOADED_STATE__ script content safely
-var altPreloadedState = (function(){
-  try {
-    const scripts = Array.from(document.getElementsByTagName('script')).filter(e => e.id === '__PRELOADED_STATE__');
-    if (scripts.length > 0) {
-      return JSON.parse(scripts[0].innerHTML);
-    }
-  } catch(_) {}
-  return {};
-})();
-// Prefer window.__PRELOADED_STATE__, fallback to altPreloadedState.pageState
-var preLoadedState = (function(){
-  const wps = window.__PRELOADED_STATE__;
-  if (wps && typeof wps === 'object' && !wps.tagName) return wps;
-  if (altPreloadedState && typeof altPreloadedState === 'object') return altPreloadedState.pageState || altPreloadedState;
-  return undefined;
-})();
-var rawID = typeof rawID !== 'undefined' ? rawID : undefined;
-var userId = typeof userId !== 'undefined' ? userId : null;
-var uid = typeof uid !== 'undefined' ? uid : null;
-// Ensure a numeric default for fixed fee if not set elsewhere
-meliCurrentFee = (typeof meliCurrentFee === 'number' && !isNaN(meliCurrentFee)) ? meliCurrentFee : 6.5;
-var catalogRemoteLookupData = Array.isArray(typeof catalogRemoteLookupData !== 'undefined' ? catalogRemoteLookupData : undefined) ? catalogRemoteLookupData : [];
-var eaAPIHeaders = (function(){ try { const h = new Headers(); h.append('X-Api-Key','Ps-RXiTdFgN62dmQhZ9bsoHMCEyT2!ypg!ov%7MEFR#jP3mtZWbDoSvEdctMgF6a'); return h; } catch(_) { return null; } })();
-
-function removeDuplicateElementsById(id) {
-  try {
-    const nodes = document.querySelectorAll(`[id="${id}"]`);
-    nodes.forEach((node, index) => {
-      if (index > 0) {
-        node.remove();
-      }
-    });
-  } catch (_) {}
-}
-
-function ensureMainComponentSkeleton(container) {
-  if (!container) return;
-  removeDuplicateElementsById("main-component-skeleton");
-  if (!container.querySelector("#main-component-skeleton")) {
-    container.insertAdjacentHTML("afterbegin", buildMainComponentSkeleton());
-  }
-}
-
-function ensureVisitsComponentSkeleton(container) {
-  if (!container) return;
-  removeDuplicateElementsById("visits-component");
-  if (!container.querySelector("#visits-component")) {
-    container.insertAdjacentHTML("afterbegin", buildVisitsComponentSkeleton());
-  }
-}
-
-const ANALYTICS_WRAPPER_ID = "mfy-analytics-ui";
-let analyticsMountObserver = null;
-let suppressAnalyticsObserver = !1;
-
-function replaceAnalyticsUI(container) {
-  if (!container) return;
-  suppressAnalyticsObserver = !0;
-  const existing = container.querySelector(`#${ANALYTICS_WRAPPER_ID}`);
-  existing && existing.remove();
-  container.insertAdjacentHTML("afterbegin", analytics_ui);
-  setTimeout((() => {
-    suppressAnalyticsObserver = !1;
-  }), 0);
-}
-
-function ensureAnalyticsObserver() {
-  if (analyticsMountObserver || "anuncio" !== paginaAtual) return;
-  const target = document.body;
-  if (!target) return;
-  analyticsMountObserver = new MutationObserver((() => {
-    if (suppressAnalyticsObserver) return;
-    const headerNode = document.querySelector(".ui-pdp-header");
-    if (!headerNode) return;
-    let active = eadataRetrieve("eaActive");
-    null === active && (active = !0);
-    if (!active) return;
-    headerNode.querySelector(`#${ANALYTICS_WRAPPER_ID}`) || contentScpt();
-  }));
-  analyticsMountObserver.observe(target, {
-    childList: !0,
-    subtree: !0
-  });
-}
-// ===== NVAI LOADER TOTAL (drop-in) =====
-class NvaiLoaderTotal {
-  constructor(defaults = {}) {
-    this.defaults = {
-      size: 40,              // px
-      text: 'Analisando...', // legenda opcional
-      showText: true,
-      ...defaults
-    };
-    this.styleId = 'novai-atom-loader-css';
-  }
-
-  ensureStyles() {
-    if (typeof document === 'undefined') return;
-    if (document.getElementById(this.styleId)) return;
-
-    const css = `
-@keyframes orbit-10 {
-  from { transform: translate(-50%,-50%) rotate(0deg) translateX(10px) rotate(0deg); }
-  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(10px) rotate(-360deg); }
-}
-@keyframes orbit-14 {
-  from { transform: translate(-50%,-50%) rotate(0deg) translateX(14px) rotate(0deg); }
-  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(14px) rotate(-360deg); }
-}
-@keyframes orbit-18 {
-  from { transform: translate(-50%,-50%) rotate(0deg) translateX(18px) rotate(0deg); }
-  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(18px) rotate(-360deg); }
-}
-@keyframes orbit-22 {
-  from { transform: translate(-50%,-50%) rotate(0deg) translateX(22px) rotate(0deg); }
-  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(22px) rotate(-360deg); }
-}
-
-.nvai-atom-wrap{display:flex;align-items:center;gap:.5rem;width:auto;height:auto}
-.nvai-analysing{color:var(--novai-text,#8E8E93);font-size:.875rem;padding-left:10px}
-.nvai-atom{position:relative}
-.nvai-electron{
-  position:absolute;top:50%;left:50%;
-  width:6px;height:6px;border-radius:50%;
-  background:var(--novai-main,#F8DD82);
-  box-shadow:0 0 6px rgba(248,221,130,0.6)
-}
-.nvai-e1{animation:orbit-10 1.0s linear infinite}
-.nvai-e2{animation:orbit-14 1.4s linear infinite}
-.nvai-e3{animation:orbit-18 1.8s linear infinite}
-.nvai-e4{animation:orbit-22 2.2s linear infinite}
-    `.trim();
-
-    const style = document.createElement('style');
-    style.id = this.styleId;
-    style.textContent = css;
-    document.head.appendChild(style);
-  }
-
-  // Gera o HTML do loader (tamanho/legenda customizáveis)
-  getHTML(opts = {}) {
-    this.ensureStyles();
-    const { size, text, showText } = { ...this.defaults, ...opts };
-    const label = showText ? `<span class="nvai-analysing">${text}</span>` : '';
-
-    return `
-<div data-nvai-spinner="true" role="status" aria-live="polite" class="nvai-atom-wrap">
-  <div class="nvai-atom" style="width:${size}px;height:${size}px;">
-    <span class="nvai-electron nvai-e1"></span>
-    <span class="nvai-electron nvai-e2"></span>
-    <span class="nvai-electron nvai-e3"></span>
-    <span class="nvai-electron nvai-e4"></span>
-  </div>
-  ${label}
-</div>
-    `.trim();
-  }
-
-  // Substitui conteúdo do nó pelo loader
-  replaceContent(node, opts = {}) {
-    if (!node) return;
-    node.innerHTML = this.getHTML(opts);
-  }
-
-  // Detecta loader NVAI (e também legados mfy/lottie pra evitar duplicar)
-  hasSpinner(node) {
-    if (!node) return false;
-    return !!node.querySelector('[data-nvai-spinner],[data-novai-spinner],[data-mfy-spinner],lottie-player');
-  }
-
-  // Helpers de conveniência (compatíveis com o antigo)
-  getWrappedHTML(styleStr = "", opts = {}) {
-    return `<div style="${styleStr}">${this.getHTML(opts)}</div>`;
-  }
-
-  getInlineHTML(opts = {}) {
-    return `<span style="display:inline-block;vertical-align:middle;">${this.getHTML(opts)}</span>`;
-  }
-
-  // Monta e retorna o elemento do loader inserido
-  mount(node, opts = {}) {
-    if (!node) return null;
-    this.replaceContent(node, opts);
-    return node.querySelector('[data-nvai-spinner]');
-  }
-
-  // Remove o loader NVAI do nó
-  remove(node) {
-    if (!node) return;
-    const el = node.querySelector('[data-nvai-spinner]');
-    if (el) el.remove();
-  }
-
-  // Atalho estático
-  static html(opts = {}) {
-    return new NvaiLoaderTotal().getHTML(opts);
-  }
-}
-
-// ===== Instância padrão (recomendado) =====
-const nvaiLoaderTotal = new NvaiLoaderTotal();
-
-// String pronta (como antes você tinha "SpinLoader")
-const NvaiLoader = nvaiLoaderTotal.getHTML();
-
-// ===== (Opcional) SHIM de compatibilidade =====
-// Se você não quer refatorar tudo agora, mantém os nomes antigos apontando pro novo:
-const spinLoaderManager = nvaiLoaderTotal;
-var SpinLoader = NvaiLoader;
-
+], fullIcon = '<svg xmlns="http://www.w3.org/2000/svg" class="logo-full" width="151" height="39" viewBox="0 0 151 39" data-reactroot="" style="width: 3.75em;height: auto;position: relative;top: 0.2em;padding: 0em 0em 0em 0.35em;"><g fill="#00A650" fill-rule="evenodd"><path d="M9.577 0L0 22.286h15.962L9.577 39l25.54-25.071H19.153L28.732 0zM56.094 27.925h-6.931l5.924-24.38h19.706l-1.33 5.483H60.688l-.886 3.801h12.452l-1.33 5.483H58.433l-2.338 9.613zm33.718.439c-8.262 0-12.332-3.582-12.332-8.7 0-.402.12-1.242.202-1.608l3.546-14.51h7.052L84.774 17.91c-.04.183-.12.585-.12 1.023.04 2.01 1.732 3.948 5.158 3.948 3.707 0 5.601-2.12 6.286-4.971l3.507-14.365h7.012L103.11 18.02c-1.451 5.921-4.998 10.344-13.3 10.344zm36.014-.439h-17.732l5.924-24.38h6.932l-4.554 18.897h10.76l-1.33 5.483zm23.844 0h-17.732l5.924-24.38h6.932l-4.554 18.897H151l-1.33 5.483z"></path></g></svg>';
 function parseJwt(e) {
   var t = e?.split(".")[1], n = t.replace(/-/g, "+").replace(/_/g, "/"), a = decodeURIComponent(window.atob(n).split("").map((function (e) {
     return "%" + ("00" + e.charCodeAt(0).toString(16)).slice(-2)
@@ -290,7 +129,37 @@ const params = new Proxy(new URLSearchParams(window.location.search), {
   get: (e, t) => e.get(t)
 }
 );
-
+function sendToContentScript(e) {
+  try {
+    document.dispatchEvent(new CustomEvent("MetrifyExtension", {
+      detail: e
+    }
+    ))
+  }
+  catch (e) {}
+}
+function AuthDataStore(e, t) {
+  sendToContentScript({
+    type: "STORE",
+    key: e,
+    value: t
+  }
+  )
+}
+function AuthDataRetrieve(e) {
+  sendToContentScript({
+    type: "RETRIEVE",
+    key: e
+  }
+  )
+}
+function AuthDataCheck(e) {
+  sendToContentScript({
+    type: "AUTH_CHECK",
+    key: e
+  }
+  )
+}
 function isList() {
   null != document.getElementsByClassName("ui-search-breadcrumb__title")[0] && (paginaAtual = "lista")
 }
@@ -308,110 +177,13 @@ function eadataRetrieve(e) {
   const n = JSON.parse(t);
   return (new Date).getTime() > n.expiry ? (localStorage.removeItem(e), null): n.value
 }
-// Default TTL (time-to-live) for local cached values: 30 days
-var TTL1 = 30 * 24 * 60 * 60 * 1e3;
-const LOCAL_ACCESS_TOKEN_KEY = "local_usertkn";
-const LOCAL_REFRESH_TOKEN_KEY = "local_user_refresh";
-const AUTH_REQUEST_EVENT = "NovaiRequestAuthState";
-const AUTH_STATE_EVENT = "NovaiAuthState";
-const AUTH_UPDATE_EVENT = "NovaiAuthTokensUpdated";
-let pendingAuthSyncPromise = null;
-
-function persistAuthState(detail = {}) {
-  const { accessToken, refreshToken, clear, source } = detail || {};
-  const ttl = "number" == typeof detail.ttl && detail.ttl > 0 ? detail.ttl : TTL1;
-
-  if (clear) {
-    try {
-      localStorage.removeItem(LOCAL_ACCESS_TOKEN_KEY);
-    } catch (_) {}
-    try {
-      localStorage.removeItem(LOCAL_REFRESH_TOKEN_KEY);
-    } catch (_) {}
-    try {
-      eaHeaders.delete("Authorization");
-    } catch (_) {}
-    return;
-  }
-
-  if ("string" == typeof accessToken && accessToken.trim()) {
-    try {
-      eadataStore(LOCAL_ACCESS_TOKEN_KEY, accessToken, ttl);
-    } catch (_) {}
-    const canReadHeader = eaHeaders && "function" == typeof eaHeaders.get;
-    const canWriteHeader = eaHeaders && "function" == typeof eaHeaders.set;
-    let shouldSetHeader = !1;
-    try {
-      shouldSetHeader = !canReadHeader || !eaHeaders.get("Authorization") || "background" === source;
-    } catch (_) {
-      shouldSetHeader = !0;
-    }
-    if (shouldSetHeader && canWriteHeader) {
-      try {
-        eaHeaders.set("Authorization", `Bearer ${accessToken}`);
-      } catch (_) {}
-    }
-  }
-
-  if ("string" == typeof refreshToken && refreshToken.trim()) {
-    try {
-      eadataStore(LOCAL_REFRESH_TOKEN_KEY, refreshToken, ttl);
-    } catch (_) {}
-  }
+document.addEventListener("MetrifyExtensionResponse", (function (e) {
+  "RETRIEVE" == e.detail.type ? mfy_userdata = e.detail.value: "AUTH_CHECK" == e.detail.type && (mfy_userdata.remote = e.detail.value)
 }
-
-document.addEventListener(AUTH_STATE_EVENT, (event => {
-  persistAuthState(event.detail || {});
-}));
-
-function requestAuthStateFromBackground() {
-  if (pendingAuthSyncPromise) return pendingAuthSyncPromise;
-
-  pendingAuthSyncPromise = new Promise((resolve => {
-    const handler = event => {
-      clearTimeout(timer);
-      resolve(event?.detail || {});
-    };
-    const timer = setTimeout((() => {
-      document.removeEventListener(AUTH_STATE_EVENT, handler);
-      resolve(null);
-    }), 1e3);
-
-    document.addEventListener(AUTH_STATE_EVENT, handler, { once: !0 });
-
-    try {
-      document.dispatchEvent(new CustomEvent(AUTH_REQUEST_EVENT));
-    } catch (_) {
-      clearTimeout(timer);
-      document.removeEventListener(AUTH_STATE_EVENT, handler);
-      resolve(null);
-    }
-  })).finally((() => {
-    pendingAuthSyncPromise = null;
-  }));
-
-  return pendingAuthSyncPromise;
+)), document.addEventListener("MetrifyAuthCheck", (function (e) {
+  mfy_userdata.remote = e.detail.value
 }
-
-function broadcastAuthTokens(accessToken, refreshToken) {
-  if (!accessToken && !refreshToken) return;
-  try {
-    document.dispatchEvent(new CustomEvent(AUTH_UPDATE_EVENT, {
-      detail: {
-        accessToken,
-        refreshToken,
-        ttl: TTL1,
-        source: "page"
-      }
-    }));
-  } catch (_) {}
-}
-// Ensure a global user id binding exists to avoid ReferenceError on read
-var uid = typeof uid === "undefined" ? null : uid;
-// Ensure theme color variables exist for CSS and icon URLs
-var mfyMainColor = typeof mfyMainColor === "undefined" ? "#7933ff" : mfyMainColor;
-var mfyMainColorNumbers = typeof mfyMainColorNumbers === "undefined" ? (typeof mfyMainColor === "string" ? mfyMainColor.replace('#','') : "7933ff") : mfyMainColorNumbers;
-isList();
+)), isList();
 var getHTML = async function (e, t) {
   try {
     const n = new Headers;
@@ -528,6 +300,37 @@ var scrapeHTML = async function (e, t, n, a, i) {
   )()
 }
 , eaHeaders = new Headers;
+async function fetchUserMeData(e, t = !1) {
+  return new Promise((n => {
+    const a = mfyuser?.id || null;
+    if (!a) return void n({
+      success: !1,
+      error: "No user ID available"
+    }
+    );
+    document.dispatchEvent(new CustomEvent("FetchUserMe", {
+      detail: {
+        userId: a,
+        authToken: e,
+        forceRefresh: t
+      }
+    }
+    ));
+    const i = e => {
+      document.removeEventListener("UserMeResponse", i), n(e.detail)
+    }
+    ;
+    document.addEventListener("UserMeResponse", i), setTimeout((() => {
+      document.removeEventListener("UserMeResponse", i), n({
+        success: !1,
+        error: "Timeout waiting for user data"
+      }
+      )
+    }
+    ), 2e4)
+  }
+  ))
+}
 eaHeaders.append("pragma", "no-cache"), eaHeaders.append("cache-control", "no-cache");
 var eaInit = {
   method: "GET",
@@ -618,6 +421,7 @@ Criado em: ${data_br}  |  Há cerca de: ${dias} dias
 <span id="mediabtn" class="andes-button--loud mfy-main-bg andes-button" style="margin-top: 0.35em;font-size: 12px!important;display:inline!important;padding-top: 1em;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;">
   Média: ${media_vendas} vendas/mês
 </span>
+<img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;" src="https://i.ibb.co/Y8mQ2MT/metrifylogo.png">
 <div id="plusf_wrap" class="hdn smooth transp" style=";font-size:14px;padding: 1.35em;margin: 0.7em 0em -2.35em 0em;width: 110%;">
   <div id="plusf" style="margin-left: 0.5em;">
     <img alt="icon" src="https://ci3.googleusercontent.com/proxy/4AHE0GSzeLFc0tuceXt2Hib-rWVbcK8yqriCrBnrQFdt3LpCrH-NA3nyDKu-IO-65xO2yjlS7rsjGiJWV6QunadzFZlJPWqeb2Shj_fYgwagdLoTOAljMen83VI1eloEUOdeZcR4Su7DrJRWooeRNOF5nZ2fJv2BE06zEE2uKHkiVrr1vOvtY78kR28=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-mail.png"
@@ -640,53 +444,56 @@ Criado em: ${data_br}  |  Há cerca de: ${dias} dias
 
 var mlfee = "";
 
-var nvailoader = `
-<style id="novai-atom-loader-css">
-@keyframes orbit-10 {
-  from { transform: translate(-50%,-50%) rotate(0deg) translateX(10px) rotate(0deg); }
-  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(10px) rotate(-360deg); }
-}
-@keyframes orbit-14 {
-  from { transform: translate(-50%,-50%) rotate(0deg) translateX(14px) rotate(0deg); }
-  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(14px) rotate(-360deg); }
-}
-@keyframes orbit-18 {
-  from { transform: translate(-50%,-50%) rotate(0deg) translateX(18px) rotate(0deg); }
-  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(18px) rotate(-360deg); }
-}
-@keyframes orbit-22 {
-  from { transform: translate(-50%,-50%) rotate(0deg) translateX(22px) rotate(0deg); }
-  to   { transform: translate(-50%,-50%) rotate(360deg) translateX(22px) rotate(-360deg); }
-}
-
-.nvai-atom-wrap{display:flex;align-items:center;gap:.5rem;width:auto;height:auto}
-.nvai-analysing{color:#8E8E93;font-size:.875rem;padding-left:10px}
-.nvai-atom{position:relative;width:40px;height:40px}
-
-/* apenas os elétrons */
-.nvai-electron{
-  position:absolute;top:50%;left:50%;
-  width:6px;height:6px;border-radius:50%;
-  background:#F8DD82;box-shadow:0 0 6px rgba(248,221,130,0.6)
-}
-.nvai-e1{animation:orbit-10 1.0s linear infinite}
-.nvai-e2{animation:orbit-14 1.4s linear infinite}
-.nvai-e3{animation:orbit-18 1.8s linear infinite}
-.nvai-e4{animation:orbit-22 2.2s linear infinite}
-</style>
-
-<nvailoader class="nvai-atom-wrap">
-  <div class="nvai-atom">
-    <span class="nvai-electron nvai-e1"></span>
-    <span class="nvai-electron nvai-e2"></span>
-    <span class="nvai-electron nvai-e3"></span>
-    <span class="nvai-electron nvai-e4"></span>
-  </div>
-  <span class="nvai-analysing">Analisando...</span>
-</nvailoader>
+var mfyloader = `
+<mfyloader style="width: 5rem;height: 5rem;display: flex;">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="margin: auto; background: rgb(255, 255, 255, 0); display: block;" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
+<defs>
+<filter id="ldio-r0lbqrngywn-filter" x="-100%" y="-100%" width="300%" height="300%" color-interpolation-filters="sRGB">
+  <feGaussianBlur in="SourceGraphic" stdDeviation="2.4000000000000004"></feGaussianBlur>
+  <feComponentTransfer result="cutoff">
+    <feFuncA type="table" tableValues="0 0 0 0 0 0 1 1 1 1 1"></feFuncA>
+  </feComponentTransfer>
+</filter>
+</defs>
+<g filter="url(#ldio-r0lbqrngywn-filter)"><g transform="translate(50 50)">
+<g>
+<circle cx="17" cy="0" r="5" fill="#6252c5">
+  <animate attributeName="r" keyTimes="0;0.5;1" values="3.5999999999999996;8.399999999999999;3.5999999999999996" dur="4s" repeatCount="indefinite" begin="-0.25s"></animate>
+</circle>
+<animateTransform attributeName="transform" type="rotate" keyTimes="0;1" values="0;360" dur="4s" repeatCount="indefinite" begin="0s"></animateTransform>
+</g>
+</g><g transform="translate(50 50)">
+<g>
+<circle cx="17" cy="0" r="5" fill="#2a9fde">
+  <animate attributeName="r" keyTimes="0;0.5;1" values="3.5999999999999996;8.399999999999999;3.5999999999999996" dur="2s" repeatCount="indefinite" begin="-0.2s"></animate>
+</circle>
+<animateTransform attributeName="transform" type="rotate" keyTimes="0;1" values="0;360" dur="2s" repeatCount="indefinite" begin="-0.05s"></animateTransform>
+</g>
+</g><g transform="translate(50 50)">
+<g>
+<circle cx="17" cy="0" r="5" fill="#00d9ff">
+  <animate attributeName="r" keyTimes="0;0.5;1" values="3.5999999999999996;8.399999999999999;3.5999999999999996" dur="1.3333333333333333s" repeatCount="indefinite" begin="-0.15s"></animate>
+</circle>
+<animateTransform attributeName="transform" type="rotate" keyTimes="0;1" values="0;360" dur="1.3333333333333333s" repeatCount="indefinite" begin="-0.1s"></animateTransform>
+</g>
+</g><g transform="translate(50 50)">
+<g>
+<circle cx="17" cy="0" r="5" fill="#6e2aff">
+  <animate attributeName="r" keyTimes="0;0.5;1" values="3.5999999999999996;8.399999999999999;3.5999999999999996" dur="1s" repeatCount="indefinite" begin="-0.1s"></animate>
+</circle>
+<animateTransform attributeName="transform" type="rotate" keyTimes="0;1" values="0;360" dur="1s" repeatCount="indefinite" begin="-0.15s"></animateTransform>
+</g>
+</g><g transform="translate(50 50)">
+<g>
+<circle cx="17" cy="0" r="5" fill="#6252c5">
+  <animate attributeName="r" keyTimes="0;0.5;1" values="3.5999999999999996;8.399999999999999;3.5999999999999996" dur="0.8s" repeatCount="indefinite" begin="-0.05s"></animate>
+</circle>
+<animateTransform attributeName="transform" type="rotate" keyTimes="0;1" values="0;360" dur="0.8s" repeatCount="indefinite" begin="-0.2s"></animateTransform>
+</g>
+</g></g>
+</svg>
+</mfyloader>
 `;
-
-
 
 var eanotifytag = `
 <div style="background-color: var(--mfy-main);background-image: linear-gradient(to right, #003eba -42%, var(--mfy-main) 35%);width:2em;height:2em;position: absolute;top: 2.7em;right: -1em;cursor: pointer;border-right: 2px solid #2c4cff;border-radius: 0px 5px 5px 0px;box-shadow: 0.31em 0 0.35em -0.35em rgb(0 0 0);">
@@ -792,29 +599,27 @@ var easwitchoff = `
 `;
 
 var analytics_ui = `
-  <div id="${ANALYTICS_WRAPPER_ID}">
-    ${eagrossrev}
-    ${eamoretools}
-    ${eatoolbox}
-    ${eameter}
-    ${ranksearch}
-    ${easwitchoff}
-    ${eatoolbox_close}
-    ${eameterModal}
-    <span id="eaadvsearchForm" style="position: relative;top: 2.7em;z-index: 0;">
-      <input type="text" class="nav-search-input" name="as_word" placeholder="Posição deste anúncio (busca)" maxlength="120" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" tabindex="3" style=" width: 100%;">
-      <button class="nav-search-btn" tabindex="4" style=" position: relative; top: -1.75em; background-color: #ebebeb; right: -12.7em; border-radius: 0em 0.31em 0.31em 0em;">
-        <div role="img" aria-label="Buscar" class="nav-icon-search"></div>
-      </button>
+  ${eagrossrev}
+  ${eamoretools}
+  ${eatoolbox}
+  ${eameter}
+  ${ranksearch}
+  ${easwitchoff}
+  ${eatoolbox_close}
+  ${eameterModal}
+  <span id="eaadvsearchForm" style="position: relative;top: 2.7em;z-index: 0;">
+    <input type="text" class="nav-search-input" name="as_word" placeholder="Posição deste anúncio (busca)" maxlength="120" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" tabindex="3" style=" width: 100%;">
+    <button class="nav-search-btn" tabindex="4" style=" position: relative; top: -1.75em; background-color: #ebebeb; right: -12.7em; border-radius: 0em 0.31em 0.31em 0em;">
+      <div role="img" aria-label="Buscar" class="nav-icon-search"></div>
+    </button>
+  </span>
+  <br>
+  <span id="eaadvsearchResult" style="display: none;position: relative;top: 0.5em;">
+    <span style="color: #333333;display: block;font-weight: bold;position: relative;top: -0.77em;padding: 1em 0.5em 0.7em 0.5em;border: 1px solid #ebebeb;">
+      <img src="https://img.icons8.com/material-rounded/24/7e7e7e/search-property.png" style="width: 1.27em;position: relative;top: 0.27em;opacity: 0.5;">
+      <earesult> - | - <span style=" font-size: 0.7em; color: #00000050; letter-spacing: 0.035em; padding: 0.35em 0.75em; background-color: #ebebeb; border-radius: 1em;">"-"</span></earesult>
     </span>
-    <br>
-    <span id="eaadvsearchResult" style="display: none;position: relative;top: 0.5em;">
-      <span style="color: #333333;display: block;font-weight: bold;position: relative;top: -0.77em;padding: 1em 0.5em 0.7em 0.5em;border: 1px solid #ebebeb;">
-        <img src="https://img.icons8.com/material-rounded/24/7e7e7e/search-property.png" style="width: 1.27em;position: relative;top: 0.27em;opacity: 0.5;">
-        <earesult> - | - <span style=" font-size: 0.7em; color: #00000050; letter-spacing: 0.035em; padding: 0.35em 0.75em; background-color: #ebebeb; border-radius: 1em;">"-"</span></earesult>
-      </span>
-    </span>
-  </div>
+  </span>
 `;
 
 var btn_preco = `
@@ -842,22 +647,8 @@ var eapricewarning = !1;
 
 function pricingWarning() {
   if (1 == eapricewarning) {
-    (function () {
-      let e = preLoadedState.initialState.melidata_track.event_data.category_id;
-      e?.length > 0 && o(e);
-      (async function (t) {
-        if ("" != t && null != t) {
-          await new Promise((n => {
-            fetchCategoryWithCache(t, (e => {
-              e && (s = e), n();
-            }));
-          }));
-        }
-        eabar_category.innerHTML = s.name ? s.name: "Categoria";
-        let n = document.getElementById("eaadsoncategory");
-        s.total_items_in_this_category && n ? n.innerHTML = `<b style="color: var(--mfy-main);font-size:18px;">${s.total_items_in_this_category}</b> anúncios na categoria.`: n.parentElement.parentElement.remove();
-      })(e);
-    })();
+    let e = document.getElementById("vermais");
+    e.innerHTML = 'Ver mais detalhes <img src="https://img.icons8.com/officexs/16/000000/warning-shield.png" style="margin-left: 0.35em;">', e.setAttribute("style", "float: right;margin: 1em 6em 0em 0em;display: flex;align-items: center;")
   }
 }
 function media_ponderada(e) {
@@ -885,33 +676,20 @@ function dLayerMainFallback() {
   NaN === preco_Local && (preco_Local = parseFloat(catalogData[0].body.price)), null == comprador && (comprador = document.documentElement.innerHTML.split("user_id")[1].split(",")[0].split(":")[1]), null == tipo_anuncio && (tipo_anuncio = null == melidata.q ? document.documentElement.innerHTML.split("listing_type_id")[1]?.split('"')[2]: catalogData[0].body.listing_type_id)
 }
 function dlayerFallback() {
-  const catalogBody = catalogData?.[0]?.body || {};
-  const dataLayerEntry = Array.isArray(dataLayer) && dataLayer.length > 0 ? dataLayer[0] : {};
-  dLayerAlt = catalogBody.date_created ?? dataLayerEntry.startTime;
-  vendasAlt = catalogBody.sold_quantity;
-  0 == vendas.length && (vendas = vendasAlt || (() => {
-    const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
-    if (!subtitleEl) return vendas;
-    let subtitleSales = subtitleEl.innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
-    return subtitleSales ? (subtitleSales.endsWith("mil") && (subtitleSales = 1e3 * parseFloat(subtitleSales.replace("mil", ""))), parseFloat(subtitleSales) || vendas) : vendas;
-  })());
-  dLayer = dLayerAlt?.split("T")[0];
-  data_br = "" == data_br ? dLayer?.split("-").reverse().join("/") : data_br;
-  dataMilisec = Date.parse(dLayer);
-  eadiff = eanow - dataMilisec;
-  "" == dias && (dias = Math.round(eadiff / (8.64 * Math.pow(10, 7))));
-  "" == media_vendas && (media_vendas = isNaN(Math.round(vendas / (dias / 30))) ? "Indisponível" : Math.round(vendas / (dias / 30)));
-  0 == dias ? media_vendas = "0" : dias < 30 && (alert_media_vendas = !0);
-  dLayerMainFallback();
+  dLayerAlt = catalogData[0].body.date_created ?? dataLayer[0].startTime, vendasAlt = catalogData[0].body.sold_quantity, 0 == vendas.length && (vendas = vendasAlt || (() => {
+    const e = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
+    if (!e) return vendas;
+    let t = e.innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
+    return t ? (t.endsWith("mil") && (t = 1e3 * parseFloat(t.replace("mil", ""))), parseFloat(t) || vendas): vendas
+  }
+  )()), dLayer = dLayerAlt?.split("T")[0], data_br = "" == data_br ? dLayer?.split("-").reverse().join("/"): data_br, dataMilisec = Date.parse(dLayer), eadiff = eanow - dataMilisec, "" == dias && (dias = Math.round(eadiff / (8.64 * Math.pow(10, 7)))), "" == media_vendas && (media_vendas = isNaN(Math.round(vendas / (dias / 30))) ? "Indisponível": Math.round(vendas / (dias / 30))), 0 == dias ? media_vendas = "0": dias < 30 && (alert_media_vendas = !0), dLayerMainFallback()
 }
 function altContentScpt() {
-  const header = document.getElementsByClassName("ui-pdp-header")[0];
-  if (!header) return;
-  header.insertAdjacentHTML("afterbegin", '<span id="eaoffSwitch" style="top: 0em;left: 0em;background-color:rgb(52, 131, 250);color:#fff;"><img src="https://img.icons8.com/external-gradak-royyan-wijaya/24/3f8afe/external-interface-gradak-interface-gradak-royyan-wijaya-5.png" style="width: 1.5em; height: 1.5em; position: relative; top: 0.21em; margin-right: 0.5em; filter: brightness(5); transform: scaleX(-1);"><span class="eahiddenlabel"> Ligar Análises</span></span>');
-  const e = document.getElementById("eaoffSwitch");
-  e?.addEventListener("click", (function () {
+  spot0 = document.getElementsByClassName("ui-pdp-header"), spot0[0].insertAdjacentHTML("afterbegin", '<span id="eaoffSwitch" style="top: 0em;left: 0em;background-color:rgb(52, 131, 250);color:#fff;"><img src="https://img.icons8.com/external-gradak-royyan-wijaya/24/3f8afe/external-interface-gradak-interface-gradak-royyan-wijaya-5.png" style="width: 1.5em; height: 1.5em; position: relative; top: 0.21em; margin-right: 0.5em; filter: brightness(5); transform: scaleX(-1);"><span class="eahiddenlabel"> Ligar Análises</span></span>');
+  let e = document.getElementById("eaoffSwitch");
+  e.addEventListener("click", (function (t) {
     e.lastChild.innerText = " Desligar Análises", e.firstChild.style.filter = "brightness(1)", e.firstChild.style.transform = "scaleX(1)", e.setAttribute("style", "top: 0em;left: 0em;"), localSwitchState = eadataRetrieve("eaActive"), null === localSwitchState && (localSwitchState = !0), eadataStore("eaActive", !localSwitchState, TTL1), setTimeout((function () {
-      try { initializeExtensionFeatures() } catch (err) {}
+      window.location.reload()
     }
     ), 500)
   }
@@ -937,47 +715,16 @@ function parseSalesText(e) {
     thisItemSales: a
   }
 }
-async function fetchProductDataFromPage(rawItemId, t) {
-  const altPS = (typeof window !== "undefined" && window.altPreloadedState) ? window.altPreloadedState : altPreloadedState;
-  let normalizedItemId = rawItemId ?? dataLayer[0]?.itemId ?? dataLayer[0]?.catalogProductId;
-
-  if (!normalizedItemId) {
-    normalizedItemId = altPS?.pageState?.itemId ?? altPS?.pageState?.catalogProductId ?? altPS?.pageState?.components?.track?.gtm_event?.itemId ?? null;
-  }
-
-  if (typeof normalizedItemId === "number") {
-    normalizedItemId = `MLB${normalizedItemId}`;
-  }
-
-  if (typeof normalizedItemId === "string") {
-    normalizedItemId = normalizedItemId.trim();
-  }
-
-  const idMatch = typeof normalizedItemId === "string" ? normalizedItemId.match(/MLB-?(\d+)/i) : null;
-  if (idMatch) {
-    normalizedItemId = `MLB${idMatch[1]}`;
-  } else if (typeof normalizedItemId === "string" && /^\d+$/.test(normalizedItemId)) {
-    normalizedItemId = `MLB${normalizedItemId}`;
-  }
-
-  if (!normalizedItemId) {
-    console.warn("fetchProductDataFromPage: unable to determine MLB item id", { rawItemId, dataLayerSnapshot: dataLayer[0] });
-    typeof t === "function" && t();
-    return;
-  }
-
-  const productNumericId = normalizedItemId.replace(/^MLB-?/i, "");
-  const productUrl = `https://produto.mercadolivre.com.br/MLB-${productNumericId}`;
-
+async function fetchProductDataFromPage(e, t) {
   let n = document.getElementsByClassName("ui-pdp-header");
-  n.length > 0 && ensureMainComponentSkeleton(n[0]);
-  if (iscatalog = !0, itemsLocalData[normalizedItemId] || (document.dispatchEvent(new CustomEvent("GetProductData", {
+  n.length > 0 && n[0].insertAdjacentHTML("afterbegin", buildMainComponentSkeleton());
+  if (iscatalog = !0, itemsLocalData[e] || (document.dispatchEvent(new CustomEvent("GetProductData", {
     detail: {
-      itemIds: [normalizedItemId]
+      itemIds: [e]
     }
   }
-  )), await new Promise((e => setTimeout(e, 100)))), itemsLocalData[normalizedItemId] && itemsLocalData[normalizedItemId].startTime && void 0 !== itemsLocalData[normalizedItemId].itemSales) {
-    const n = itemsLocalData[normalizedItemId];
+  )), await new Promise((e => setTimeout(e, 100)))), itemsLocalData[e] && itemsLocalData[e].startTime && void 0 !== itemsLocalData[e].itemSales) {
+    const n = itemsLocalData[e];
     vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
     let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
     if (a && vendas > 0) {
@@ -987,8 +734,9 @@ async function fetchProductDataFromPage(rawItemId, t) {
     t()
   }
   else {
+    const n = `https://produto.mercadolivre.com.br/MLB-${e.split("MLB")[1]}`;
     try {
-      scrapeForScripts(normalizedItemId, productUrl, !0, ((n, a) => {
+      scrapeForScripts(e, n, !0, ((n, a) => {
         if (a) t();
         else try {
           let a, i, s = n || [], o = 0;
@@ -1168,14 +916,14 @@ function buildMainComponentSkeleton() {
           <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width:1.35em; margin:auto;">
         </div>
         <div>
-          <div class="mfy-title"><span class="skeleton"></span> Visitas totais</div>
+          <div class="mfy-title"><span class="skeleton">30884</span> Visitas totais</div>
           <div class="skeleton-pill mfy-conv">Conversão: 3.2%</div>
         </div>
       </div>
 
       <div class="mfy-right">
         <div class="mfy-label">Vende a cada:</div>
-        <div class="mfy-value"><span class="skeleton"></span> Visitas</div>
+        <div class="mfy-value"><span class="skeleton">000</span> Visitas</div>
       </div>
     </div>
 
@@ -1183,7 +931,7 @@ function buildMainComponentSkeleton() {
       <img src="https://img.icons8.com/windows/32/c7c7c7/old-cash-register.png"
            style="width:1.5em; height:1.5em; position:relative; top:.21em; margin-right:.5em;">
       <div class="mfy-rev-text">
-        Faturando: <strong style="font-size:15px;"><span class="skeleton"></span>/mês</strong>
+        Faturando: <strong style="font-size:15px;"><span class="skeleton">R$ 1.932,56</span>/mês</strong>
       </div>
       <div class="mfy-dropdown">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
@@ -1195,181 +943,12 @@ function buildMainComponentSkeleton() {
     </div>
 
     <div class="mfy-footer">
-      <div class="mfy-created">Criado há: <span class="skeleton"></span> dia(s)</div>
+      <div class="mfy-created">Criado há: <span class="skeleton">520</span> dia(s)</div>
       <div class="skeleton-pill mfy-avg">Média: 58 vendas/mês</div>
     </div>
   </div>
 `;
 
-}
-
-function buildVisitsComponentSkeleton() {
-  const shimmer = "background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite;";
-  return `
-  <div id="visits-component">
-    <style>
-      @keyframes loading {
-        0%   { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-      }
-      .skeleton-text {
-        ${shimmer}
-        border-radius: 4px;
-        height: 1em;
-        display: inline-block;
-      }
-      .skeleton-pill {
-        ${shimmer}
-        border-radius: 12px;
-        height: 1.2em;
-        display: inline-block;
-      }
-    </style>
-
-    ${
-      iscatalog
-        ? `
-      <div style="display:flex">
-        <div
-          id="eabtn-chart"
-          class="andes-button--loud mfy-main-bg andes-button"
-          style="
-            border-radius: 2rem;
-            width: 2.35em;
-            height: 2.35em;
-            padding: 0.14em 0.5em;
-            display: inline-flex;
-            position: relative;
-            z-index: 10;
-            transition: 0.35s;
-            align-items: center;
-          "
-        >
-          <img
-            src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png"
-            style="width: 1.35em; margin: auto;"
-          >
-          <div
-            id="eabtn-chart-tooltip"
-            style="
-              width: fit-content;
-              display: none;
-              flex-direction: column;
-              text-align: start;
-              line-height: 1;
-              font-size: 1rem;
-              color: var(--mfy-main);
-              padding: 1rem;
-              opacity: 0;
-            "
-          >
-            Anúncio com menos de 30 dias,
-            <span style="opacity: .5;">gráfico sem dados suficientes.</span>
-          </div>
-        </div>
-
-        <span
-          style="
-            margin-left: 3.1em;
-            position: absolute;
-            top: 0.45em;
-            font-weight: 400;
-          "
-        >
-          <span class="skeleton-text" style="width: 80px;"></span>
-          Visitas totais
-        </span>
-
-        <div id="eadivider"></div>
-      </div>
-      `
-        : `
-      <div style="display:flex; margin: 0 0 1.25rem 0; gap: 1rem;">
-        <div
-          id="eabtn-chart"
-          class="andes-button--loud mfy-main-bg andes-button"
-          style="
-            border-radius: 2rem;
-            width: 2.35em;
-            height: 2.35em;
-            padding: 0.14em 0.5em;
-            display: inline-flex;
-            position: relative;
-            z-index: 10;
-            transition: 0.35s;
-            align-items: center;
-          "
-        >
-          <img
-            src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png"
-            style="width: 1.35em; margin: auto;"
-          >
-          <div
-            id="eabtn-chart-tooltip"
-            style="
-              width: fit-content;
-              display: none;
-              flex-direction: column;
-              text-align: start;
-              line-height: 1;
-              font-size: 1rem;
-              color: var(--mfy-main);
-              padding: 1rem;
-              opacity: 0;
-            "
-          >
-            Anúncio com menos de 30 dias,
-            <span style="opacity: .5;">gráfico sem dados suficientes.</span>
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 1rem; min-width: fit-content; justify-content: space-between;">
-          <div style="display: flex; flex-direction: column;">
-            <div style="display: flex; gap: 0.5rem;">
-              <span class="skeleton-text" style="width: 25px;"></span>
-              <span>Visitas totais</span>
-            </div>
-
-            <div
-              class="mfy-main-bg"
-              style="
-                position: relative;
-                font-size: 14px !important;
-                min-width: fit-content;
-                padding: 0.2rem 1em;
-                display: flex;
-                gap: .25rem;
-                color: #fff;
-                border-radius: 1rem;
-              "
-            >
-              <span style="min-width: fit-content;">Conversão:</span>
-              <span style="opacity: 0.25; font-weight: 700;">
-                <span class="skeleton-text" style="width: 30px;"></span>%
-              </span>
-            </div>
-          </div>
-
-          <div id="vendaporvisitas" style="position: relative; text-align: end;">
-            Vende a cada:<br>
-            <span class="skeleton-text" style="width: 80px;"></span>
-          </div>
-        </div>
-      </div>
-
-      <div
-        id="eadivider"
-        style="
-          background-color: #00000014;
-          height: 1px;
-          width: 22.7em;
-          margin: 0 0 1rem 0;
-        "
-      ></div>
-      `
-    }
-  </div>
-`;
 }
 async function altInfo(e) {
   function t() {
@@ -1380,67 +959,91 @@ async function altInfo(e) {
     }
     else contentScpt()
   }
-  const altPS = (typeof window !== 'undefined' && window.altPreloadedState) ? window.altPreloadedState : altPreloadedState;
-  dataLayer[0]?.catalogProductId || (altPS?.pageState?.page !== "vip") ? await fetchProductDataFromPage(e, t) : t()
+  dataLayer[0]?.catalogProductId || "vip" != altPreloadedState.pageState.page ? await fetchProductDataFromPage(e, t): t()
 }
 function askPermissions(e, t) {
-  // No-op to avoid blocking overlays; always proceed to initialize features
-  initializeExtensionFeatures()
+  null == t && (t = !1);
+  let n = "", a = "";
+  if (
+  null != e &&
+  (
+    n =
+      '<div id="modal-permission" style="" aria-hidden="false" class="is-open"><div style="position: fixed;top: 11vh;left: 29vw;z-index: 10000000000;align-content: center;align-items: center;"> <div style="display: flex; justify-content: center; margin-right: 1em;"> <img src="https://i.ibb.co/NV9yg3y/icon-white.png" style="max-width: 4vw;"> </div> <br><div style="text-align: center;padding: 1em 3.5em 3.1em 3.5em;width: 35vw;height: 46vh;background-color: #f1f2f3;margin: 1em 4em 0em 3.1em;border-radius: 0.7em;"> <lottie-player src="https://assets8.lottiefiles.com/private_files/lf30_gtudsjto.json" background="transparent" speed="1" style="width: 200px;height: 200px;margin: auto;margin-bottom: -2em;" loop="" autoplay=""></lottie-player><span style="font-size: 2.1em;font-weight: 700;color: var(--mfy-main);line-height: 1em;letter-spacing: -0.05em;">Ok, vamos autorizar esta conta.</span> <br><span style="font-weight: 200;"><div style="text-align: center;font-size: 0.92em;padding: 1.35em 2em 1em 2em;background-color: #ebebeb;margin: 1em 0em;font-weight: 900;"> Seu e-email no Mercado Livre: <br><span style="font-size: 1.7em;color: var(--mfy-main);">' + e + '</span></div><span style="font-weight: 400;color: gray;font-size: 0.85em;">Autorize o app para utilizá-lo em sua conta do Mercado Livre acima. <b style="font-weight: bolder;">OBS.: Evite refazer esse processo.</b></span><a href="https://bit.ly/metrify-ext-conectar"><div style="color: #fff;background-color: #4a90f9;padding: 1.11em 2em;margin-top: 1em;font-size: 1.21em;font-weight: 900;text-transform: uppercase;letter-spacing: 0.035em;border-radius: 4em;cursor: pointer;"> Clique para autorizar</div> </a> </span></div></div><div id="eafollow_bg" style="background-color: #000c20d6 !important;position: absolute;z-index: 100000000;width: 100vw;height: 10000vh;overflow: hidden;color: rgb(0,0,0,0);backdrop-filter: blur(7px);"></div></div>',
+    a =
+      '<div class="auth-alert" style="color: var(--mfy-main);font-weight: 700;position: absolute;background-color: #f1f4ffb0;padding: 1.1em 0em 0em 0em;width: 21vw;height: 275px;z-index: 1000;backdrop-filter: blur(4px);right: 11em;top: 7em;border-radius: 11px 0px 11px 11px;line-height: 1.35em!important;text-align: center;box-shadow: 0 10px 20px rgb(0 0 0 / 19%), 1px 10px 4px -7px rgb(0 0 0 / 35%);transition: 0.35s all;"><div class="auth-step1" style=" /* display: none; */ "> <lottie-player src="https://assets8.lottiefiles.com/private_files/lf30_gtudsjto.json" background="transparent" speed="1" style="width: 100px;height: 100px;margin: auto;margin-bottom: -0.35em;" loop="" autoplay=""> </lottie-player> <div style="margin: auto; max-width: 70%; margin-top: -1rem; "><span style="font-size: 1.21em;">Já autorizou o uso do Metrify em sua conta?</span></div> <span style="font-size: 0.86em;font-weight: 400;">Para continuar a usá-lo, clique abaixo:</span><br><div class="eaauth-check" style="background-color: var(--mfy-main);font-size: 1.15em;font-weight: 900;color: #fff;padding: 1em;width: 77%;margin: auto;letter-spacing: 0.035em;border-radius: 4em;cursor: pointer;position: relative;top: 0.35em;"> Sim, já autorizei.</div> <br><div class="eaauth-pop" style="background-color: #4a70a8;font-size: 1.1em;font-weight: 900;color: #fff;padding: 0.7em;width: 77%;margin: auto;letter-spacing: 0.035em;border-radius: 4em;cursor: pointer;position: relative;/* top: 0.35em; */"> Ainda não autorizei</div></div><div class="auth-step2" style=" opacity: 0%; transition: 0.7s all; display: none; "> <lottie-player src="https://assets8.lottiefiles.com/private_files/lf30_gtudsjto.json" background="transparent" speed="1" style="width: 70px;height: 70px;margin: auto;margin-bottom: 0.75em;margin-top: 1em;" loop="" autoplay=""></lottie-player> <span style="font-size: 2em;">Verificando...</span> <br> <span style="font-size: 0.86em;font-weight: 400;">Atualizando informações...</span></div><div class="auth-step3" style=" opacity: 0%; transition: 0.7s all; "> <lottie-player autoplay="" loop="" style="width: 70px;height: 70px;margin: auto;margin-bottom: 0.75em;margin-top: 1em;" speed="1"  background="rgba(0, 0, 0, 0)" src="https://assets4.lottiefiles.com/packages/lf20_b8rtfk3s.json"></lottie-player> <span style="font-size: 1.7em;padding: 0em 0.5em;display: flex;line-height: 1em;margin: -0.5em 0em -0.5em 0em;">Que pena... Não encontramos uma autorização válida.</span> <br> <span style="font-size: 0.86em;font-weight: 400;margin-bottom: 0.75em;">Clique abaixo para liberar o Metrify.</span> <br><div class="eaauth-pop2" style="background-color: var(--mfy-main);font-size: 1.15em;font-weight: 900;color: #fff;padding: 1em;width: 77%;margin: auto;letter-spacing: 0.035em;border-radius: 4em;cursor: pointer;position: relative;top: 0.75em;"> Autorizar Metrify</div></div><div class="auth-step4" style="opacity: 0; transition: all 0.7s ease 0s; display: none;"> <lottie-player autoplay="" loop="" style="width: 70px;height: 70px;margin: auto;margin-bottom: 0.75em;margin-top: 1em;" speed="1" background="transparent" src="https://assets7.lottiefiles.com/packages/lf20_94HTw9.json"></lottie-player> <span style="font-size: 1.7em;">Autorização encontrada.</span> <br> <span style="font-size: 0.86em;font-weight: 400;margin-bottom: 0.75em;">Atualize a página.</span> <br><div class="eaauth-pop4" style="background-color: var(--mfy-main);font-size: 1.15em;font-weight: 900;color: #fff;padding: 1em;width: 77%;margin: auto;letter-spacing: 0.035em;border-radius: 4em;cursor: pointer;position: relative;top: 0.75em;"> Atualizar página</div></div></div>'
+  ),
+  t
+) {
+
+    document.getElementsByClassName("auth-alert")[0].style.display = "none", document.getElementsByTagName("body")[0].insertAdjacentHTML("afterbegin", n), document.getElementsByClassName("eaauth_title")[0].innerText = "Atualize a sua autorização."
+  }
+  else document.getElementsByTagName("body")[0].insertAdjacentHTML("afterbegin", a), function () {
+    let e = document.getElementsByClassName("auth-alert")[0], t = document.getElementsByClassName("auth-step1")[0], a = document.getElementsByClassName("auth-step2")[0], i = document.getElementsByClassName("eaauth-pop")[0];
+    document.getElementsByClassName("eaauth-check")[0].addEventListener("click", (function () {
+      e.style.height = "175px", t.style.display = "none", a.style.display = "block", a.style.opacity = "100%", findfreshAuth(usuario_logado)
+    }
+    )), i.addEventListener("click", (function () {
+      e.style.display = "none", document.getElementsByTagName("body")[0].insertAdjacentHTML("afterbegin", n)
+    }
+    ))
+  }
+  ()
 }
 async function getnewToken(e) {
-  let refreshToken = e;
-  if (!refreshToken) {
-    try {
-      refreshToken = eadataRetrieve(LOCAL_REFRESH_TOKEN_KEY);
-    } catch (_) {
-      refreshToken = null;
-    }
-    if (!refreshToken) {
-      return !1;
-    }
+  var t = new Headers;
+  t.append("accept", "application/json"), t.append("content-type", "application/x-www-form-urlencoded"), fetch("https://api.mercadolibre.com/oauth/token?grant_type=refresh_token&client_id=323521671107951&client_secret=FbKILwMpPIa89q6lYd59yA5wJrPK2noN&refresh_token=" + e, {
+    method: "POST",
+    headers: t,
+    redirect: "follow"
   }
-
-  const headers = new Headers;
-  headers.append("accept", "application/json");
-  headers.append("content-type", "application/json");
-
-  try {
-    const response = await fetch("https://nossopoint-backend-flask-server.com/token_access", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        refresh_token: refreshToken
-      })
-    });
-
-    let body = null;
-    try {
-      body = await response.json();
-    } catch (_) {}
-
-    if (body?.refresh_token) {
-      try { eadataStore(LOCAL_REFRESH_TOKEN_KEY, body.refresh_token, TTL1); } catch (_) {}
-    }
-
-    if (response.ok && body?.access_token) {
-      return appendToken(body.access_token, body.refresh_token);
-    }
-  } catch (_) {}
-
-  return !1;
+  ).then((e => e.json())).then((e => {
+    400 != e.status ? appendToken(e.access_token): findPermission()
+  }
+  )).catch ((e => {}))
 }
 function confirmAuth(e, t) {
-  // Avoid showing confirmation modals or forcing reloads
-  initializeExtensionFeatures()
+  let n = '<div id="modal-permission" style="" aria-hidden="false" class="is-open"><div style="position: fixed;top: 11vh;left: 29vw;z-index: 10000000000;align-content: center;align-items: center;"> <div style="display: flex; justify-content: center; margin-right: 1em;"> <img src="https://i.ibb.co/NV9yg3y/icon-white.png" style="max-width: 4vw;"> </div> <br><div style="text-align: center;padding: 1em 3.5em 3.1em 3.5em;width: 35vw;height: 46vh;background-color: #f1f2f3;margin: 1em 4em 0em 3.1em;border-radius: 0.7em;"> <lottie-player src="https://assets8.lottiefiles.com/private_files/lf30_gtudsjto.json" background="transparent" speed="1" style="width: 200px;height: 200px;margin: auto;margin-bottom: -2em;" loop="" autoplay=""></lottie-player><span style="font-size: 2.1em;font-weight: 700;color: var(--mfy-main);line-height: 1em;letter-spacing: -0.05em;">Ok, vamos autorizar esta conta.</span> <br><span style="font-weight: 200;"><div style="text-align: center;font-size: 0.92em;padding: 1.35em 2em 1em 2em;background-color: #ebebeb;margin: 1em 0em;font-weight: 900;"> Seu e-email no Mercado Livre: <br><span style="font-size: 1.7em;color: var(--mfy-main);">' + usuario_logado + '</span></div><span style="font-weight: 400;color: gray;font-size: 0.85em;">Autorize o app para utilizá-lo em sua conta do Mercado Livre acima. <b style="font-weight: bolder;">OBS.: Evite refazer esse processo.</b></span><a href="https://bit.ly/metrify-ext-conectar"><div style="color: #fff;background-color: #4a90f9;padding: 1.11em 2em;margin-top: 1em;font-size: 1.21em;font-weight: 900;text-transform: uppercase;letter-spacing: 0.035em;border-radius: 4em;cursor: pointer;"> Clique para autorizar</div> </a> </span></div></div><div id="eafollow_bg" style="background-color: #000c20d6 !important;position: absolute;z-index: 100000000;width: 100vw;height: 10000vh;overflow: hidden;color: rgb(0,0,0,0);backdrop-filter: blur(7px);"></div></div>';
+  if (e) {
+    let e = new Headers;
+    e.append("accept", "application/json"), e.append("content-type", "application/x-www-form-urlencoded"), fetch("https://api.mercadolibre.com/oauth/token?grant_type=refresh_token&client_id=323521671107951&client_secret=FbKILwMpPIa89q6lYd59yA5wJrPK2noN&refresh_token=" + t, {
+      method: "POST",
+      headers: e,
+      redirect: "follow"
+    }
+    ).then((e => e.json())).then((e => {
+      if (400 != e.status) {
+        appendToken(e.access_token);
+        let t = document.getElementsByClassName("auth-alert")[0], n = document.getElementsByClassName("auth-step2")[0], a = document.getElementsByClassName("auth-step3")[0], i = document.getElementsByClassName("auth-step4")[0];
+        t.style.height = "235px", a.style.display = "none", n.style.display = "none", i.style.display = "block", i.style.opacity = "100%", document.getElementsByClassName("eaauth-pop4")[0].addEventListener("click", (function () {
+          document.location.reload(!0)
+        }
+        ))
+      }
+      else askPermissions(usuario_logado, !0)
+    }
+    )).catch ((e => {}))
+  }
+  else {
+    let e = document.getElementsByClassName("auth-alert")[0], t = document.getElementsByClassName("auth-step2")[0], a = document.getElementsByClassName("auth-step3")[0], i = document.getElementsByClassName("eaauth-pop2")[0];
+    e.style.height = "275px", t.style.display = "none", a.style.display = "block", a.style.opacity = "100%", i.addEventListener("click", (function () {
+      e.style.display = "none", document.getElementsByTagName("body")[0].insertAdjacentHTML("afterbegin", n)
+    }
+    ))
+  }
 }
 function checkrefresh() {
-  initializeExtensionFeatures()
+  let e = parseJwt(mfy_userdata?.token)?.token;
+  e && "" != e ? (eadataStore("ealocalrst", null, TTL3), setTimeout((function () {
+    document.location.reload(!0)
+  }
+  ), 1500)): confirmAuth(!1)
 }
 async function checkDatalayer() {
-  // Do not prompt for permissions; proceed directly
-  initializeExtensionFeatures()
+  askPermissions(usuario_logado)
 }
-
+async function findPermission() {
+  checkDatalayer()
+}
 function requestData(e, t = {}) {
   return new Promise(((n, a) => {
     const {
@@ -1528,7 +1131,6 @@ function getMLinfo() {
   }
 }
 async function findDocID(e, t, n) {
-  console.log("Buscando documento de identidade...", mfyProxy);
   t = t || 0, await fetch(`${mfyProxy}https://api.mercadolibre.com/users/me`, eaInit).then((e => e.json())).then((e => rawID = e.identification.number ?? void 0)).catch ((function (e) {})), generateEAN13(e, t, !!n)
 }
 function generateEAN13(e, t, n) {
@@ -1606,18 +1208,18 @@ function contentScpt() {
     function t() {
       earanksearchBtn = document.getElementById("eaadvsearchBtn"), earanksearchForm = document.getElementById("eaadvsearchForm"), earanksearchResult = document.getElementById("eaadvsearchResult"), earanksearchGo = earanksearchForm.getElementsByTagName("button")[0], earanksearchValue = earanksearchForm.getElementsByTagName("input")[0];
       var t = earanksearchBtn.getElementsByTagName("img")[0];
-      iscatalog || dataLayer[0]?.catalogProductId, earanksearchForm.setAttribute("style", "display: none;"), earanksearchBtn.addEventListener("click", (function () {
+      iscatalog || dataLayer[0].catalogProductId, earanksearchForm.setAttribute("style", "display: none;"), earanksearchBtn.addEventListener("click", (function () {
         e = [], [], earanksearchForm.getElementsByTagName("input")[0].value = "", earanksearchResult.setAttribute("style", "display:none;"), "rgb(52, 131, 250)" != earanksearchBtn.style.backgroundColor ? (earanksearchForm.setAttribute("style", "position: relative;top: 2.7em;z-index: 0;"), earanksearchBtn.style.backgroundColor = "rgb(52, 131, 250)", t.setAttribute("style", "width: 1.5em;height: 1.5em;position: relative;top: 0.21em;filter: brightness(11);"), earanksearchBtn.getElementsByClassName("eahiddenlabel")[0].setAttribute("style", "display:none;")): (earanksearchBtn.getElementsByClassName("eahiddenlabel")[0].removeAttribute("style"), earanksearchForm.setAttribute("style", "display:none;"), t.setAttribute("style", "width: 1.5em;height: 1.5em;position: relative;top: 0.21em;margin-right: 0.5em;"), earanksearchBtn.removeAttribute("style"))
       }
       )), earanksearchGo.addEventListener("click", (function () {
         earanksearchForm.setAttribute("style", "display:none;position: relative; z-index: 0;"), async function (t) {
-          earanksearchForm.insertAdjacentHTML("afterend", `<div id="nvailoaderdiv" style="display: flex;width: 100%;">${nvailoader}<span style="position: relative;font-size: 0.86em;font-weight: 700;top: 5em;flex: 1;">Buscando este anúncio nas 20 primeiras páginas. Um momento... </span></div>`), document.getElementsByTagName("nvailoader")[0].style.marginTop = "3em";
+          earanksearchForm.insertAdjacentHTML("afterend", `<div id="mfyloaderdiv" style="display: flex;width: 100%;">${mfyloader}<span style="position: relative;font-size: 0.86em;font-weight: 700;top: 5em;flex: 1;">Buscando este anúncio nas 20 primeiras páginas. Um momento... </span></div>`), document.getElementsByTagName("mfyloader")[0].style.marginTop = "3em";
           let n = !1;
           for (let i = 0;
           i < 20;
           i++) {
             function a(e) {
-              document.getElementById("nvailoaderdiv")?.remove(), document.getElementById("eaadvsearchResult").setAttribute("style", "position: relative;top:1.75em;");
+              document.getElementById("mfyloaderdiv")?.remove(), document.getElementById("eaadvsearchResult").setAttribute("style", "position: relative;top:1.75em;");
               var n = document.getElementsByTagName("earesult")[0];
               if (n.innerHTML = 'Não encontrado <span style="font-size:0.7em;position: relative;left: -10.5em;top: 1.1em;">(nas 20 primeiras páginas)</span> <span style="font-size: 0.7em;color: #00000050;display: inline-flex;letter-spacing: 0.035em;padding: 0.35em 0.75em;background-color: #ebebeb;border-radius: 1em;position: relative;right: -15.5em;top: -1.35em;">"' + t + '"</span>', n.setAttribute("style", "position:relative;top:-0.35em;"), -1 != e) {
                 let a = Math.floor(e / 50) + 1, i = e % 50;
@@ -1642,11 +1244,8 @@ function contentScpt() {
         let e = isNaN(media_vendas * preco_Local) ? 0: media_vendas * preco_Local, t = parseSalesText(document.getElementsByClassName("ui-pdp-subtitle")[0].innerText).thisItemSales, n = isNaN(t * preco_Local) ? 0: t * preco_Local, a = document.getElementsByClassName("eagrossrev-title")[0], i = document.getElementsByClassName("earevstats")[0], s = document.getElementsByClassName("eagrossrev-catalog-title");
         if (iscatalog) {
           a.setAttribute("class", ""), a.parentElement.lastChild.remove(), a.parentElement.setAttribute("style", "font-size: 0.92em;display: flex;font-weight: 900;");
-          let t = a.parentElement.previousElementSibling || a.parentElement.previousSibling;
-          if (t instanceof Element) {
-          t.remove(), a.parentElement.insertAdjacentElement("afterbegin", t);
-          }
-          a.parentElement.parentElement.setAttribute("style", "display: flex;flex-direction: column;"), a.innerHTML = '<div style="padding: 0rem 1rem;margin: 0 .75rem;font-size: .85rem;width: fit-content;border-radius:1rem;border:1px solid #ebebeb;">Catálogo & Anúncio vencedor</div>', i && i.insertAdjacentHTML("beforeend", '<div style="display:flex;flex-direction:column;margin-top:1rem;"><span style="font-size: 0.92em;font-weight: 900;"><span class="ui-pdp-review__amount">-Anúncio</span> <span class="eagrossrev-catalog-title" style="font-size: 1.35em;">R$0</span><span class="revtitle revperiod">/mês</span></span>\n            <span style="font-size: 0.92em;font-weight: 900;"><span class="ui-pdp-review__amount">- Catálogo:</span> <span class="eagrossrev-catalog-title" style="font-size: 1.35em;">R$0</span><span class="revtitle"> Total</span></span></div>'), s?.length > 0 && (s[1].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`), document.getElementsByClassName("eagrossrev-catalog-title")[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`
+          let t = a.parentElement.previousSibling;
+          a.parentElement.previousSibling.remove(), a.parentElement.insertAdjacentElement("afterbegin", t), a.parentElement.parentElement.setAttribute("style", "display: flex;flex-direction: column;"), a.innerHTML = '<div style="padding: 0rem 1rem;margin: 0 .75rem;font-size: .85rem;width: fit-content;border-radius:1rem;border:1px solid #ebebeb;">Catálogo & Anúncio vencedor</div>', i && i.insertAdjacentHTML("beforeend", '<div style="display:flex;flex-direction:column;margin-top:1rem;"><span style="font-size: 0.92em;font-weight: 900;"><span class="ui-pdp-review__amount">-Anúncio</span> <span class="eagrossrev-catalog-title" style="font-size: 1.35em;">R$0</span><span class="revtitle revperiod">/mês</span></span>\n            <span style="font-size: 0.92em;font-weight: 900;"><span class="ui-pdp-review__amount">- Catálogo:</span> <span class="eagrossrev-catalog-title" style="font-size: 1.35em;">R$0</span><span class="revtitle"> Total</span></span></div>'), s?.length > 0 && (s[1].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`), document.getElementsByClassName("eagrossrev-catalog-title")[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`
         }
         else a.innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`;
         i.setAttribute("style", "transition:all 0.35s;padding: 0em 1em 0.35em 1.7em;color: gray;display: none;margin-top: -4em;opacity: 0");
@@ -1730,7 +1329,7 @@ function contentScpt() {
           for (let e = 0;
           e < n.length;
           e++) "Informações sobre o vendedor" != n[e].innerText && "Informações da loja" != n[e].innerText && "Devolução grátis" != n[e].innerText || (t = n[e].parentElement.parentElement);
-          let a = `${'<span id="easellerbtn" sellerdata="none" open="false" class="andes-button--loud mfy-main-bg  andes-button" style="position:relative; z-index:1;margin-bottom: 28px;margin-top: -1em;width: 100%;"><img src="https://img.icons8.com/material-outlined/48/ffffff/individual-server.png" style="width: 1.35em;margin: 0.8em 0.2em -0.35em 0em;display: inline-block;">Informações Extras</span>'}${`<div class="smooth ui-pdp-component-list pr-16 pl-16 alinharvertical" id="sellerinfobox" style="margin: -3em 0em 0em 0em;padding: 2em 0em 1em 0em;height: 0px;overflow: hidden;opacity: 0;">${nvailoader}</div>`}`;
+          let a = `${'<span id="easellerbtn" sellerdata="none" open="false" class="andes-button--loud mfy-main-bg  andes-button" style="position:relative; z-index:1;margin-bottom: 28px;margin-top: -1em;width: 100%;"><img src="https://img.icons8.com/material-outlined/48/ffffff/individual-server.png" style="width: 1.35em;margin: 0.8em 0.2em -0.35em 0em;display: inline-block;">Informações Extras</span>'}${`<div class="smooth ui-pdp-component-list pr-16 pl-16 alinharvertical" id="sellerinfobox" style="margin: -3em 0em 0em 0em;padding: 2em 0em 1em 0em;height: 0px;overflow: hidden;opacity: 0;">${mfyloader}</div>`}`;
           "" != t && null != t?.firstChild && t?.firstChild.insertAdjacentHTML("beforebegin", a);
           let i = document.getElementById("easellerbtn"), s = document.getElementById("sellerinfobox");
           i?.addEventListener("click", (function () {
@@ -1740,7 +1339,7 @@ function contentScpt() {
         }
         else {
           document.getElementById("easellerbtn").setAttribute("sellerdata", "true");
-          let e = document.getElementById("sellerinfobox"), a = e.getElementsByTagName("nvailoader");
+          let e = document.getElementById("sellerinfobox"), a = e.getElementsByTagName("mfyloader");
           a.length > 0 && e.removeChild(a[0]);
           let i = new Date(t.seller.registration_date).toLocaleDateString("pt-br"), s = "", o = new Date(t.seller.registration_date).getFullYear(), r = (new Date).getFullYear();
           if (parseFloat(o) < parseFloat(r)) {
@@ -1855,49 +1454,31 @@ function contentScpt() {
       let n = document.getElementById("eacattrendsbtn");
       n.addEventListener("click", t)
     }
-    replaceAnalyticsUI(spot0[0]);
-    i();
-    (function () {
+    spot0[0].insertAdjacentHTML("afterbegin", analytics_ui), i(), function () {
       let e = document.getElementById("eahealthmeter"), t = document.getElementById("eameter_modal");
       e && e.remove(), t && t.remove()
     }
-    )();
-    t();
-    (function () {
-      let e = eadataRetrieve("eaActive");
-      const t = document.getElementById("eaoffSwitch");
-      if (!t) return;
-      const n = t.querySelector("img");
-      const a = t.querySelector(".eahiddenlabel");
-      function i() {
-        e = eadataRetrieve("eaActive"), null === e && (e = !0);
-        if (e) {
-          a && (a.innerText = " Desligar Análises"), n && (n.style.filter = "brightness(1)", n.style.transform = "scaleX(1)"), t.setAttribute("style", ""), iscatalog || (t.style.top = "0.31em");
-        } else {
-          a && (a.innerText = " Ligar Análises"), n && (n.style.filter = "brightness(5)", n.style.transform = "scaleX(-1)"), t.setAttribute("style", "background-color:rgb(52, 131, 250);color:#fff;");
-        }
+    (), t(), function () {
+      let e = eadataRetrieve("eaActive"), t = document.getElementById("eaoffSwitch");
+      function n() {
+        e = eadataRetrieve("eaActive"), null === e && (e = !0), e ? (t.lastChild.innerText = " Desligar Análises", t.firstChild.style.filter = "brightness(1)", t.firstChild.style.transform = "scaleX(1)", t.setAttribute("style", ""), iscatalog || (t.style.top = "0.31em")): (t.setAttribute("style", "background-color:rgb(52, 131, 250);color:#fff;"), t.firstChild.style.filter = "brightness(5)", t.firstChild.style.transform = "scaleX(-1)", t.lastChild.innerText = " Ligar Análises")
       }
-      i(), t.addEventListener("click", (function () {
-        e = eadataRetrieve("eaActive"), null === e && (e = !0), eadataStore("eaActive", !e, TTL1), i(), setTimeout((function () {
-          try { initializeExtensionFeatures() } catch (err) {}
+      n(), t && t.addEventListener("click", (function () {
+        e = eadataRetrieve("eaActive"), null === e && (e = !0), eadataStore("eaActive", !e, TTL1), n(), setTimeout((function () {
+          window.location.reload()
         }
         ), 1e3)
       }
       ))
     }
-    )();
-    ensureAnalyticsObserver();
-    n();
-    iscatalog && (document.getElementById("eaoffSwitch")?.setAttribute("style", "top: 0.35em;"), document.getElementById("eaadvsearchBtn")?.setAttribute("style", "left: 0.25em;"));
-    a();
-    (function () {
+    (), n(), iscatalog && (document.getElementById("eaoffSwitch")?.setAttribute("style", "top: 0.35em;"), document.getElementById("eaadvsearchBtn")?.setAttribute("style", "left: 0.25em;")), a(), function () {
       const e = document.getElementById("highlights");
       if (e) {
         const t = e.cloneNode(!0);
         t.style.marginBottom = "1rem", e.remove(), document.querySelector(".ui-pdp-header")?.insertAdjacentElement("beforebegin", t)
       }
     }
-    )()
+    ()
   }
   function n(e) {
     taxaML_verif = parseFloat(e) < parseFloat(cota_minima_MLB) ? taxa_mlb - taxa_cota: taxa_mlb, taxa_percentual = (taxaML_verif / preco_Local).toFixed(3)
@@ -2172,7 +1753,7 @@ function s() {
     }
     function o() {
       if (null != verif && "pro" == verif) {
-        eaSince = '<div style="font-size: 0.95rem;font-weight: 700;display: inline-flex;border-radius: 1em;color: rgb(90, 90, 90);box-shadow: rgb(0, 0, 0) 0px 2px 11px -7px;padding: 0.35em 1em;position: relative;transition: 0.35s;min-width: fit-content;cursor:default" id="easince"><span style=" margin-top: 0.2em;">Criado há: ' + (isNaN(dias) ? "?": dias) + ' dia(s)</span><span style="position: absolute;top: 1.75em;font-size: 0.92em;font-weight: 200;opacity: 0;transition: all 0.35s;">(' + (data_br ?? "--/--/----") + ")</span></div>", btn = !alert_media_vendas && dias > 30 ? `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <span id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;cursor:default">\n                Média: ${iscatalog&&0==media_vendas?"-":media_vendas} vendas/mês\n              </span>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;"`: `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <div id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;gap: 0.25rem;">\n                Média:  <div style="min-width: fit-content;font-size: 1.2rem;">${iscatalog&&0==media_vendas?"-":media_vendas}</div> <span style="font-size: .9rem;">vendas/mês</span>\n              </div>\n              <div class="easalesavg-alert" style="display: inline-flex;background: var(--mfy-main);position: relative;z-index: 11;height: 1.75em;border-radius: 100%;padding: 5px;margin-left: -0.5rem;">\n                <img src="https://img.icons8.com/material-outlined/24/ffffff/clock-alert.png">\n              </div>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;"`, visits = '<span>? Visitas totais <span class="andes-button--loud mfy-main-bg  andes-button" style="margin-left: 0.5em;margin-top: 0.35em;font-size:14px!important;display: inherit;padding: 0.1em 0.4em;"> Conversão de <strong>?%</strong></span></span><br><span class="ui-pdp-subtitle" id="vendaporvisitas" style="position: relative;top: -0.86em;">Vende a cada x Visitas</span>';
+        eaSince = '<div style="font-size: 0.95rem;font-weight: 700;display: inline-flex;border-radius: 1em;color: rgb(90, 90, 90);box-shadow: rgb(0, 0, 0) 0px 2px 11px -7px;padding: 0.35em 1em;position: relative;transition: 0.35s;min-width: fit-content;cursor:default" id="easince"><span style=" margin-top: 0.2em;">Criado há: ' + (isNaN(dias) ? "?": dias) + ' dia(s)</span><span style="position: absolute;top: 1.75em;font-size: 0.92em;font-weight: 200;opacity: 0;transition: all 0.35s;">(' + (data_br ?? "--/--/----") + ")</span></div>", btn = !alert_media_vendas && dias > 30 ? `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <span id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;cursor:default">\n                Média: ${iscatalog&&0==media_vendas?"-":media_vendas} vendas/mês\n              </span>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;" src="https://i.ibb.co/Y8mQ2MT/metrifylogo.png">`: `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <div id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;gap: 0.25rem;">\n                Média:  <div style="min-width: fit-content;font-size: 1.2rem;">${iscatalog&&0==media_vendas?"-":media_vendas}</div> <span style="font-size: .9rem;">vendas/mês</span>\n              </div>\n              <div class="easalesavg-alert" style="display: inline-flex;background: var(--mfy-main);position: relative;z-index: 11;height: 1.75em;border-radius: 100%;padding: 5px;margin-left: -0.5rem;">\n                <img src="https://img.icons8.com/material-outlined/24/ffffff/clock-alert.png">\n              </div>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;" src="https://i.ibb.co/Y8mQ2MT/metrifylogo.png"> `, visits = '<span>? Visitas totais <span class="andes-button--loud mfy-main-bg  andes-button" style="margin-left: 0.5em;margin-top: 0.35em;font-size:14px!important;display: inherit;padding: 0.1em 0.4em;"> Conversão de <strong>?%</strong></span></span><br><span class="ui-pdp-subtitle" id="vendaporvisitas" style="position: relative;top: -0.86em;">Vende a cada x Visitas</span>';
         const c = e => e.charAt(0).toUpperCase() + e.slice(1), p = dayjs(), g = 6;
         let f = p.month() - g, u = p.year();
         f < 0 && (u -= 1, f += 12);
@@ -2310,54 +1891,8 @@ function s() {
         }
         l();
         const L = Date.now();
-        function M(e) {
-          if (null == e) return null;
-          if (typeof e == "number" && Number.isFinite(e)) return e;
-          if (typeof e == "string") {
-            const t = e.trim();
-            if (!t) return null;
-            try {
-              return M(JSON.parse(t));
-            }
-            catch (n) {
-              const a = t.match(/-?\d[\d.,]*/);
-              if (!a) return null;
-              const i = a[0].replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".");
-              const s = parseFloat(i);
-              return Number.isFinite(s) ? s: null;
-            }
-          }
-          if (Array.isArray(e)) {
-            for (const t of e) {
-              const n = M(t);
-              if (null !== n && Number.isFinite(n)) return n;
-            }
-            return null;
-          }
-          if ("object" == typeof e) {
-            if (typeof e.total_visits == "number" && Number.isFinite(e.total_visits)) return e.total_visits;
-            if (typeof e.total == "number" && Number.isFinite(e.total)) return e.total;
-            if (typeof e.visits == "number" && Number.isFinite(e.visits)) return e.visits;
-            const t = Object.keys(e);
-            for (const n of t) {
-              const a = M(e[n]);
-              if (null !== a && Number.isFinite(a)) return a;
-            }
-          }
-          return null;
-        }
         function d(e) {
-          console.groupCollapsed("[Novai] Visits payload");
-          console.log("Raw visits payload:", e);
-          const n = M(e);
-          console.log("Parsed total visits:", n);
-          console.groupEnd();
-          const a = typeof n == "number" && Number.isFinite(n) ? n: NaN;
-          visitastotais = a;
-          conversaototal = Number.isFinite(a) && a > 0 ? vendas / a: 0;
-          visitaporvenda = Number.isFinite(a) ? a / (vendas > 0 ? vendas: 1): NaN;
-          visitaporvenda_fix = Number.isFinite(visitaporvenda) ? parseFloat(visitaporvenda).toFixed(0): "?";
-          visitasparavender = Number.isFinite(visitaporvenda) ? parseFloat(visitaporvenda_fix): NaN;
+          visitastotais = e[Object.keys(e)[0]], conversaototal = isNaN(vendas / visitastotais) ? 0: vendas / visitastotais, visitaporvenda = visitastotais / (vendas > 0 ? vendas: 1), visitaporvenda_fix = isNaN(visitaporvenda) ? "?": parseFloat(visitaporvenda).toFixed(0), visitasparavender = parseFloat(visitaporvenda_fix);
           const t = function ({
             isCatalog: e,
             totalVisits: t,
@@ -2370,19 +1905,17 @@ function s() {
           }
           ({
             isCatalog: iscatalog,
-            totalVisits: Number.isFinite(visitastotais) ? visitastotais: NaN,
+            totalVisits: Number(visitastotais) ?? "-",
             conversion: parseFloat(100 * conversaototal).toFixed(1) ?? "-",
             visitsPerSale: visitasparavender,
             hasSales: vendas > 0
           }
-          );
-          const elapsed = Date.now() - L;
-          const delay = Math.max(0, 800 - elapsed);
+          ), n = Date.now() - L, a = Math.max(0, 800 - n);
           setTimeout((() => {
-            const holder = document.getElementById("visits-component");
-            holder && (holder.outerHTML = t, setTimeout(l, 250));
+            const e = document.getElementById("visits-component");
+            e && (e.outerHTML = t, setTimeout(l, 250))
           }
-          ), delay);
+          ), a)
         }
         document.dispatchEvent(new CustomEvent("GetVisitsData", {
           detail: {
@@ -2395,9 +1928,7 @@ function s() {
             itemId: t, visitsData: n
           }
           = e.detail;
-          console.debug("[Novai] VisitsDataResponse event", e.detail);
           t === item_ID && n ? d(n): fetch(`${mfyProxyLessRestricted}https://api.mercadolibre.com/visits/items?ids=${item_ID}`, eaInit).then((e => e.json())).then((e => {
-            console.debug("[Novai] Visits API response", e),
             d(e), document.dispatchEvent(new CustomEvent("StoreVisitsData", {
               detail: {
                 itemId: item_ID,
@@ -2406,10 +1937,9 @@ function s() {
             }
             ))
           }
-          )).catch ((function (t) {
-            console.error("[Novai] Visits API error", t);
-            const n = document.getElementById("visits-component");
-            n && (n.innerHTML = '<div style="opacity: 0.5;"><span>-</span></div>')
+          )).catch ((function (e) {
+            const t = document.getElementById("visits-component");
+            t && (t.innerHTML = '\n                      <div style="opacity: 0.5;">\n                        <span>-</span>\n                      </div>')
           }
           )), document.removeEventListener("VisitsDataResponse", T)
         }
@@ -2452,64 +1982,31 @@ function s() {
             document.getElementById("eamediapop").style.display = "none"
           }
           ))), "anuncio" == paginaAtual && "pro" == verif) {
-            const e = Array.from(document.getElementsByClassName("ui-pdp-gallery__wrapper")), t = '<div class="eadownloadicon"><img src="https://img.icons8.com/fluency-systems-regular/48/ffffff/file-download.png" alt="Baixar imagem"></div>', a = '<span class="eagetallimgs ui-pdp-gallery__wrapper"><label class="ui-pdp-gallery__label"><div class="ui-pdp-thumbnail ui-pdp-gallery__thumbnail"><div class="eagetallimgs-inside ui-pdp-thumbnail__picture" style="background: #FFD600;padding: 1em;"><img width="44" height="44" src="https://img.icons8.com/material-rounded/24/ffffff/download-2.png" style=" position: relative; top: -0.5em;"><span style=" color: #fff; position: relative; top: -1em; font-size: 11px;">Todas</span></div></div></label></span>', i = document.getElementsByClassName("ui-pdp-gallery__column")[0], s = [];
-            const n = e => {
-              e.style.display = "flex", e.style.alignItems = "center", e.style.justifyContent = "center", e.style.width = "44px", e.style.height = "44px", e.style.margin = "0.5em 0 0 0.5em", e.style.background = "#FFD600", e.style.borderRadius = "12px", e.style.cursor = "pointer"
+            let e = document.getElementsByClassName("ui-pdp-gallery__wrapper"), t = '<div class="eadownloadicon"> <img src="https://img.icons8.com/fluency-systems-regular/48/ffffff/file-download.png" style=" width: 100%;"></div>', a = '<span class="eagetallimgs ui-pdp-gallery__wrapper"><label class="ui-pdp-gallery__label"><div class="ui-pdp-thumbnail ui-pdp-gallery__thumbnail"><div class="eagetallimgs-inside ui-pdp-thumbnail__picture" style="background: var(--mfy-main);padding: 1em;"><img width="44" height="44" src="https://img.icons8.com/material-rounded/24/ffffff/download-2.png" style=" position: relative; top: -0.5em;"><span style=" color: #fff; position: relative; top: -1em; left: -0.21em; font-size: 11px;">Todas</span></div></div></label></span>', i = document.getElementsByClassName("ui-pdp-gallery__column")[0], s = [];
+            for (let n = 0;
+            n < e.length;
+            n++) if (void 0 !== e[n].getElementsByTagName("img")[0]) {
+              let a = `${e[n].getElementsByTagName("img")[0].getAttribute("src").replace("_Q","_NQ").replace("NP_","NP_2X_").replace("-R","-F").replace(".webp",".jpg")}`;
+              s.push(a), e[n].getElementsByTagName("img")[0].parentNode.parentNode.insertAdjacentHTML("afterend", t)
             }
-            , o = e => {
-              e && (e.style.width = "24px", e.style.height = "24px")
-            }
-            ;
-            for (let r = 0;
-            r < e.length;
-            r++) {
-              const a = e[r], l = a.getElementsByTagName("img")[0];
-              if (void 0 === l) continue;
-              const c = `${l.getAttribute("src").replace("_Q","_NQ").replace("NP_","NP_2X_").replace("-R","-F").replace(".webp",".jpg")}`;
-              s.includes(c) || s.push(c);
-              const d = l.parentNode && l.parentNode.parentNode;
-              if (!d) continue;
-              const u = a.querySelectorAll(".eadownloadicon");
-              if (u.length > 1) for (let e = 1;
-              e < u.length;
-              e++) u[e].remove();
-              if (0 === r) {
-                if (u[0]) u[0].remove();
-                continue;
-              }
-              let m = u[0];
-              m || (d.insertAdjacentHTML("afterend", t), m = a.querySelector(".eadownloadicon"));
-              if (!m) continue;
-              n(m), m.dataset.eaDownloadSrc = c, m.dataset.eaDownloadIndex = r.toString();
-              const g = m.querySelector("img");
-              o(g);
-              m.dataset.eaBound || (m.dataset.eaBound = "true", m.setAttribute("role", "button"), m.setAttribute("tabindex", "0"), m.addEventListener("click", (function () {
-                const e = this.dataset.eaDownloadSrc, t = parseInt(this.dataset.eaDownloadIndex || "0", 10);
-                e && f(e, "imagem" + (t + 1))
-              }
-              )), m.addEventListener("keydown", (function (e) {
-                "Enter" !== e.key && " " !== e.key || (e.preventDefault(), this.click())
-              }
-              )))
-            }
-            i && !i.querySelector(".eagetallimgs") && i.insertAdjacentHTML("afterbegin", a);
-            const r = i && i.querySelector(".eagetallimgs");
-            r && (r.style.display = "flex", r.style.alignItems = "center", r.style.justifyContent = "center", r.style.cursor = "pointer", r.dataset.eaDownloadSources = JSON.stringify(s), r.dataset.eaBound || (r.dataset.eaBound = "true", r.addEventListener("click", (function () {
-              let e = [];
-              try {
-                e = JSON.parse(this.dataset.eaDownloadSources || "[]")
-              } catch (e) {
-                console.error("Failed to parse download sources", e)
-              }
-              for (let t = 0;
-              t < e.length;
-              t++) f(e[t], "imagem" + (t + 1))
-            }
-            ))));
-            async function f(e, t) {
+            i.insertAdjacentHTML("afterbegin", a);
+            let o = document.getElementsByClassName("eagetallimgs")[0], r = document.getElementsByClassName("eadownloadicon");
+            async function n(e, t) {
               const n = await fetch(e), a = await n.blob(), i = URL.createObjectURL(a), s = document.createElement("a");
               s.href = i, s.download = t, document.body.appendChild(s), s.click(), document.body.removeChild(s)
             }
+            if (void 0 !== r) for (let e = 0;
+            e < r.length;
+            e++) r[e].addEventListener("click", (function () {
+              n(s[e], "imagem" + (e + 1))
+            }
+            ));
+            void 0 !== o && o.addEventListener("click", (function () {
+              for (let e = 0;
+              e < s.length;
+              e++) n(s[e], "imagem" + (e + 1))
+            }
+            ))
           }
         }
         (), t(), async function () {
@@ -2551,9 +2048,12 @@ function s() {
         }
         )), setTimeout(i, 50), setTimeout(e, 150), setTimeout(a, 175), setTimeout(s, 500), setTimeout((function () {
           if (spot0[0]) {
-            const headerNode = spot0[0];
-            ensureVisitsComponentSkeleton(headerNode);
-            let e = headerNode.parentElement;
+            spot0[0].insertAdjacentHTML("afterbegin", function () {
+              const e = "background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite;";
+              return `\n              <div id="visits-component">\n                <style>\n                  @keyframes loading {\n                    0% { background-position: 200% 0; }\n                    100% { background-position: -200% 0; }\n                  }\n                  .skeleton-text {\n                    ${e}\n                    border-radius: 4px;\n                    height: 1em;\n                    display: inline-block;\n                  }\n                  .skeleton-pill {\n                    ${e}\n                    border-radius: 12px;\n                    height: 1.2em;\n                    display: inline-block;\n                  }\n                </style>\n                ${iscatalog?'\n                <div style="display:flex">\n                    <div id="eabtn-chart" style="border-radius: 2rem; width: 2.35em; padding: 0.14em 0.5em; height: 2.35em; display: inline-flex; position: relative; z-index: 10; transition: 0.35s; align-items: center;" class="andes-button--loud mfy-main-bg andes-button">\n                    <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width: 1.35em; margin: auto;">\n                      <div id="eabtn-chart-tooltip" style="width: fit-content; display: none; flex-direction: column; text-align: start; line-height: 1; font-size: 1rem; color:var(--mfy-main); padding: 1rem; opacity: 0;">\n                        Anúncio com menos de 30 dias,<span style="opacity: .5;">gráfico sem dados suficientes.</span>\n                  </div>\n                    </div>\n                    <span style="margin-left: 3.1em;position: absolute;top: 0.45em;font-weight: 400;"><span class="skeleton-text" style="width: 80px;"></span> Visitas totais</span>\n                  <div id="eadivider"></div>\n                </div>\n                ':'\n                  <div style="display:flex;margin: 0rem 0 1.25rem 0;gap: 1rem;">\n                    <div id="eabtn-chart" style="border-radius: 2rem; width: 2.35em; padding: 0.14em 0.5em; height: 2.35em; display: inline-flex; position: relative; z-index: 10; transition: 0.35s; align-items: center;" class="andes-button--loud mfy-main-bg andes-button">\n                      <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width: 1.35em; margin: auto;">\n                      <div id="eabtn-chart-tooltip" style="width: fit-content; display: none; flex-direction: column; text-align: start; line-height: 1; font-size: 1rem; color:var(--mfy-main); padding: 1rem; opacity: 0;">\n                        Anúncio com menos de 30 dias,<span style="opacity: .5;">gráfico sem dados suficientes.</span>\n                      </div>\n                    </div>\n                    <div style="display: flex;gap: 1rem;min-width: fit-content;justify-content: space-between;">\n                      <div style="display: flex; flex-direction: column;">\n                        <div style="display: flex;gap: 0.5rem;">\n                          <span class="skeleton-text" style="width: 25px;"></span> \n                          <span>Visitas totais</span>\n                        </div>\n                        <div class="mfy-main-bg" style="position:relative;font-size:14px!important;min-width: fit-content;padding: 0.2rem 1em;display: flex;gap: .25rem;color: #fff;border-radius: 1rem;">\n                          <span style="min-width: fit-content;">Conversão:</span> <span style="opacity: 0.25;font-weight: 700;"><span class="skeleton-text" style="width: 30px;"></span>%</span>\n                        </div>\n                      </div>\n                      <div id="vendaporvisitas" style="position: relative;text-align: end;">\n                        Vende a cada:<br>\n                        <span class="skeleton-text" style="width: 80px;"></span>\n                      </div>\n                    </div>\n                  </div>\n                  <div id="eadivider" style="background-color: #00000014;height: 1px;width: 22.7em;margin: 0rem 0rem 1rem 0rem;"></div>\n                '}\n              </div>`
+            }
+            ());
+            let e = spot0[0].parentElement;
             e.parentElement.firstElementChild
           }
         }
@@ -2561,125 +2061,148 @@ function s() {
       }
       else btn = "", spot[0].insertAdjacentHTML("afterbegin", btn)
     }
-    spot3 = document.getElementsByClassName("ui-pdp-title"), reflow = document.getElementsByClassName("ui-pdp-header__title-container"), maisFunc = document.getElementById("plusf");
-    const headerEl = document.getElementsByClassName("ui-pdp-header")[0];
-    const headerWrapper = headerEl?.parentNode?.parentNode ?? null;
-    headerWrapper?.setAttribute("style", "max-width:352px;margin:auto;margin-right:1em;");
-    const bookmarkEl = document.getElementsByClassName("ui-pdp-bookmark")[0];
-    if (bookmarkEl) {
-      const bookmarkStyle = "transform: scale(0.77);top: 1.21em!important;position: absolute;left: ";
-      bookmarkEl.setAttribute("style", `${bookmarkStyle}${iscatalog ? "22.5" : "21.5"}em!important;`);
-    }
-    dataLayer && (condicao_produto = dataLayer[0]?.condition, preco_Local = dataLayer[0]?.localItemPrice, categoria_Local = dataLayer[0]?.categoryId, tipo_anuncio = dataLayer[0]?.listingType ?? document.documentElement.innerHTML.split("listing_type_id")[1]?.split('"')[2], comprador = dataLayer[0]?.buyerId, vendedor = dataLayer[0]?.sellerId, dLayer = dataLayer[0]?.startTime, item_ID = dataLayer[0]?.itemId ?? dataLayer[0]?.catalogProductId ?? null);
-    const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
-    let subtitleSales = subtitleEl?.innerHTML?.split(" | ")[1]?.split(" vendidos")[0]?.trim() ?? null;
-    if ("string" == typeof subtitleSales && subtitleSales.endsWith("mil")) {
-      const parsed = parseFloat(subtitleSales.replace("mil", ""));
-      subtitleSales = isNaN(parsed) ? subtitleSales: 1e3 * parsed;
-    } else if ("string" == typeof subtitleSales) {
-      const normalized = parseFloat(subtitleSales.replace(/\./g, "").replace(",", "."));
-      subtitleSales = isNaN(normalized) ? subtitleSales: normalized;
-    }
-    if (("string" == typeof vendas && 0 == vendas.length || null == vendas) && null != subtitleSales) vendas = subtitleSales;
-    dLayer && "" == data_br ? (data_br = dayjs(dLayer).locale("pt-br").format("DD/MM/YYYY"), dataMilisec = Date.parse(dLayer), eadiff = eanow - dataMilisec, dias = Math.round(eadiff / (8.64 * Math.pow(10, 7))), media_vendas = 0 == dias || isNaN(vendas) ? "Indisponível (0 dias)": Math.round(vendas / (dias / 30)), o()): o()
+    spot3 = document.getElementsByClassName("ui-pdp-title"), reflow = document.getElementsByClassName("ui-pdp-header__title-container"), maisFunc = document.getElementById("plusf"), document.getElementsByClassName("ui-pdp-header")[0].parentNode.parentNode.setAttribute("style", "max-width:352px;margin:auto;margin-right:1em;"), iscatalog ? document.getElementsByClassName("ui-pdp-bookmark")[0]?.setAttribute("style", "transform: scale(0.77);top: 1.21em!important;position: absolute;left: 22.5em!important;"): document.getElementsByClassName("ui-pdp-bookmark")[0]?.setAttribute("style", "transform: scale(0.77);top: 1.21em!important;position: absolute;left: 21.5em!important;"), dataLayer && (condicao_produto = dataLayer[0]?.condition, preco_Local = dataLayer[0]?.localItemPrice, categoria_Local = dataLayer[0]?.categoryId, tipo_anuncio = dataLayer[0]?.listingType ?? document.documentElement.innerHTML.split("listing_type_id")[1]?.split('"')[2], comprador = dataLayer[0]?.buyerId, vendedor = dataLayer[0]?.sellerId, dLayer = dataLayer[0]?.startTime, item_ID = dataLayer[0]?.itemId ?? dataLayer[0].catalogProductId);
+    let d = document.getElementsByClassName("ui-pdp-header__subtitle")[0].innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
+    d?.endsWith("mil") && (d = d.replace("mil", ""), d = 1e3 * parseFloat(d)), vendas = 0 == vendas.length ? d: vendas, dLayer && "" == data_br ? (data_br = dayjs(dLayer).locale("pt-br").format("DD/MM/YYYY"), dataMilisec = Date.parse(dLayer), eadiff = eanow - dataMilisec, dias = Math.round(eadiff / (8.64 * Math.pow(10, 7))), media_vendas = 0 == dias || isNaN(vendas) ? "Indisponível (0 dias)": Math.round(vendas / (dias / 30)), o()): o()
   }
 }
 ()
 }
-async function ensureAuthorizationToken() {
-  if (eaHeaders && "function" == typeof eaHeaders.get && eaHeaders.get("Authorization")) return !0;
-
-  let storedAccess = getStoredAccessToken();
-  let storedRefresh = getStoredRefreshToken();
-
-  if (!storedAccess && !storedRefresh) {
-    await requestAuthStateFromBackground();
-    storedAccess = getStoredAccessToken();
-    storedRefresh = getStoredRefreshToken();
-  }
-
-  if (storedAccess && !isAccessTokenExpired(storedAccess)) {
-    return appendToken({
-      access_token: storedAccess,
-      refresh_token: storedRefresh
-    });
-  }
-
-  if (storedRefresh) {
-    const refreshed = await getnewToken(storedRefresh);
-    if (refreshed) return refreshed;
-  }
-
-  console.warn("NOVAI: Nenhum token de acesso válido encontrado. Conclua o login na extensão para habilitar as métricas.");
-  return !1;
+function storeFresh(e) {
+  AuthDataStore("ealocalrst", e), checkrefresh(!0)
 }
-
-function initializeExtensionFeatures() {
-  if (eaHeaders && "function" == typeof eaHeaders.get && eaHeaders.get("Authorization")) {
-    dataCleanup();
-    return;
+async function findfreshAuth(e) {
+  await fetch(mfyEndpoints.auth, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    }
+    ,
+    body: JSON.stringify({
+      email: `${usuario_logado}`,
+      id: `${uid}`
+    }
+    )
   }
-
-  if (!ensureAuthPromise) {
-    ensureAuthPromise = ensureAuthorizationToken().catch((() => !1)).then((() => {
-      dataCleanup();
-    })).finally((() => {
-      ensureAuthPromise = null;
-    }));
+  ).then((e => e.json())).then((e => {
+    storeFresh(e)
   }
+  )).catch ((e => {}))
 }
-function storeFresh() {
-  initializeExtensionFeatures()
-}
-async function findfreshAuth() {
-  initializeExtensionFeatures()
-}
-function appendToken(tokenOrPayload, maybeRefreshToken) {
-  let accessToken = tokenOrPayload;
-  let refreshToken = maybeRefreshToken;
-
-  if (tokenOrPayload && "object" == typeof tokenOrPayload) {
-    accessToken = tokenOrPayload.access_token ?? tokenOrPayload.token ?? tokenOrPayload.accessToken;
-    refreshToken = refreshToken ?? tokenOrPayload.refresh_token ?? tokenOrPayload.refreshToken;
-  }
-
-  if (!accessToken) {
-    return !1;
-  }
-  try {
-    eaHeaders.set("Authorization", `Bearer ${accessToken}`);
-  } catch (_) {}
-  try {
-    eadataStore(LOCAL_ACCESS_TOKEN_KEY, accessToken, TTL1);
-  } catch (_) {}
-  if (refreshToken) {
-    try { eadataStore(LOCAL_REFRESH_TOKEN_KEY, refreshToken, TTL1); } catch (_) {}
-  }
-  broadcastAuthTokens(accessToken, refreshToken);
-  return !0;
+function appendToken(e) {
+  eaHeaders.append("Authorization", " Bearer " + e), eadataStore("local_usertkn", e, TTL1)
 }
 function dataCleanup() {
   if ("anuncio" === paginaAtual) {
-    let e = document.getElementsByTagName("nvailoader");
+    let e = document.getElementsByTagName("mfyloader");
     if (e) for (loader of e) loader.remove()
   }
   getMLinfo()
 }
-var extdataVerified = !1, userdataOk = !0, dataTrial = 0;
+var tried = !1;
 async function validateToken() {
-  initializeExtensionFeatures()
+  let e = eadataRetrieve("local_usertkn");
+  async function t() {
+    let e = parseJwt(mfy_userdata?.token);
+    if (0 == tried) {
+      var t = {
+        method: "POST",
+        headers: myHeaders,
+        redirect: "follow"
+      }
+      ;
+      fetch("https://api.mercadolibre.com/oauth/token?grant_type=refresh_token&client_id=323521671107951&client_secret=FbKILwMpPIa89q6lYd59yA5wJrPK2noN&refresh_token=" + e.token, t).then((e => e.json())).then((e => {
+        if (400 != e.status) {
+          let t = e.access_token;
+          eaHeaders.append("Authorization", " Bearer " + t), eadataStore("local_usertkn", t, TTL1), window.location.reload(!0)
+        }
+        else tried = !0, validateToken()
+      }
+      )).catch ((e => {}))
+    }
+    else askPermissions(usuario_logado)
+  }
+  if (null == e || null == e) t();
+  else {
+    var n = new Headers;
+    if (n.append("pragma", "no-cache"), n.append("cache-control", "no-cache"), n.append("Authorization", " Bearer " + e.toString()), AuthDataCheck("remote_user"), await new Promise((e => setTimeout(e, 500))), mfy_userdata?.remote?.email != usuario_logado) try {
+      const n = await fetchUserMeData(e, !1);
+      if (n.success && n.data) {
+        const a = n.data;
+        AuthDataStore("remote_user", {
+          email: a.email,
+          id: a.id
+        }
+        ), a.email == usuario_logado ? (eaHeaders.append("Authorization", " Bearer " + e), dataCleanup()): t(), n.fromCache
+      }
+      else t()
+    }
+    catch (e) {
+      t()
+    }
+    else eaHeaders.append("Authorization", " Bearer " + e), dataCleanup()
+  }
 }
-function findTier() {
-  verif = "pro", initializeExtensionFeatures()
+function findTier(e) {
+  verif = e.tier, verif = "pro", validateToken()
 }
+var extdataVerified = !1, userdataOk = !0, dataTrial = 0;
 async function registerNewAcc() {
-  initializeExtensionFeatures()
+  null == uid && null == uid && (uid = `${dataLayer?.at(0)?.buyerId?dataLayer[0].buyerId:melidata_namespace?.actual_track.user.user_id?melidata_namespace?.actual_track.user.user_id:preLoadedState?.user?.id}`), registeringAcc = !0, await fetch(mfyEndpoints.register, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    }
+    ,
+    body: JSON.stringify({
+      email: `${usuario_logado}`,
+      id: uid
+    }
+    )
+  }
+  ).then((e => e.json())).then((e => window ? window.location.reload(): null)).catch ((e => {}))
 }
-async function getnstoreData() {
-  initializeExtensionFeatures()
+async function getnstoreData(e) {
+  if (null != usuario_logado) if (extdataVerified = !0, null == uid && null == uid && (uid = `${dataLayer?.at(0)?.buyerId?dataLayer[0].buyerId:melidata_namespace?.actual_track.user.user_id?melidata_namespace?.actual_track.user.user_id:preLoadedState?.user?.id}`), await fetch(mfyEndpoints.auth, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    }
+    ,
+    body: JSON.stringify({
+      email: `${usuario_logado}`,
+      id: uid
+    }
+    )
+  }
+  ).then((e => e.json())).then((e => AuthDataStore("ealocalrst", e))).catch ((e => {})), "userverif" == e && window.location.reload(), 1 == e) if (++dataTrial > 1) {
+    userdataOk = !1;
+    let e = document.getElementsByTagName("mfyloader");
+    if (e) for (loader of e) loader.remove();
+    setTimeout((() => {
+      registeringAcc || registerNewAcc()
+    }
+    ), 1e3);
+    spot0 = document.getElementsByClassName("ui-pdp-header");
+    document.getElementById("acc-register-btn")
+  }
+  else verifyData("getnstoreData-try2");
+  else verifyData("getnstoreData")
 }
-async function verifyData() {
-  initializeExtensionFeatures()
+async function verifyData(e) {
+  if (AuthDataRetrieve("ealocalrst"), await new Promise((e => setTimeout(e, 1e3))), mfy_userdata || eadataRetrieve("local_usertkn")) if (null == mfy_userdata?.token) if (extdataVerified) {
+    userdataOk = !1;
+    let e = document.getElementsByClassName("eadropdown")[0], t = '<div style=" position: absolute; background: red; width: 1em; text-align: center; border-radius: 2em; color: #fff; font-size: 0.75em; font-weight: bolder; padding: 0em 0.85em 0em 0.6em; top: 7.5em; left: 81.5em; z-index: 14;" class="eadropalert">!</div>';
+    userdataOk = !1, e && e.insertAdjacentHTML("beforebegin", t)
+  }
+  else getnstoreData();
+  else {
+    findTier(parseJwt(mfy_userdata?.token))
+  }
+  else getnstoreData(!0)
 }
 const kFormatter = e => {
   if (Math.abs(e) > 999) {
@@ -2689,35 +2212,6 @@ const kFormatter = e => {
   return e.toString()
 }
 ;
-const TOKEN_EXPIRY_SKEW_MS = 6e4;
-let ensureAuthPromise = null;
-
-function getStoredAccessToken() {
-  try {
-    return eadataRetrieve(LOCAL_ACCESS_TOKEN_KEY);
-  } catch (_) {
-    return null;
-  }
-}
-
-function getStoredRefreshToken() {
-  try {
-    return eadataRetrieve(LOCAL_REFRESH_TOKEN_KEY);
-  } catch (_) {
-    return null;
-  }
-}
-
-function isAccessTokenExpired(token) {
-  try {
-    const payload = parseJwt(token);
-    if (!payload || !payload.exp) return !1;
-    const expiry = 1e3 * payload.exp;
-    return Date.now() + TOKEN_EXPIRY_SKEW_MS >= expiry;
-  } catch (_) {
-    return !1;
-  }
-}
 function runOnList() {
   if ("lista" === paginaAtual) {
     preLoadedState = "object" != typeof window.__PRELOADED_STATE__ || null === window.__PRELOADED_STATE__ || window.__PRELOADED_STATE__.tagName ? altPreloadedState?.pageState: window.__PRELOADED_STATE__, listView = preLoadedState?.initialState.analytics_track.pageLayout;
@@ -2726,105 +2220,9 @@ function runOnList() {
     c = Array.from(c), c = c.filter((e => e.classList.contains("ui-search-layout__item")));
     let p = c.length, g = p;
     var t = p;
-    let f = `
-<div id="ealistrequest"
-     style="
-      transition: all .25s;
-      display:flex; align-items:center; gap:.6em; justify-content:center;
-      background: linear-gradient(to bottom, #ffe600 0, #ffe600 4px, #222222 4px, #222222 100%);
-      padding:.75em 2em; margin:0 0 1rem 0; border-radius:.5em;
-      width:fit-content; color:#fff; font-size:.77em; cursor:pointer;
-      border:1px solid #fff; box-shadow:0 6px 18px rgba(0,0,0,.06);
-     ">
-  <span style="font-weight:700; font-size:1.11em; letter-spacing:.01em; margin:.35em; font-family: Montserrat;">
-    Buscar Métricas
-  </span>
-  <!-- ícone inline (sem dependências) -->
-  <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"
-       fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-       style="display:block;">
-    <!-- eixo -->
-    <path d="M3 3v18h18"></path>
-    <!-- linha de tendência -->
-    <polyline points="6,15 10,11 13,13 18,8"></polyline>
-    <!-- marcadores -->
-    <circle cx="6" cy="15" r="1"></circle>
-    <circle cx="10" cy="11" r="1"></circle>
-    <circle cx="13" cy="13" r="1"></circle>
-    <circle cx="18" cy="8" r="1"></circle>
-  </svg>
-</div>`;
-
-
-
-    let u = `
-    <div class="mfy-ad-listinfo_widget" style="display: flex;align-items: center;justify-content: space-between;border-radius: 5rem;margin: 0rem 1rem;position: relative; z-index:999">
-    <div style="display: flex; gap: .5rem;">
-    <div style="
-    background-color: var(--mfy-main);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: .25rem .75rem;
-    border-radius: 5rem;
-    font-size: 1.1rem;
-    font-weight: 700;
-    letter-spacing: 0.02rem;
-    gap: .25rem;
-" class="imageset"><img width="16" height="16" src="https://img.icons8.com/material-outlined/ffffff/24/stack-of-photos--v1.png" alt="stack-of-photos--v1">10</div>
-<div style="
-    background-color: #fff;
-    color: var(--mfy-main);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: .2rem .5rem;
-    border-radius: 5rem;
-    font-size: 1rem;
-    font-weight: 900;
-    letter-spacing: 0.02rem;
-    border: 1px solid #ebebeb;
-    box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;
-" class="reviews"><img width="18" height="18" src="https://img.icons8.com/sf-ultralight-filled/${mfyMainColorNumbers}/25/star.png" alt="star">4.5</div>
-<div style="
-    background-color: #fff;
-    color: var(--mfy-main);
-    display: flex;
-    gap: .25rem;
-    align-items: center;
-    justify-content: center;
-    padding: .2rem .5rem;
-    border-radius: 5rem;
-    font-size: 1rem;
-    font-weight: 900;
-    letter-spacing: 0.02rem;
-    border: 1px solid #ebebeb;
-    box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;
-" class="local"><img width="16" height="16" src="https://img.icons8.com/material-outlined/${mfyMainColorNumbers}/24/visit.png" alt="box--v1">0un</div>
-</div>
-<div style="
-      background-color: #ffe600;          /* NOVAI amarelo */
-      color: #111;                        /* texto preto */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: .35rem 1rem;
-      border-radius: 1rem;                /* ambos os lados arredondados */
-      border: 2px solid #000;             /* borda preta */
-      font-size: 1.1rem;
-      font-weight: 900;
-      letter-spacing: 0.02rem;
-      gap: 1rem;
-      box-shadow: 0 6px 18px rgba(0,0,0,.06);
-      position: absolute;
-      top: 0;                             /* canto superior direito */
-      right: 0;
-      " class="iscatalog">Catálogo</div>
-    
-</div>`;
-
-  c && "pro" == verif && !document.getElementById("ealistrequest") && (m.insertAdjacentHTML("beforebegin", f), function () {
+    let f = '<div id="ealistrequest" style="transition: all 0.25s;display: flex;align-items: center;justify-content: center;background: rgb(60,115,255);background: linear-gradient( #3483fa 92%,  var(--mfy-main) 92%);padding: 0.75em 2em; margin: 0rem 0rem 1rem 0rem; border-radius: 0.5em;width: fit-content;color: #fff;font-size: 0.77em;cursor: pointer;box-shadow: rgb(0 0 0 / 10%) 0px 11px 6px -7px, rgb(0 0 0 / 13%) 0px 4px 3px -3px;"><img src="https://img.icons8.com/pastel-glyph/64/ffffff/analytics.png" style="width: 21px;margin-right: 0.75em;"><span style="font-weight: 500;font-size: 1.11em;letter-spacing: 0.01em;margin: 0.35em;font-family: Montserrat;">Ativar Métricas de Busca </span></div>';
+    let u = `\n    <div class="mfy-ad-listinfo_widget" style="display: flex;align-items: center;justify-content: space-between;border-radius: 5rem;margin: 0rem 1rem;position: relative; z-index:999">\n    <div style="display: flex; gap: .5rem;">\n    <div style="\n    background-color: var(--mfy-main);\n    color: #fff;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: .25rem .75rem;\n    border-radius: 5rem;\n    font-size: 1.1rem;\n    font-weight: 700;\n    letter-spacing: 0.02rem;\n    gap: .25rem;\n" class="imageset"><img width="16" height="16" src="https://img.icons8.com/material-outlined/ffffff/24/stack-of-photos--v1.png" alt="stack-of-photos--v1">10</div>\n<div style="\n    background-color: #fff;\n    color: var(--mfy-main);\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: .2rem .5rem;\n    border-radius: 5rem;\n    font-size: 1rem;\n    font-weight: 900;\n    letter-spacing: 0.02rem;\n    border: 1px solid #ebebeb;\n    box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;\n" class="reviews"><img width="18" height="18" src="https://img.icons8.com/sf-ultralight-filled/${mfyMainColorNumbers}/25/star.png" alt="star">4.5</div>\n<div style="\n    background-color: #fff;\n    color: var(--mfy-main);\n    display: flex;\n    gap: .25rem;\n    align-items: center;\n    justify-content: center;\n    padding: .2rem .5rem;\n    border-radius: 5rem;\n    font-size: 1rem;\n    font-weight: 900;\n    letter-spacing: 0.02rem;\n    border: 1px solid #ebebeb;\n    box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;\n" class="local"><img width="16" height="16" src="https://img.icons8.com/material-outlined/${mfyMainColorNumbers}/24/visit.png" alt="box--v1">0un</div>\n</div>\n\n${'<div style="\n      background-color: #fff159;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      padding: .35rem 1rem;\n      border-radius: 1rem 0 0 1rem;\n      margin-right: -1rem;\n      font-size: 1.1rem;\n      font-weight: 900;\n      letter-spacing: 0.02rem;\n      gap: 1rem;\n      box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;\n      position: absolute;\n      top: -1000%;\n      right: 0;\n      " class="iscatalog">Catálogo</div>'}\n    \n</div>`;
+    c && "pro" == verif && (m.insertAdjacentHTML("beforebegin", f), function () {
       let e = preLoadedState.initialState.results.filter((e => e.trends_categories?.polycards)).length > 0, t = preLoadedState.initialState.results.filter((e => e.trends_categories?.polycards))[0], n = e ? t.trends_categories.polycards: preLoadedState.initialState.results, i = e ? n: n.filter((e => e.id && e.id.startsWith("POLYCARD"))), s = !(!i[0]?.polycard && !e);
       i = i[0]?.polycard ? i.map((e => e.polycard)): i.filter((e => e?.id && e.id.startsWith("MLB")));
       var o = {
@@ -2857,18 +2255,14 @@ function runOnList() {
           let f, y = g.firstElementChild;
           if (0 == r ? y.querySelector(".iscatalog").remove(): (y.setAttribute("catalog", !0), l++), y.querySelector(".local") && y.querySelector(".local").remove(), y.querySelector(".imageset") && y.querySelector(".imageset").remove(), d && c[t]) {
             let e = c[t].querySelector(".ui-search-item__pub-label") ?? c[t].querySelector(".poly-component__ads-promotions");
-            e && e.setAttribute("style", "background-color: #ffd900ff;color: var(--mfy-dark);border-radius: 0.5em;padding: 0.25em 0.75em;font-size: 0.86em;font-weight: 800;letter-spacing: 0.01em;margin-left: 0.5em;display: flex;align-items: center;justify-content: center;text-align: center; ")
+            e && e.setAttribute("style", "background-color: #eaeaea;color: var(--mfy-dark);border-radius: 0.5em;padding: 0.25em 0.75em;font-size: 0.86em;font-weight: 800;letter-spacing: 0.01em;margin-left: 0.5em;")
           }
           if ("listing" == listView) {
             y.style.position = "absolute", y.style.bottom = "7%";
             let e = y.querySelector(".iscatalog");
             e && (e.style.borderRadius = "0 1rem 1rem 0", e.style.position = "absolute", e.style.top = "-3.5rem", e.style.left = "-2.7rem", e.style.right = "auto")
           }
-          i.reviews ? y.querySelector(".reviews").innerHTML = y.querySelector(".reviews").getElementsByTagName("img")[0].outerHTML + `${i.reviews}`: y.querySelector(".reviews").remove(), y.querySelector(".imageset") && (y.querySelector(".imageset").innerHTML = y.querySelector(".imageset").getElementsByTagName("img")[0].outerHTML + `${i.imageset}`), i.local && (y.querySelector(".local").innerHTML = y.querySelector(".local").getElementsByTagName("img")[0].outerHTML + `${i.local}`), c[t] && (f = c[t].querySelector(".ui-search-result__image") || c[t].querySelector(".poly-card__portada"));
-          // Prevent duplicate widget insertion on re-init
-          if (c[t] && !c[t].querySelector('.mfy-ad-listinfo_widget') && f) {
-            f.insertAdjacentElement("afterend", y);
-          }
+          i.reviews ? y.querySelector(".reviews").innerHTML = y.querySelector(".reviews").getElementsByTagName("img")[0].outerHTML + `${i.reviews}`: y.querySelector(".reviews").remove(), y.querySelector(".imageset") && (y.querySelector(".imageset").innerHTML = y.querySelector(".imageset").getElementsByTagName("img")[0].outerHTML + `${i.imageset}`), i.local && (y.querySelector(".local").innerHTML = y.querySelector(".local").getElementsByTagName("img")[0].outerHTML + `${i.local}`), c[t] && (f = c[t].querySelector(".ui-search-result__image") || c[t].querySelector(".poly-card__portada")), f?.insertAdjacentElement("afterend", y)
         }
         ))
       }
@@ -2930,7 +2324,7 @@ function runOnList() {
 let y = document.getElementById("ealistrequest");
 function n(e) {
   let t = e.target, a = document.getElementById("ealistrequest");
-  t.removeEventListener("click", n), a.style.margin = "0rem 0rem 1rem 0rem", a.outerHTML = `<div id="ealistrequest" style=" margin: 0.35rem 0.35rem 1rem 0.35rem; font-weight: 500;font-size: 1em;letter-spacing: 0.01em;font-family: Montserrat;transition: all 0.25s;display: flex;align-items: center;justify-content: center;background: #222222;/* background: linear-gradient(25deg, rgb(121 51 255) 92%, rgb(77 18 190) 100%); */padding: 0.75em 2em;border-radius: 0.5em;width: fit-content;color: #fff;font-size: 0.77em;cursor: pointer;box-shadow: rgb(0 0 0 / 10%) 0px 11px 6px -7px, rgb(0 0 0 / 13%) 0px 4px 3px -3px;">Carregando ${SpinLoader} </div>`;
+  t.removeEventListener("click", n), a.style.margin = "0rem 0rem 1rem 0rem", a.outerHTML = `<div id="ealistrequest" style=" margin: 0.35rem 0.35rem 1rem 0.35rem; font-weight: 500;font-size: 1em;letter-spacing: 0.01em;font-family: Montserrat;transition: all 0.25s;display: flex;align-items: center;justify-content: center;background: var(--mfy-main);/* background: linear-gradient(25deg, rgb(121 51 255) 92%, rgb(77 18 190) 100%); */padding: 0.75em 2em;border-radius: 0.5em;width: fit-content;color: #fff;font-size: 0.77em;cursor: pointer;box-shadow: rgb(0 0 0 / 10%) 0px 11px 6px -7px, rgb(0 0 0 / 13%) 0px 4px 3px -3px;">Carregando dados ${SpinLoader} </div>`;
   let i = document.getElementsByClassName("mfy-ad-listinfo_widget");
   for (let e = 0;
   e < i.length;
@@ -2974,100 +2368,27 @@ function n(e) {
 ))
 }
 setTimeout((function () {
-  // Avoid inserting the toolbar twice if it already exists (e.g., after re-init)
-  if (document.getElementById("mfy-smetrics-status")) {
-    // Ensure behaviors still wire up on re-init
-    const t = document.getElementsByClassName("ui-search-results")[0] ?? document.getElementsByClassName("ui-search-layout--grid__grid__layout--grid")[0];
-    const n = t.querySelectorAll("ol");
-    s(n);
-    document.getElementById("ealistrequest")?.remove();
-    return;
-  }
-  let e = `<style>
-  #mfy-spinner {
-    width: 22px;
-    height: 22px;
-    border: 3px solid #444;
-    border-top-color: #FFE600;
-    border-radius: 50%;
-    animation: mfy-spinner-spin 1s linear infinite;
-  }
-
-  @keyframes mfy-spinner-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-</style>
-<div style="display:flex; flex-direction:row; align-items:center; justify-content:space-between; width:100%; gap:1rem; font-family: Montserrat, sans-serif; margin-bottom: 10px;">
-    <div style="display:flex; flex-direction:row; align-items:center; gap:1.5rem;">
-      <div id="mfy-catalog-filter-container" style="display:flex; flex-direction:row; align-items:center; gap:.5rem; background:#222; border:1px solid #383838; padding:.4rem; border-radius:8px;">
-        <button type="button" data-filter="todos" class="mfy-catalog-filter-btn" style="padding: 0.5rem 1rem; border-radius: 6px; border: none; background:#FFE600; color:#111; font-weight:700; font-size: 0.9rem; cursor:pointer; transition: all .2s ease;">Todos</button>
-        <button type="button" data-filter="filtrar" class="mfy-catalog-filter-btn" style="padding: 0.5rem 1rem; border-radius: 6px; border: none; background:#333; color:#eaeaea; font-weight:600; font-size: 0.9rem; cursor:pointer; transition: all .2s ease;">Catálogos</button>
-        <button type="button" data-filter="ocultar" class="mfy-catalog-filter-btn" style="padding: 0.5rem 1rem; border-radius: 6px; border: none; background:#333; color:#eaeaea; font-weight:600; font-size: 0.9rem; cursor:pointer; transition: all .2s ease;">Ocultar catálogos</button>
-      </div>
-      <div id="mfy-smetrics-status" style="display:flex; flex-direction:row; align-items:center; min-width: 22px;">
-        <div id="mfy-spinner"></div>
-      </div>
-    </div>
-    <div style="display:flex; align-items:center; background:#222; border: 1px solid #383838; border-radius: 8px; padding: 0.4rem 0.5rem 0.4rem 1rem;">
-      <span style="font-size: 0.9rem; color: #aaa; margin-right: 0.75rem; white-space: nowrap;">
-        Filtrar por
-      </span>
-      <select disabled id="easortselect" style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background: transparent; border: none; font-size: 1rem; font-weight: 700; color: #fff; font-family: Montserrat; border-radius: .4rem; padding: .15rem 1.8rem .15rem 0; cursor: pointer; outline: none; background-image: url('data:image/svg+xml,%3csvg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 16 16\\'%3e%3cpath fill=\\'none\\' stroke=\\'%23FFE600\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\' stroke-width=\\'2\\' d=\\'M2 5l6 6 6-6\\'/%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.2rem center; background-size: 1em;">
-        <option value="og" style="color:#fff;background:#111;">Selecione</option>
-        <option value="time" style="color:#fff;background:#111;">Mais recentes</option>
-        <option value="sales" style="color:#fff;background:#111;">Número de vendas</option>
-        <option value="mostprice" style="color:#fff;background:#111;">Maior preço</option>
-        <option value="lessprice" style="color:#fff;background:#111;">Menor preço</option>
-      </select>
-    </div>
-</div>`, t = document.getElementsByClassName("ui-search-results")[0] ?? document.getElementsByClassName("ui-search-layout--grid__grid__layout--grid")[0], n = t.querySelectorAll("ol");
-  n[0].insertAdjacentHTML("beforebegin", e), s(n), document.getElementById("ealistrequest")?.remove();
-  const applyCatalogFilter = (lists, mode) => {
-    const normalizedMode = ["todos", "ocultar", "filtrar"].includes(mode) ? mode : "todos";
-    lists.forEach((listNode => {
-      if (!listNode || "OL" !== listNode.tagName) return;
-      Array.from(listNode.children).forEach((item => {
-        if (!item || "LI" !== item.tagName) return;
-        const isCatalog = "true" === item.getAttribute("catalog");
-        switch (normalizedMode) {
-          case "ocultar":
-            item.style.display = isCatalog ? "none" : "";
-            break;
-          case "filtrar":
-            item.style.display = isCatalog ? "" : "none";
-            break;
-          default:
-            item.style.display = "";
-        }
-      }))
-    }))
-  };
-  const setupCatalogFilterButtons = lists => {
-    const container = document.getElementById("mfy-catalog-filter-container");
-    if (!container) return;
-    const buttons = Array.from(container.querySelectorAll("[data-filter]"));
-    if (buttons.length === 0) return;
-    const baseStyle = "padding: 0.35rem 0.75rem; border-radius: .4rem; border: 1px solid #333; background:#111; color:#fff; font-weight:600; cursor:pointer; transition: background .2s, color .2s;";
-    const activeStyle = "padding: 0.35rem 0.75rem; border-radius: .4rem; border: 1px solid #FFE600; background:#FFE600; color:#111; font-weight:600; cursor:pointer; transition: background .2s, color .2s;";
-    const setActive = activeButton => {
-      buttons.forEach((button => {
-        button.setAttribute("style", button === activeButton ? activeStyle : baseStyle);
-      }));
-    };
-    const handleFilterChange = (button) => {
-      setActive(button);
-      applyCatalogFilter(lists, button.dataset.filter);
-    };
-    buttons.forEach((button => {
-      button.setAttribute("style", baseStyle);
-      button.addEventListener("click", (() => handleFilterChange(button)));
-    }));
-    const defaultButton = buttons.find((button => "todos" === button.dataset.filter)) || buttons[0];
-    defaultButton && handleFilterChange(defaultButton);
-  };
-  setupCatalogFilterButtons(Array.from(n));
+  let e = `\n          <div style="display: flex; flex-direction: row; align-items: center;">\n          <div style="margin: 1rem 1rem 1rem 0;width: fit-content;border: 1px solid rgb(0,0,0,0.31);border-radius: 1rem;display: flex;align-items: center;justify-content: center;padding: 1rem 0.5rem;box-shadow: rgba(9, 30, 66, 0.25) 0px 1px 1px, rgba(9, 30, 66, 0.13) 0px 0px 1px 1px;">\n          <img src="https://i.ibb.co/K7Lc6cr/metrify.png" style="pointer-events:none; width:15px;margin: auto;margin-left:0.75rem; margin-right: 0.5rem;">\n          <span>\n            Filtrar por <select disabled id="easortselect" style="margin-left: 0.5rem; border: none; background: transparent; font-size: 1.1rem; font-weight: 700; color: rgb(0,0,0,0.7); font-family: Montserrat;">\n            <option value="og">Selecione</option>\n            <option value="time">Mais recentes</option>\n            <option value="sales">Número de vendas</option>\n            <option value="mostprice">Maior preço</option>\n            <option value="lessprice">Menor preço</option>\n            </select>\n          </span>\n          </div>\n          <div id="mfy-smetrics-status" style="display:flex;flex-direction:row;align-items:center">\n          <label for="mfy-smetrics-progress">Carregando vendas...</label>\n          <progress id="mfy-smetrics-progress" value="0" max=${p} style=" width:  7rem; height: 2rem; margin: 1rem;" />\n          </div>\n          <div id="mfy-catalog-filter-container" style="display:none">\n            <label for="mfy-catalog-filter" style="font-size: 1.21rem;font-weight: 700;">Exibir:</label>\n            <select id="mfy-catalog-filter" style="padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid #ccc;">\n              <option value="todos">Todos</option>\n              <option value="ocultar">Ocultar catálogos</option>\n              <option value="filtrar">Apenas catálogos</option>\n            </select>\n          </div>\n</div>`, t = document.getElementsByClassName("ui-search-results")[0] ?? document.getElementsByClassName("ui-search-layout--grid__grid__layout--grid")[0], n = t.querySelectorAll("ol");
+  n[0].insertAdjacentHTML("beforebegin", e), s(n), document.getElementById("ealistrequest")?.remove(), document.getElementById("mfy-catalog-filter").addEventListener("change", (e => {
+    !function (e, t) {
+      let n = e[0];
+      Array.from(n.querySelectorAll("ol > li")).forEach((e => {
+        const n = "true" === e.getAttribute("catalog");
+        switch (t) {
+        case "todos": e.style.display = "";
+        break;
+      case "ocultar": e.style.display = n ? "none": "";
+      break;
+    case "filtrar": e.style.display = n ? "": "none";
+    break;
+  default : e.style.display = ""
+}
+}
+))
+}
+(t.querySelectorAll("ol"), e.target.value)
+}
+))
 }
 ), 2750)
 }
@@ -3078,14 +2399,7 @@ y?.addEventListener("click", (e => n(e))), y?.addEventListener("mouseover", (fun
   this.style.transform = "scale(1)"
 }
 ));
-// Bind CTA listeners only once to prevent duplicate handlers
-if (y && !y.dataset.bound) {
-  y.addEventListener("click", (e => n(e)));
-  y.addEventListener("mouseover", function () { this.style.transform = "scale(1.05)" });
-  y.addEventListener("mouseout", function () { this.style.transform = "scale(1)" });
-  y.dataset.bound = "1";
-}
-document.getElementsByTagName("nvailoader");
+document.getElementsByTagName("mfyloader");
 var a = document.getElementsByClassName("fulfillment ui-pb-label-builder fulfillment fulfillment").length > 0 ? document.getElementsByClassName("fulfillment ui-pb-label-builder fulfillment fulfillment"): document.querySelectorAll(".poly-component__shipped-from").length > 0 ? document.querySelectorAll(".poly-component__shipped-from"): document.getElementsByClassName("poly-shipping__promise-icon--full"), i = e.filter((e => e.metadata && "true" === e.metadata.is_pad)), s = [];
 function o(e) {
   let t = document.getElementById("eacatextrainfo");
@@ -3131,16 +2445,7 @@ function r(e, t) {
 }
 async function l(n, a) {
   var i = n, s = i?.querySelector(".poly-component__title-wrapper")?.innerText ?? i?.querySelector(".poly-poly-component__title")?.innerText, o = e[a];
-  // If metrics box already exists for this item, avoid reinserting or reprocessing
-  if (i.querySelector(`div.${o?.metadata?.id ?? ''}`) || i.querySelector(`#loader-${o?.metadata?.id ?? ''}`)) {
-    return;
-  }
-  // Insert loader only if not already present and metrics box not present
-  const contentWrapper = i.getElementsByClassName("ui-search-result__content-wrapper")[0] ?? i.getElementsByClassName("poly-card__content")[0];
-  if (!i.querySelector('nvailoader') && !i.querySelector(`div.${o?.metadata?.id ?? ''}`)) {
-    contentWrapper?.insertAdjacentHTML("afterbegin", nvailoader);
-  }
-  async function aWrapper(e) {
+  (i.getElementsByClassName("ui-search-result__content-wrapper")[0] ?? i.getElementsByClassName("poly-card__content")[0])?.insertAdjacentHTML("afterbegin", mfyloader), async function (e) {
     !function (n) {
       function a(e) {
         let t = "true" == i.getAttribute("catalog") || n.catalogListed, a = e.match(/window\.__PRELOADED_STATE__\s*=\s*(\{.*\});/);
@@ -3276,7 +2581,7 @@ async function l(n, a) {
           (state.initialState?.metadata?.url_canonical?.startsWith("https://www.mercadolivre") || t) && (g = !0), o(c, m, !0)
         }
       }
-  var s = "#7CFC00";
+      var s = "#7CFC00";
       function o(a, o, r) {
         let l = null != itemsLocalData[n.itemID];
         a > 180 && a < 365 ? s = "#f7b500": a > 365 && (s = "#ff0000");
@@ -3286,87 +2591,74 @@ async function l(n, a) {
         , ((e, t) => m.add(t, "month"))), g = c.map((e => d(e.startOf("month")))), f = c.map((e => d(e.endOf("month")))), u = f.map(((e, t) => `${mfyProxyLessRestricted}https://api.mercadolibre.com/items/visits?ids=${n.itemID}&date_from=${g[t]}&date_to=${e}`));
         let y = "position: absolute; bottom: -21px; z-index: 99;";
         "gallery" == listView && (y = "position: relative; z-index: 99;");
-        let h = `<div class="${n.itemID}" style="${y}font-family: 'Montserrat', sans-serif;margin: -2.5em 0em 1em 0em;display: flex;padding: 0.5em;background: #222222;align-items: center;justify-content: space-around;width: 19rem;height: 3.5rem;border-radius: 0.7em;border-top: 5px solid ${s};box-shadow: rgba(0, 0, 0, 0.4) 0px 8px 13px -3px, rgba(0, 0, 0, 0.2) 0px 4px 6px -2px;box-sizing: border-box;">
-
-  <!-- Seção: Criado há -->
-  <div style="font-size: 0.61em;font-weight: 400;color: #f0f0f0;line-height: 1.31em;flex: 1.35;text-align: center;">Criado há: <br>
-    <span style="font-size: 0.86rem;font-weight: 700;">
-      <span class="created-at" style="font-size: 1.1rem;font-weight: 700;">${r&&!l?SpinLoader:a}</span> ${r?"":"dia(s)"}
-    </span>
-  </div>
-
-  <!-- Seção: Vendas -->
-  <div style="font-size: 0.61em;font-weight: 400;color: #f0f0f0;line-height: 1.31em;flex: 1;padding-left: 1em;border-left: 1px solid #444444;text-align: center;">Vendas: <br>
-    <span id="${n.itemID}" style="font-size: 1.21rem;font-weight: 700;">${SpinLoader}</span>
-  </div>
-
-  <!-- Seção: Visitas -->
-  <div style="font-size: 0.61em;font-weight: 400;color: #f0f0f0;line-height: 1.31em;flex: 2;padding-left: 1em;border-left: 1px solid #444444;display: flex;align-items: center;justify-content: space-between;">
-    <div>Visitas: <br>
-      <span style="font-size: 0.8rem">(6m)</span>
-    </div>
-    <div id="loader-${n.itemID}" class="itemloader" style="cursor: pointer;display: flex;align-items: center;justify-content: center;">
-      <img style="cursor: pointer;width:1.21rem;margin-right: 0.31rem;" src="https://img.icons8.com/external-tanah-basah-basic-outline-tanah-basah/24/f0f0f0/external-qr-code-scan-coding-tanah-basah-basic-outline-tanah-basah.png" alt="QR Code Icon"/> Ver
-    </div>
-  </div>
-
-</div>`, b = i.getElementsByTagName("nvailoader")[0];
-
-        if (b) {
-          b.outerHTML = h;
-        } else {
-          // Fallback: if the temporary loader vanished (e.g., by React re-render), insert the card directly once
-          if (!i.querySelector(`div.${n.itemID}`)) {
-            const cw = i.getElementsByClassName("ui-search-result__content-wrapper")[0] ?? i.getElementsByClassName("poly-card__content")[0];
-            cw?.insertAdjacentHTML("afterbegin", h);
-          }
-        }
+        let h = `<div class="${n.itemID}" style="${y}font-family: 'Montserrat', sans-serif;margin: -2.5em 0em 1em 0em;display: flex;padding: 0em 0.5em;background: white;align-items: center;justify-content: center;width: 19rem;height: 3.5rem;border-radius: 0.7em;border-left: 8px solid ${s};box-shadow: rgba(0, 0, 0, 0.21) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px;">\n          \n          <div style="font-size: 0.61em;font-weight: 400;color: black;line-height: 1.31em;flex: 1.35;">Criado há: <br><span style="font-size: 0.86rem;font-weight: 700;"><div class="created-at" style="font-size: 1.1rem;font-weight: 700;">${r&&!l?SpinLoader:a}</d> ${r?"":"dia(s)"}</div> </div>\n          \n          <div style="font-size: 0.61em;font-weight: 400;color: black;line-height: 1.31em;flex: 1;padding-left: 1em;border-left: 1px solid #e3e2e2;">Vendas: <br><span id="${n.itemID}" style="font-size: 1.21rem;font-weight: 700;">${SpinLoader}</span> </div>\n          \n          <div style="font-size: 0.61em;font-weight: 400;color: black;line-height: 1.31em;flex:2;padding-left: 1em;border-left: 1px solid #e3e2e2;display:flex"><div>Visitas: <br><span style="font-size: 0.8rem">(6m)</span></div> \n          <div id="loader-${n.itemID}" class="itemloader" style="cursor: pointer;margin: auto;display: flex;align-items: end;justify-content: center;">\n          <img style="cursor: pointer;width:1.21rem;margin-right: 0.31rem;"src="https://img.icons8.com/external-tanah-basah-basic-outline-tanah-basah/24/777777/external-qr-code-scan-coding-tanah-basah-basic-outline-tanah-basah.png"/> Ver\n          </div> </div> </div>`, b = i.getElementsByTagName("mfyloader")[0];
+        b && (b.outerHTML = h);
         let v = null != o ? `${o<5?o:"+"+o}`: "-";
-        if (!r) {
-          const salesEl = i.querySelector(`#${n.itemID}`);
-          salesEl && (salesEl.innerHTML = v);
-        }
-        i.setAttribute("product-days", a), o && null == i.getAttribute("sales") && i.setAttribute("sales", o), document.getElementById(`loader-${n.itemID}`)?.addEventListener("mouseover", function () {
-          if (spinLoaderManager.hasSpinner(this) || this.getAttribute("visit-data") === "true") return;
-          spinLoaderManager.replaceContent(this);
-          (async (holder) => {
-            const points = [];
-            for (let idx = 0; idx < u.length; idx++) {
-              try {
-                const res = await fetch(u[idx], eaInit).then(r => r.json());
-                points.push({ date: (new Date).getTime() * (idx + 1), value: parseFloat(res[0].total_visits) });
-              } catch (_) {
-                points.push({ date: (new Date).getTime() * (idx + 1), value: 0 });
-              }
+        r || (i.querySelector(`#${n.itemID}`).innerHTML = v), i.setAttribute("product-days", a), o && null == i.getAttribute("sales") && i.setAttribute("sales", o), document.getElementById(`loader-${n.itemID}`).addEventListener("mouseover", (function () {
+          spinLoaderManager.hasSpinner(this) || "true" == this.getAttribute("visit-data") || (spinLoaderManager.replaceContent(this), async function (t) {
+            var n = [], a = t;
+            for (let e = 0;
+            e < u.length;
+            e++) await fetch(u[e], eaInit).then((e => e.json())).then((t => n.push({
+              date: (new Date).getTime() * (e + 1),
+              value: parseFloat(t[0].total_visits)
             }
-            am5.ready(function () {
-              var green = am5.color(3441658), red = am5.color(11730944);
-              var change = Math.round(1000 * ((((points[points.length - 1] ? points[points.length - 1].value : 0) / (points[0] ? points[0].value || 1 : 1)) - 1))) / 10;
-              var stroke = change < 0 ? red : green;
-              holder.style.overflow = "auto";
-              var chartDiv = document.createElement("div");
-              chartDiv.style.fontSize = "0em";
-              chartDiv.style.width = "57px";
-              chartDiv.style.height = "25px";
-              chartDiv.style.padding = "0.2em 0.4em";
-              chartDiv.style.float = "left";
-              holder.innerHTML = "";
-              holder.setAttribute("visit-data", "true");
-              holder.appendChild(chartDiv);
-              var root = am5.Root.new(chartDiv);
-              root.setThemes([am5themes_Micro.new(root)]);
-              var chart = root.container.children.push(am5xy.XYChart.new(root, { panX: false, panY: false, wheelX: "none", wheelY: "none" }));
-              chart.plotContainer.set("wheelable", false);
-              chart.zoomOutButton.set("forceHidden", true);
-              var xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, { maxDeviation: 0, baseInterval: { timeUnit: "day", count: 1 }, renderer: am5xy.AxisRendererX.new(root, {}) }));
-              var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, { strictMinMax: true, renderer: am5xy.AxisRendererY.new(root, {}) }));
-              var series = chart.series.push(am5xy.LineSeries.new(root, { xAxis: xAxis, yAxis: yAxis, valueYField: "value", valueXField: "date", stroke: stroke }));
-              series.strokes.template.setAll({ strokeWidth: 2 });
-              series.data.setAll(points);
-            });
-          })(this);
-        });
-        (function () {
+            ))).catch ((function (t) {
+              n.push({
+                date: (new Date).getTime() * (e + 1),
+                value: 0
+              }
+              )
+            }
+            ));
+            am5.ready((function () {
+              var t = am5.color(3441658), i = am5.color(11730944), s = Math.round(1e3 * (e[e.length - 1]?.value ?? 0 / e[0]?.value - 1)) / 10 < 0 ? i: t, o = a;
+              o.style.overflow = "auto";
+              var r = document.createElement("div");
+              r.style.fontSize = "0em", r.style.width = "57px", r.style.height = "25px", r.style.padding = "0.2em 0.4em", r.style.float = "left", o.innerHTML = "", o.setAttribute("visit-data", "true"), o.appendChild(r), function (e, t, n) {
+                var a = am5.Root.new (e);
+                a.setThemes([am5themes_Micro.new (a)]);
+                var i = a.container.children.push(am5xy.XYChart.new (a, {
+                  panX: !1,
+                  panY: !1,
+                  wheelX: "none",
+                  wheelY: "none"
+                }
+                ));
+                i.plotContainer.set("wheelable", !1), i.zoomOutButton.set("forceHidden", !0);
+                var s = i.xAxes.push(am5xy.DateAxis.new (a, {
+                  maxDeviation: 0,
+                  baseInterval: {
+                    timeUnit: "day",
+                    count: 1
+                  }
+                  ,
+                  renderer: am5xy.AxisRendererX.new (a, {})
+                }
+                )), o = i.yAxes.push(am5xy.ValueAxis.new (a, {
+                  strictMinMax: !0,
+                  renderer: am5xy.AxisRendererY.new (a, {})
+                }
+                )), r = i.series.push(am5xy.LineSeries.new (a, {
+                  xAxis: s,
+                  yAxis: o,
+                  valueYField: "value",
+                  valueXField: "date",
+                  stroke: n
+                }
+                ));
+                r.strokes.template.setAll({
+                  strokeWidth: 2
+                }
+                ), r.data.setAll(t)
+              }
+              (r, n, s)
+            }
+            ))
+          }
+          (this))
+        }
+        )), function () {
           t--, function () {
             function e() {
               let e = document.getElementById("easortselect");
@@ -3390,37 +2682,13 @@ async function l(n, a) {
             e = document.getElementById("mfy-smetrics-progress"), e && (e.value = e.value + 1, clearInterval(n))
           }
           ), 500)
-        }())
+        }
+        ()
       }
       let r = n.title.toLowerCase().replace(/[ãâàáäåāăąạảấầẩẫậắằẳẵặ]/g, "").replace(/[õôòóöøōŏőơọỏốồổỗộớờởỡợ]/g, "").replace(/[ñńņňṅṇṉṋṅ]/g, "").replace(/[ēĕėęěẹẻẽếềểễệ]/g, "").replace(/[īĭįỉịớờởỡợ]/g, "").replace(/[ūŭůűųụủứừửữự]/g, "").replace(/[ýỳỵỷỹ]/g, "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").split(" ").join("-").replace(/[^a-zA-Z0-9-]/g, "").replace(/^-/, ""), l = "https://produto.mercadolivre.com.br/MLB-" + n.itemID.split("MLB")[1], d = (n.catalogID.split("MLB")[1], n.itemID, i.getElementsByClassName("mfy-ad-listinfo_widget")[0]?.getAttribute("catalog"), l);
       if (i.setAttribute("product-id", n.itemID), i.setAttribute("product-price", n.price), i.setAttribute("shipping", n.shipping), "true" == i.getElementsByClassName("mfy-ad-listinfo_widget")[0]?.getAttribute("catalog") || n.catalogListed) {
         i.setAttribute("catalog", !0);
-       let e = `
-<div style="
-  background-color: #ffe600;          /* NOVAI amarelo */
-  color: #111;                        /* texto preto */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 1rem;                /* cantos arredondados */
-  font-size: 1.1rem;
-  font-weight: 900;
-  letter-spacing: 0.02rem;
-  gap: 1rem;
-  padding: 0.75rem 1rem 0.5rem 1rem;
-  border: 2px solid #000;             /* borda preta */
-  box-shadow: 0 6px 18px rgba(0,0,0,.06);
-  position: absolute;                 /* continua relativo ao card */
-  top: 0;                             /* canto superior direito do card */
-  right: 0;
-  z-index: 2147483647;                /* acima de tudo no card */
-  pointer-events: auto;               /* clicável */
-" class="iscatalog">
-  Catálogo
-</div>`;
-
-
-
+        let e = '<div style="background-color: #fff159;display: flex;align-items: center;justify-content: center;border-radius: 1rem 0 1rem 1rem;margin-right: 2rem;font-size: 1.1rem;font-weight: 900;letter-spacing: 0.02rem;gap: 1rem;padding: 0.75rem 1rem 0.5rem 1rem;box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;position: absolute;right: 0;" class="iscatalog">Catálogo</div>';
         i.getElementsByClassName("poly-card__content")[0].insertAdjacentHTML("afterbegin", e)
       }
       else i.setAttribute("catalog", !1);
@@ -3473,143 +2741,45 @@ async function l(n, a) {
     }
     )
   }
-  await aWrapper(o);
+  (o)
 }
-"lite" != verif && (function () {
-  const insertHeader = function () {
-    try {
-      if (paginaAtual !== "lista") return;
-      if (document.getElementById("eanotify")) return; // idempotent
-      const n = document.getElementById("root-app");
-      if (!n) return;
-      let e = `<div id="eanotify"
-      // style="background: #222222; margin-top: 0em; transition: all 0.35s ease 0s; display: flex; align-items: center; justify-content: center; height: 3.5em;">
-      <div style="
-      display: flex;
-      justify-content: space-between;
-      gap: 1.2rem;
-      width: 100%;
-      max-width: 1215px;
-      padding: 0 1em;
-      ">
-      
-      <style>
-      .eafont1 {
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.035em;
-        font-size: 0.75em
+"lite" != verif && document.addEventListener("load", function () {
+  let e = `<div id="eanotify"\n      // style="background: var(--mfy-main); margin-top: 0em; transition: all 0.35s ease 0s; display: flex; align-items: center; justify-content: center; height: 3.5em;">\n      <div style="\n      display: flex;\n      justify-content: space-between;\n      gap: 1.2rem;\n      width: 100%;\n      max-width: 1215px;\n      padding: 0 1em;\n      ">\n      \n      <style>\n      .eafont1 {\n        font-weight: 900;\n        text-transform: uppercase;\n        letter-spacing: 0.035em;\n        font-size: 0.75em\n        }\n        \n        .eafont2 {\n          font-weight: 900;\n                  font-size: 1.1em;\n                  color: #fff;\n                  margin-left: 0.21em;\n                  margin-bottom: 0.1em\n              }\n          </style>\n          <div style="display: flex;align-items: center;margin-right: 1em;"><img\n                  src="https://img.icons8.com/metro/26/ffffff/opened-folder.png"\n                  style="width: 21px;margin-right: 0.35em;"><span id="eabar_category"\n                  style="font-weight: 900;font-size: 1.1em;color: #dceaff;margin-left: 0.21em;margin-bottom: 0.1em;">-</span>\n          </div>\n          \n          <div style="display: flex;align-items: center;margin-right: 1em; min-width: 4em;"></div>\n\n          <div style="display: flex;align-items: center;margin-right: 1em;"><img\n                  src="https://img.icons8.com/fluent-systems-filled/48/ffffff/lightning-bolt.png"\n                  style="width: 21px;margin-right: 0.35em;"><span id="eabar_fullrate" class="eafont2">-<span\n                      style="font-size: 0.77em;"><span\n                          style="letter-spacing: 1px;margin-left: -0.31em;color: #ffffff70;">/${p}</span><span\n                          style="color: #14305c;letter-spacing: 0.05em;">(0%)</span></span></span></div>\n          <div style="display: flex;align-items: center;margin-right: 1em;"><img\n                  src="https://img.icons8.com/fluent-systems-filled/48/ffffff/post-ads.png"\n                  style="width: 21px;margin-right: 0.35em;"><span id="eabar_adsrate" class="eafont2">-<span\n                      style="font-size: 0.77em;"><span\n                          style="letter-spacing: 1px;margin-left: -0.31em;color:#ffffff70;">/${p}</span><span\n                          style="color: #14305c;letter-spacing: 0.05em;">(0%)</span></span></span></div>\n          <div style="display: flex;align-items: center;margin-right: 1em;"><img\n          src="https://img.icons8.com/ios-glyphs/ffffff/30/pricing-structure.png"\n          style="width: 21px;margin-right: 0.35em;"><span id="eabar_catalograte" class="eafont2">-<span\n              style="font-size: 0.77em;"><span\n                  style="letter-spacing: 1px;color:#ffffff70;">/${p}</span><span\n                  style="color: #14305c;margin-left: 0.2rem;">(0%)</span></span></span></div>\n\n          <div style="margin-right: 1em;display: flex;align-items: center;"><img\n                  src="https://img.icons8.com/ios-glyphs/30/ffffff/fire-element--v1.png"\n                  style="width: 21px;margin-right: 0.35em;"><span\n                  class="eafont1">Concorrência: </span><span id="eabar_competition"\n                  style="font-weight: 900;font-size: 1.14em;color: #ffffff;margin-left: 0.21em;background-color: #3456e270;border-radius: 4px;padding: 0.21em 1em;">-\n              </span><img id="notyhide" src="https://img.icons8.com/fluent/48/000000/collapse-arrow.png"\n                  style="transition:all 0.35s;width: 3em;margin-top: 3.1em;margin-left: 1em;z-index: 14;padding: 0.5em;cursor: pointer;background-color: #1f2734;border-radius: 2em;filter: hue-rotate(40deg);">\n          </div>\n          \n\n      </div>\n</div>`, t = '<div id="eacatextrainfo"><span style="padding: 4px;"><img style="width: 1.5em;margin-bottom: -4px;" src="https://img.icons8.com/cotton/64/000000/info--v2.png"/></span><span id="eaadsoncategory" style="font-size: 14px;">Carregando...</span></div>', n = document.getElementById("root-app"), l = n.firstChild.getElementsByTagName("section")[0], d = t, m = l, c = "beforeend";
+  l?.children.length > 0 ? ("ul" === l.firstChild.tagName.toLowerCase() ? (l?.setAttribute("style", "padding: 1em; margin: 0 0 7px; border-radius: 5px; display: flex; align-items: flex-start; flex-direction: column;"), l.firstChild.style.marginBottom = "1.2em"): (d = `<section id='ealistsection' class="ui-search-top-keywords" style=" padding: 1em; margin: 0 0 7px; border-radius: 5px; display: flex; align-items: flex-start; flex-direction: column;">${t}</section>`, m = document.getElementById("root-app").firstChild, c = "afterbegin"), m?.insertAdjacentHTML(c, d)): (d = `<section id='ealistsection' class="ui-search-top-keywords" style="z-index:999; padding: 1em; margin: 0 0 7px; border-radius: 5px; display: flex; align-items: flex-start; flex-direction: column;">${t}</section>`, m = document.getElementById("root-app").firstChild, c = "afterbegin", m?.insertAdjacentHTML(c, d));
+  n.insertAdjacentHTML("afterbegin", e), (eabar_category = document.getElementById("eabar_category")).innerHTML = "carregando...", eabar_fullrate = document.getElementById("eabar_fullrate"), eabar_fullrate.innerHTML = `${a.length>50?50:a.length.toString().padStart(2,"0")} <span style="font-size: 0.77em;"> <span style="letter-spacing: 1px;margin-left: -0.31em;color: #ffffff70;"> /${p}</span> <span style="color: #14305c;letter-spacing: 0.05em;">(${(a.length/50*100).toFixed(0)>100?100:(a.length/50*100).toFixed(0).padStart(2,"0")}%)</span></span>`, eabar_adsrate = document.getElementById("eabar_adsrate"), eabar_adsrate.innerHTML = i.length.toString().padStart(2, "0") + ` <span style="font-size: 0.77em;"> <span style="letter-spacing: 1px;margin-left: -0.31em;color: #ffffff70;"> /${p}</span> <span style="color: #14305c;letter-spacing: 0.05em;">(` + (i.length / 50 * 100).toFixed(0).padStart(2, "0") + "%)</span></span>";
+  let g = parseFloat((i.length / 50 * 100).toFixed(0));
+  g <= 0 && (g = 1), r([g,
+  parseFloat((0).toFixed(0)),
+  parseFloat((a.length / 50 * 100).toFixed(0))]), eanotify = document.getElementById("eanotify");
+  var f = document.getElementById("notyhide");
+  eanotify.addEventListener("mouseover", (function () {
+    this.style.marginTop = "0em", f.setAttribute("style", "transition:all 0.35s;width: 3em;margin-top: 3.1em;margin-left: 1em;z-index: 1;padding: 0.5em;cursor: pointer; border-radius: 2em;background-color: #1f2734;border-radius: 2em;filter: hue-rotate(40deg);z-index: 14;")
+  }
+  )), f.addEventListener("click", (function () {
+    eanotify.style.marginTop = "-2.77em", f.setAttribute("style", "transform: rotate(180deg);margin-top: 3.1em;z-index:1;transition:all 0.35s; width: 2em;margin-left: 1em;padding: 0.5em;cursor: pointer;border-radius: 2em;background-color: #1f2734;border-radius: 2em;filter: hue-rotate(40deg);z-index: 14;")
+  }
+  )), function () {
+    let e = preLoadedState.initialState.melidata_track.event_data.category_id;
+    e?.length > 0 && o(e), async function (e) {
+      "" != e && null != e && await new Promise((t => {
+        fetchCategoryWithCache(e, (e => {
+          e && (s = e), t()
         }
-        
-        .eafont2 {
-          font-weight: 900;
-                  font-size: 1.1em;
-                  color: #fff;
-                  margin-left: 0.21em;
-                  margin-bottom: 0.1em
-              }
-          </style>
-          <div style="display: flex;align-items: center;margin-right: 1em;"><img
-                  src="https://img.icons8.com/metro/26/ffffff/opened-folder.png"
-                  style="width: 21px;margin-right: 0.35em;"><span id="eabar_category"
-                  style="font-weight: 900;font-size: 1.1em;color: #dceaff;margin-left: 0.21em;margin-bottom: 0.1em;">-</span>
-          </div>
-          
-          <div style="display: flex;align-items: center;margin-right: 1em; min-width: 4em;"></div>
-
-          <div style="display: flex;align-items: center;margin-right: 1em;"><img
-                  src="https://img.icons8.com/fluent-systems-filled/48/ffffff/lightning-bolt.png"
-                  style="width: 21px;margin-right: 0.35em;"><span id="eabar_fullrate" class="eafont2">-<span
-                      style="font-size: 0.77em;"><span
-                          style="letter-spacing: 1px;margin-left: -0.31em;color: #d8ca0070;">/${p}</span><span
-                          style="color: #14305c;letter-spacing: 0.05em;">(0%)</span></span></span></div>
-          <div style="display: flex;align-items: center;margin-right: 1em;"><img
-                  src="https://img.icons8.com/fluent-systems-filled/48/ffffff/post-ads.png"
-                  style="width: 21px;margin-right: 0.35em;"><span id="eabar_adsrate" class="eafont2">-<span
-                      style="font-size: 0.77em;"><span
-                          style="letter-spacing: 1px;margin-left: -0.31em;color:#ffffff70;">/${p}</span><span
-                          style="color: #14305c;letter-spacing: 0.05em;">(0%)</span></span></span></div>
-          <div style="display: flex;align-items: center;margin-right: 1em;"><img
-          src="https://img.icons8.com/ios-glyphs/ffffff/30/pricing-structure.png"
-          style="width: 21px;margin-right: 0.35em;"><span id="eabar_catalograte" class="eafont2">-<span
-              style="font-size: 0.77em;"><span
-                  style="letter-spacing: 1px;color:#ffffff70;">/${p}</span><span
-                  style="color: #14305c;margin-left: 0.2rem;">(0%)</span></span></span></div>
-
-          <div style="margin-right: 1em;display: flex;align-items: center;"><img
-                  src="https://img.icons8.com/ios-glyphs/30/ffffff/fire-element--v1.png"
-                  style="width: 21px;margin-right: 0.35em;"><span style="color: #fff"
-                  class="eafont1">Concorrência: </span><span id="eabar_competition"
-                  style="font-weight: 900;font-size: 1.14em;color: #ffffff;margin-left: 0.21em;background-color: #3456e270;border-radius: 4px;padding: 0.21em 1em;">-
-              </span>
-          </div>
-          
-
-      </div>
-</div>`;
-  let t = '<div id="eacatextrainfo" style="display:none"><span style="padding: 4px;"><img style="width: 1.5em;margin-bottom: -4px;" src="https://img.icons8.com/cotton/64/000000/info--v2.png"/></span><span id="eaadsoncategory" style="font-size: 14px;">Carregando...</span></div>';
-      // Safe lookup for first section to avoid null deref
-      let l = n.firstChild ? n.firstChild.getElementsByTagName("section")[0] : null, d = t, m = l, c = "beforeend";
-      l?.children.length > 0 ? ("ul" === l.firstChild.tagName.toLowerCase() ? (l?.setAttribute("style", "padding: 1em; margin: 0 0 7px; border-radius: 5px; display: flex; align-items: flex-start; flex-direction: column;"), l.firstChild.style.marginBottom = "1.2em"): (d = `<section id='ealistsection' class="ui-search-top-keywords" style=" padding: 1em; margin: 0 0 7px; border-radius: 5px; display: flex; align-items: flex-start; flex-direction: column;">${t}</section>`, m = document.getElementById("root-app").firstChild, c = "afterbegin"), m?.insertAdjacentHTML(c, d)): (d = `<section id='ealistsection' class="ui-search-top-keywords" style="z-index:999; padding: 1em; margin: 0 0 7px; border-radius: 5px; display: flex; align-items: flex-start; flex-direction: column;">${t}</section>`, m = document.getElementById("root-app").firstChild, c = "afterbegin", m?.insertAdjacentHTML(c, d));
-      n.insertAdjacentHTML("afterbegin", e);
-  (eabar_category = document.getElementById("eabar_category")).innerHTML = "carregando...";
-  // Show helper only while loading
-  const eacat = document.getElementById("eacatextrainfo");
-  eacat && (eacat.style.display = "block");
-      eabar_fullrate = document.getElementById("eabar_fullrate");
-      {
-        const total = a.length > 50 ? 50 : a.length;
-        const percent = Math.min(100, Math.round((a.length / 50) * 100));
-        eabar_fullrate.innerHTML = total.toString().padStart(2, "0") + ' <span style="font-size: 0.77em;"> <span style="letter-spacing: 1px;margin-left: -0.31em;color: #ffffff70;"> /' + p + '</span> <span style="color: #14305c;letter-spacing: 0.05em;">(' + percent + '%)</span></span>';
+        ))
       }
-      eabar_adsrate = document.getElementById("eabar_adsrate");
-      {
-        const totalAds = i.length;
-        const percentAds = Math.min(100, Math.round((i.length / 50) * 100));
-        eabar_adsrate.innerHTML = totalAds.toString().padStart(2, "0") + ' <span style="font-size: 0.77em;"> <span style="letter-spacing: 1px;margin-left: -0.31em;color: #ffffff70;"> /' + p + '</span> <span style="color: #14305c;letter-spacing: 0.05em;">(' + percentAds + '%)</span></span>';
-      }
-      let g = parseFloat((i.length / 50 * 100).toFixed(0));
-      g <= 0 && (g = 1), r([g,
-      parseFloat((0).toFixed(0)),
-      parseFloat((a.length / 50 * 100).toFixed(0))]), eanotify = document.getElementById("eanotify");
-      (function () {
-        let e = preLoadedState.initialState.melidata_track.event_data.category_id;
-        e?.length > 0 && o(e), async function (e) {
-          "" != e && null != e && await new Promise((t => {
-            fetchCategoryWithCache(e, (e => {
-              e && (s = e), t();
-            }));
-          })), eabar_category.innerHTML = s.name ? s.name: "Categoria";
-          let t = document.getElementById("eaadsoncategory");
-          if (s.total_items_in_this_category && t) {
-            t.innerHTML = `<b style=\"color: var(--mfy-main);font-size:18px;\">${s.total_items_in_this_category}</b> anúncios na categoria.`;
-            // Hide the helper when loaded
-            const inf = document.getElementById("eacatextrainfo");
-            inf && (inf.style.display = "none");
-          } else {
-            // nothing to show, remove the container
-            t.parentElement.parentElement.remove();
-          }
-        }(e);
-      }());
-    } catch(_) {}
-  };
-  if (document.readyState === "complete" || document.readyState === "interactive") setTimeout(insertHeader, 0);
-  window.addEventListener("load", insertHeader, { once: true });
-  document.addEventListener("DOMContentLoaded", insertHeader, { once: true });
-})();
+      )), eabar_category.innerHTML = s.name ? s.name: "Categoria";
+      let t = document.getElementById("eaadsoncategory");
+      s.total_items_in_this_category && t ? t.innerHTML = `<b style="color: var(--mfy-main);font-size:18px;">${s.total_items_in_this_category}</b> anúncios na categoria.`: t.parentElement.parentElement.remove()
+    }
+    (e)
+  }
+  ()
+}
+(), !1)
 }
 }
 function pageType() {
-  const pls = (typeof window !== 'undefined' && window.preLoadedState) ? window.preLoadedState : undefined;
-  if (!pls || !pls.userId) {
-    if (document.getElementsByClassName("ui-search-breadcrumb__title")[0] != null) {
-      paginaAtual = "lista";
-    }
-  } else {
-    paginaAtual = "painel";
-  }
-  verifyData("pageType")
+  null == preLoadedState?.userId ? null != document.getElementsByClassName("ui-search-breadcrumb__title")[0] && (paginaAtual = "lista"): paginaAtual = "painel", verifyData("pageType")
 }
 if (null != sessionStorage.getItem("eauser")) usuario_logado = sessionStorage.getItem("eauser");
 else var usuario_logado = null;
@@ -3784,19 +2954,15 @@ async function findUser() {
   }
 }
 function mfyStart() {
-  // Ensure dayjs is bound from window and initialize uid once if missing
-  dayjs = window.dayjs;
-  if (uid == null) {
-    (async function () {
-      const start = Date.now();
-      const timeoutMs = 5000;
-      while (!((window.melidata_namespace && window.melidata_namespace.actual_track && window.melidata_namespace.actual_track.user && window.melidata_namespace.actual_track.user.user_id) || (window.freya && window.freya.messages && window.freya.messages.user && window.freya.messages.user.user_id)) && Date.now() - start < timeoutMs) {
-        await new Promise(r => setTimeout(r, 250));
-      }
-      const fromMelidata = window.melidata_namespace?.actual_track?.user?.user_id;
-      const fromFreya = window.freya?.messages?.user?.user_id;
-      uid = fromMelidata || fromFreya || uid; // keep null if still unavailable
-    })();
+  if (dayjs = window.dayjs, null == uid && null == uid) {
+    !async function () {
+      let e = window.melidata_namespace ? window.melidata_namespace: null;
+      for (;
+      !(e && e.actual_track && e.actual_track.user && e.actual_track.user.user_id);
+      ) await new Promise((e => setTimeout(e, 500)));
+      uid = e.actual_track.user.user_id
+    }
+    ()
   }
   if (null != mfy_version && null != mfy_version && "" != mfy_version || document.dispatchEvent(new CustomEvent("MetrifyVersion", {
     detail: ""
