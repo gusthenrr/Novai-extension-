@@ -164,13 +164,26 @@ async function getAuthTokens() {
   return { accessToken, refreshToken };
 }
 
-async function setAuthTokens({ accessToken, refreshToken, ttl }) {
+async function setAuthTokens({ accessToken, refreshToken, ttl, clear }) {
   const effectiveTtl = typeof ttl === 'number' && ttl > 0 ? ttl : TOKEN_TTL_MS;
+
+  if (clear) {
+    await Promise.all([
+      writeTokenToStorage(LOCAL_ACCESS_TOKEN_KEY, null),
+      writeTokenToStorage(LOCAL_REFRESH_TOKEN_KEY, null),
+    ]);
+    return { accessToken: null, refreshToken: null, ttl: effectiveTtl, clear: true };
+  }
+
   await Promise.all([
     writeTokenToStorage(LOCAL_ACCESS_TOKEN_KEY, accessToken, effectiveTtl),
     writeTokenToStorage(LOCAL_REFRESH_TOKEN_KEY, refreshToken, effectiveTtl),
   ]);
-  return { accessToken, refreshToken, ttl: effectiveTtl };
+  return {
+    accessToken: accessToken ?? null,
+    refreshToken: refreshToken ?? null,
+    ttl: effectiveTtl,
+  };
 }
 
 function broadcastAuthTokensToTabs(tokens) {
@@ -349,6 +362,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: false, error: error?.message || 'Erro ao salvar tokens' });
     });
     return true;
+  } else if (request.type === 'OPEN_LOGIN_PAGE') {
+    try {
+      chrome.tabs.create({ url: chrome.runtime.getURL('login.html') }, () => {
+        const err = chrome.runtime.lastError;
+        if (err) {
+          console.warn('NOVAI: não foi possível abrir a tela de login solicitada.', err.message);
+        }
+      });
+    } catch (error) {
+      console.warn('NOVAI: erro ao tentar abrir a tela de login sob demanda.', error);
+    }
+    if (typeof sendResponse === 'function') {
+      sendResponse({ success: true });
+    }
+    return false;
   } else if (request.type === 'GET_AUTH_TOKENS') {
     getAuthTokens().then((tokens) => {
       sendResponse(tokens);

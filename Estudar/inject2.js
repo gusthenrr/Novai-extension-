@@ -1,6 +1,7 @@
 const AUTH_STATE_EVENT = 'NovaiAuthState';
 const AUTH_UPDATE_EVENT = 'NovaiAuthTokensUpdated';
 const AUTH_REQUEST_EVENT = 'NovaiRequestAuthState';
+const OPEN_LOGIN_EVENT = 'NovaiOpenLogin';
 
 function dispatchNovaiAuthState(detail) {
     try {
@@ -55,9 +56,11 @@ function requestBackgroundAuthState() {
 
 document.addEventListener(AUTH_UPDATE_EVENT, (event) => {
     const detail = event?.detail || {};
-    const accessToken = detail.accessToken;
-    const refreshToken = detail.refreshToken;
-    if (!accessToken && !refreshToken) {
+    const shouldClear = detail.clear === true;
+    const accessToken = shouldClear ? null : detail.accessToken;
+    const refreshToken = shouldClear ? null : detail.refreshToken;
+
+    if (!shouldClear && !accessToken && !refreshToken) {
         return;
     }
 
@@ -67,6 +70,7 @@ document.addEventListener(AUTH_UPDATE_EVENT, (event) => {
             accessToken,
             refreshToken,
             ttl: detail.ttl,
+            clear: shouldClear,
         });
     } catch (error) {
         console.warn('NOVAI: não foi possível encaminhar tokens para o background', error);
@@ -225,8 +229,17 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             accessToken: request.accessToken,
             refreshToken: request.refreshToken,
             ttl: request.ttl,
-            source: 'background'
+            source: 'background',
+            clear: request.clear === true,
         });
+    }
+});
+
+document.addEventListener(OPEN_LOGIN_EVENT, () => {
+    try {
+        chrome.runtime.sendMessage({ type: 'OPEN_LOGIN_PAGE' });
+    } catch (error) {
+        console.warn('NOVAI: não foi possível abrir a tela de login da extensão.', error);
     }
 });
 
