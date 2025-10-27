@@ -598,28 +598,32 @@ var easwitchoff = `
 </span>
 `;
 
+var analyticsWrapperId = "mfy-analytics-wrapper";
+
 var analytics_ui = `
-  ${eagrossrev}
-  ${eamoretools}
-  ${eatoolbox}
-  ${eameter}
-  ${ranksearch}
-  ${easwitchoff}
-  ${eatoolbox_close}
-  ${eameterModal}
-  <span id="eaadvsearchForm" style="position: relative;top: 2.7em;z-index: 0;">
-    <input type="text" class="nav-search-input" name="as_word" placeholder="Posição deste anúncio (busca)" maxlength="120" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" tabindex="3" style=" width: 100%;">
-    <button class="nav-search-btn" tabindex="4" style=" position: relative; top: -1.75em; background-color: #ebebeb; right: -12.7em; border-radius: 0em 0.31em 0.31em 0em;">
-      <div role="img" aria-label="Buscar" class="nav-icon-search"></div>
-    </button>
-  </span>
-  <br>
-  <span id="eaadvsearchResult" style="display: none;position: relative;top: 0.5em;">
-    <span style="color: #333333;display: block;font-weight: bold;position: relative;top: -0.77em;padding: 1em 0.5em 0.7em 0.5em;border: 1px solid #ebebeb;">
-      <img src="https://img.icons8.com/material-rounded/24/7e7e7e/search-property.png" style="width: 1.27em;position: relative;top: 0.27em;opacity: 0.5;">
-      <earesult> - | - <span style=" font-size: 0.7em; color: #00000050; letter-spacing: 0.035em; padding: 0.35em 0.75em; background-color: #ebebeb; border-radius: 1em;">"-"</span></earesult>
+  <div id="${analyticsWrapperId}" class="mfy-analytics-wrapper">
+    ${eagrossrev}
+    ${eamoretools}
+    ${eatoolbox}
+    ${eameter}
+    ${ranksearch}
+    ${easwitchoff}
+    ${eatoolbox_close}
+    ${eameterModal}
+    <span id="eaadvsearchForm" style="position: relative;top: 2.7em;z-index: 0;">
+      <input type="text" class="nav-search-input" name="as_word" placeholder="Posição deste anúncio (busca)" maxlength="120" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" tabindex="3" style=" width: 100%;">
+      <button class="nav-search-btn" tabindex="4" style=" position: relative; top: -1.75em; background-color: #ebebeb; right: -12.7em; border-radius: 0em 0.31em 0.31em 0em;">
+        <div role="img" aria-label="Buscar" class="nav-icon-search"></div>
+      </button>
     </span>
-  </span>
+    <br>
+    <span id="eaadvsearchResult" style="display: none;position: relative;top: 0.5em;">
+      <span style="color: #333333;display: block;font-weight: bold;position: relative;top: -0.77em;padding: 1em 0.5em 0.7em 0.5em;border: 1px solid #ebebeb;">
+        <img src="https://img.icons8.com/material-rounded/24/7e7e7e/search-property.png" style="width: 1.27em;position: relative;top: 0.27em;opacity: 0.5;">
+        <earesult> - | - <span style=" font-size: 0.7em; color: #00000050; letter-spacing: 0.035em; padding: 0.35em 0.75em; background-color: #ebebeb; border-radius: 1em;">"-"</span></earesult>
+      </span>
+    </span>
+  </div>
 `;
 
 var btn_preco = `
@@ -717,7 +721,13 @@ function parseSalesText(e) {
 }
 async function fetchProductDataFromPage(e, t) {
   let n = document.getElementsByClassName("ui-pdp-header");
-  n.length > 0 && n[0].insertAdjacentHTML("afterbegin", buildMainComponentSkeleton());
+  if (n.length > 0) {
+    const a = document.getElementById("main-component-skeleton");
+    a && (a.remove(), console.log("[EAMELI2] fetchProductDataFromPage: removed stale skeleton before reinjection for", e));
+    n[0].insertAdjacentHTML("afterbegin", buildMainComponentSkeleton());
+    console.log("[EAMELI2] fetchProductDataFromPage: skeleton injected for", e);
+  }
+  else console.warn("[EAMELI2] fetchProductDataFromPage: ui-pdp-header not found; skipping skeleton injection for", e);
   if (iscatalog = !0, itemsLocalData[e] || (document.dispatchEvent(new CustomEvent("GetProductData", {
     detail: {
       itemIds: [e]
@@ -725,19 +735,20 @@ async function fetchProductDataFromPage(e, t) {
   }
   )), await new Promise((e => setTimeout(e, 100)))), itemsLocalData[e] && itemsLocalData[e].startTime && void 0 !== itemsLocalData[e].itemSales) {
     const n = itemsLocalData[e];
+    console.log("[EAMELI2] fetchProductDataFromPage: using cached catalog payload for", e);
     vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
     let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
     if (a && vendas > 0) {
       let e = a.innerHTML;
       a.parentElement.style.margin = "1rem 0", a.innerHTML = e + ' (no catálogo)<br><strong style="font-weight: 900;color: var(--mfy-main);">' + vendas + ' vendas</strong><span style="font-size: 0.77em;position: relative;top: -0.1em;"> (deste modelo &amp; vendedor)</span>', a.setAttribute("sales", vendas)
     }
-    t()
+    console.log("[EAMELI2] fetchProductDataFromPage: catalog metrics ready from cache for", e), t()
   }
   else {
     const n = `https://produto.mercadolivre.com.br/MLB-${e.split("MLB")[1]}`;
     try {
       scrapeForScripts(e, n, !0, ((n, a) => {
-        if (a) t();
+        if (a) console.warn("[EAMELI2] fetchProductDataFromPage: scrapeForScripts returned error for", e, a), t();
         else try {
           let a, i, s = n || [], o = 0;
           if (s.length > 0) {
@@ -840,16 +851,18 @@ let n = `
                 )))
               }
             }
-            l && t()
+            l && (console.log("[EAMELI2] fetchProductDataFromPage: catalog metrics derived via scraping for", e), t())
           }
         }
-        catch (e) {
-          t()
+        catch (n) {
+          console.error("[EAMELI2] fetchProductDataFromPage: failed to parse scraped catalog data for", e, n), t()
         }
       }
       ), !1, mfyProxy)
     }
-    catch (e) {}
+    catch (t) {
+      console.error("[EAMELI2] fetchProductDataFromPage: unhandled error during scraping for", e, t)
+    }
   }
 }
 function buildMainComponentSkeleton() {
@@ -1454,11 +1467,23 @@ function contentScpt() {
       let n = document.getElementById("eacattrendsbtn");
       n.addEventListener("click", t)
     }
-    spot0[0].insertAdjacentHTML("afterbegin", analytics_ui), i(), function () {
+    spot0 = document.getElementsByClassName("ui-pdp-header");
+    if (!spot0?.length) {
+      console.warn("[EAMELI2] contentScpt: ui-pdp-header not found; analytics UI not injected.");
+      return;
+    }
+    const existingAnalyticsWrapper = document.getElementById(analyticsWrapperId);
+    existingAnalyticsWrapper && (existingAnalyticsWrapper.remove(), console.log("[EAMELI2] contentScpt: removed existing analytics wrapper before reinjection."));
+    spot0[0].insertAdjacentHTML("afterbegin", analytics_ui);
+    console.log("[EAMELI2] contentScpt: analytics UI injected.");
+    i();
+    (function () {
       let e = document.getElementById("eahealthmeter"), t = document.getElementById("eameter_modal");
       e && e.remove(), t && t.remove()
     }
-    (), t(), function () {
+    )();
+    t();
+    (function () {
       let e = eadataRetrieve("eaActive"), t = document.getElementById("eaoffSwitch");
       function n() {
         e = eadataRetrieve("eaActive"), null === e && (e = !0), e ? (t.lastChild.innerText = " Desligar Análises", t.firstChild.style.filter = "brightness(1)", t.firstChild.style.transform = "scaleX(1)", t.setAttribute("style", ""), iscatalog || (t.style.top = "0.31em")): (t.setAttribute("style", "background-color:rgb(52, 131, 250);color:#fff;"), t.firstChild.style.filter = "brightness(5)", t.firstChild.style.transform = "scaleX(-1)", t.lastChild.innerText = " Ligar Análises")
@@ -1471,14 +1496,20 @@ function contentScpt() {
       }
       ))
     }
-    (), n(), iscatalog && (document.getElementById("eaoffSwitch")?.setAttribute("style", "top: 0.35em;"), document.getElementById("eaadvsearchBtn")?.setAttribute("style", "left: 0.25em;")), a(), function () {
+    )();
+    n();
+    if (iscatalog) {
+      document.getElementById("eaoffSwitch")?.setAttribute("style", "top: 0.35em;"), document.getElementById("eaadvsearchBtn")?.setAttribute("style", "left: 0.25em;")
+    }
+    a();
+    (function () {
       const e = document.getElementById("highlights");
       if (e) {
         const t = e.cloneNode(!0);
         t.style.marginBottom = "1rem", e.remove(), document.querySelector(".ui-pdp-header")?.insertAdjacentElement("beforebegin", t)
       }
     }
-    ()
+    )()
   }
   function n(e) {
     taxaML_verif = parseFloat(e) < parseFloat(cota_minima_MLB) ? taxa_mlb - taxa_cota: taxa_mlb, taxa_percentual = (taxaML_verif / preco_Local).toFixed(3)
