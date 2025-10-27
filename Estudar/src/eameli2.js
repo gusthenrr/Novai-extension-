@@ -245,55 +245,6 @@ const NvaiLoader = nvaiLoaderTotal.getHTML();
 const spinLoaderManager = nvaiLoaderTotal;
 var SpinLoader = NvaiLoader;
 
-// ---- Resilient UI keep-alive (re-inject after React wipes nodes) ----
-let _mfyKeepAliveInterval = null;
-let _mfyKeepAliveObserver = null;
-let _mfyLastReinitAt = 0;
-const _mfyMinReinitGapMs = 1200;
-function _mfyScheduleReinit(reason) {
-  const now = Date.now();
-  if (now - _mfyLastReinitAt < _mfyMinReinitGapMs) return;
-  _mfyLastReinitAt = now;
-  try { initializeExtensionFeatures(); } catch (_) {}
-}
-function _mfyKeepAliveTick() {
-  try {
-    if (paginaAtual === 'anuncio') {
-      const hasSwitch = document.getElementById('eaoffSwitch');
-      if (!hasSwitch) return _mfyScheduleReinit('missing eaoffSwitch');
-    } else if (paginaAtual === 'lista') {
-      const hasCTA = document.getElementById('ealistrequest') || document.getElementById('mfy-catalog-filter-container');
-      if (!hasCTA) return _mfyScheduleReinit('missing list widgets');
-    }
-  } catch (_) {}
-}
-function startKeepAlive() {
-  if (!_mfyKeepAliveInterval) {
-    _mfyKeepAliveInterval = setInterval(_mfyKeepAliveTick, 1500);
-  }
-  if (!_mfyKeepAliveObserver && typeof MutationObserver !== 'undefined') {
-    const root = document.getElementById('root-app') || document.body;
-    _mfyKeepAliveObserver = new MutationObserver((mutations) => {
-      // If one of our nodes was removed, verify after a tiny delay
-      // and only re-inject if the node is STILL missing (avoids duplicates on replace/outerHTML).
-      let removedOurNode = false;
-      for (const m of mutations) {
-        if (m.type === 'childList') {
-          m.removedNodes && m.removedNodes.forEach(n => {
-            if (n && n.nodeType === 1) {
-              const el = n;
-              if (el.id === 'eaoffSwitch' || el.id === 'ealistrequest' || el.id === 'price-tool' || el.classList?.contains('eamaindropdownmenu')) {
-                removedOurNode = true;
-              }
-            }
-          });
-        }
-      }
-      if (removedOurNode) setTimeout(_mfyKeepAliveTick, 100);
-    });
-    try { _mfyKeepAliveObserver.observe(root, { childList: true, subtree: true }); } catch (_) {}
-  }
-}
 function parseJwt(e) {
   var t = e?.split(".")[1], n = t.replace(/-/g, "+").replace(/_/g, "/"), a = decodeURIComponent(window.atob(n).split("").map((function (e) {
     return "%" + ("00" + e.charCodeAt(0).toString(16)).slice(-2)
@@ -899,52 +850,22 @@ function dLayerMainFallback() {
 }
 function dlayerFallback() {
   const catalogBody = catalogData?.[0]?.body || {};
-  const dataLayerEntry = Array.isArray(dataLayer) && dataLayer.length > 0 ? dataLayer[0] : null;
-  let startTimeRaw = catalogBody.date_created ?? dataLayerEntry?.startTime ?? null;
-  const vendasAlt = catalogBody.sold_quantity;
-  const vendasIsEmpty = typeof vendas === "string" ? vendas.length === 0 : null == vendas;
-  if (vendasIsEmpty) {
-    const parsedSubtitleSales = (() => {
-      const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
-      if (!subtitleEl) return null;
-      let salesText = subtitleEl.innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
-      if (!salesText) return null;
-      if (salesText.endsWith("mil")) {
-        const numeric = parseFloat(salesText.replace("mil", ""));
-        return isNaN(numeric) ? null : numeric * 1e3;
-      }
-      const numeric = parseFloat(salesText.replace(/\./g, "").replace(",", "."));
-      return isNaN(numeric) ? null : numeric;
-    })();
-    if (typeof vendasAlt === "number" && !isNaN(vendasAlt)) vendas = vendasAlt;
-    else if (typeof parsedSubtitleSales === "number" && !isNaN(parsedSubtitleSales)) vendas = parsedSubtitleSales;
-  }
-  if ("number" == typeof startTimeRaw && isFinite(startTimeRaw)) {
-    const normalized = new Date(startTimeRaw);
-    startTimeRaw = isNaN(normalized.getTime()) ? null : normalized.toISOString();
-  }
-  if ("string" != typeof startTimeRaw || startTimeRaw.length === 0) return void dLayerMainFallback();
-  dLayerAlt = startTimeRaw;
-  dLayer = dLayerAlt.split("T")[0];
-  if (!dLayer) return void dLayerMainFallback();
-  "" == data_br && (data_br = dLayer.split("-").reverse().join("/"));
-  const dataMilisec = Date.parse(dLayer);
-  if (isNaN(dataMilisec)) return void dLayerMainFallback();
-  const diff = eanow - dataMilisec;
-  eadiff = diff;
-  if ("" == dias) {
-    const computedDays = Math.round(diff / (8.64 * Math.pow(10, 7)));
-    !isNaN(computedDays) && (dias = computedDays);
-  }
-  if ("" == media_vendas) {
-    if ("number" == typeof vendas && !isNaN(vendas) && dias > 0) {
-      const monthlyAvg = Math.round(vendas / (dias / 30));
-      media_vendas = isNaN(monthlyAvg) ? "Indisponível" : monthlyAvg;
-    } else media_vendas = "Indisponível";
-  }
-  const diasNumber = "number" == typeof dias ? dias : parseFloat(dias);
-  if (!isNaN(diasNumber)) dias = diasNumber;
-  0 == diasNumber ? media_vendas = "0": diasNumber < 30 && !isNaN(diasNumber) && (alert_media_vendas = !0);
+  const dataLayerEntry = Array.isArray(dataLayer) && dataLayer.length > 0 ? dataLayer[0] : {};
+  dLayerAlt = catalogBody.date_created ?? dataLayerEntry.startTime;
+  vendasAlt = catalogBody.sold_quantity;
+  0 == vendas.length && (vendas = vendasAlt || (() => {
+    const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
+    if (!subtitleEl) return vendas;
+    let subtitleSales = subtitleEl.innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
+    return subtitleSales ? (subtitleSales.endsWith("mil") && (subtitleSales = 1e3 * parseFloat(subtitleSales.replace("mil", ""))), parseFloat(subtitleSales) || vendas) : vendas;
+  })());
+  dLayer = dLayerAlt?.split("T")[0];
+  data_br = "" == data_br ? dLayer?.split("-").reverse().join("/") : data_br;
+  dataMilisec = Date.parse(dLayer);
+  eadiff = eanow - dataMilisec;
+  "" == dias && (dias = Math.round(eadiff / (8.64 * Math.pow(10, 7))));
+  "" == media_vendas && (media_vendas = isNaN(Math.round(vendas / (dias / 30))) ? "Indisponível" : Math.round(vendas / (dias / 30)));
+  0 == dias ? media_vendas = "0" : dias < 30 && (alert_media_vendas = !0);
   dLayerMainFallback();
 }
 function altContentScpt() {
@@ -3820,7 +3741,6 @@ async function findUser() {
 function mfyStart() {
   // Ensure dayjs is bound from window and initialize uid once if missing
   dayjs = window.dayjs;
-  try { startKeepAlive(); } catch(_) {}
   if (uid == null) {
     (async function () {
       const start = Date.now();
