@@ -1141,7 +1141,81 @@ function dLayerMainFallback() {
 function dlayerFallback() {
   const catalogBody = catalogData?.[0]?.body || {};
   const dataLayerEntry = Array.isArray(dataLayer) && dataLayer.length > 0 ? dataLayer[0] : null;
-  let startTimeRaw = catalogBody.date_created ?? dataLayerEntry?.startTime ?? null;
+  const coerceItemId = rawId => {
+    if (!rawId && 0 !== rawId) return null;
+    if (typeof rawId === "number" && isFinite(rawId)) return `MLB${rawId}`;
+    if (typeof rawId === "string") {
+      const trimmed = rawId.trim();
+      if (!trimmed) return null;
+      const mlbMatch = trimmed.match(/^MLB-?(\d+)/i);
+      if (mlbMatch) return `MLB${mlbMatch[1]}`;
+      const numeric = trimmed.match(/(\d+)/);
+      if (numeric) return `MLB${numeric[1]}`;
+    }
+    return null;
+  };
+  const normalizeStartTime = value => {
+    if (!value && 0 !== value) return null;
+    if (value instanceof Date && !isNaN(value.getTime())) return value.toISOString();
+    if (typeof value === "number" && isFinite(value)) {
+      const normalized = new Date(value);
+      return isNaN(normalized.getTime()) ? null : normalized.toISOString();
+    }
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      if (/^\d+$/.test(trimmed)) {
+        const numeric = parseInt(trimmed, 10);
+        if (!isNaN(numeric)) {
+          const normalized = new Date(numeric);
+          if (!isNaN(normalized.getTime())) return normalized.toISOString();
+        }
+      }
+      const normalized = new Date(trimmed);
+      return isNaN(normalized.getTime()) ? null : normalized.toISOString();
+    }
+    return null;
+  };
+  const startTimeCandidates = (() => {
+    const inferredItemId = coerceItemId(
+      dataLayerEntry?.itemId
+      ?? dataLayerEntry?.catalogProductId
+      ?? catalogBody?.id
+    );
+    const localStartTime = inferredItemId && itemsLocalData?.[inferredItemId]?.startTime
+      ? itemsLocalData[inferredItemId].startTime
+      : null;
+    return [
+      catalogBody.date_created,
+      dataLayerEntry?.startTime,
+      dataLayerEntry?.components?.track?.gtm_event?.startTime,
+      dataLayerEntry?.components?.track?.startTime,
+      dataLayerEntry?.gtm_event?.startTime,
+      trackDataParsed?.startTime,
+      trackDataParsed?.components?.track?.gtm_event?.startTime,
+      preLoadedState?.startTime,
+      preLoadedState?.initialState?.startTime,
+      preLoadedState?.initialState?.components?.track?.gtm_event?.startTime,
+      preLoadedState?.pageState?.startTime,
+      preLoadedState?.pageState?.components?.track?.gtm_event?.startTime,
+      altPreloadedState?.startTime,
+      altPreloadedState?.initialState?.startTime,
+      altPreloadedState?.initialState?.components?.track?.gtm_event?.startTime,
+      altPreloadedState?.pageState?.startTime,
+      altPreloadedState?.pageState?.components?.track?.gtm_event?.startTime,
+      melidata_namespace?.track?.gtm_event?.startTime,
+      melidata_namespace?.track?.startTime,
+      localStartTime
+    ].filter(value => value || value === 0);
+  })();
+  let startTimeRaw = null;
+  for (const candidate of startTimeCandidates) {
+    const normalized = normalizeStartTime(candidate);
+    if (normalized) {
+      startTimeRaw = normalized;
+      break;
+    }
+  }
   const vendasAlt = catalogBody.sold_quantity;
   const vendasIsEmpty = typeof vendas === "string" ? vendas.length === 0 : null == vendas;
   if (vendasIsEmpty) {
@@ -1160,11 +1234,20 @@ function dlayerFallback() {
     if (typeof vendasAlt === "number" && !isNaN(vendasAlt)) vendas = vendasAlt;
     else if (typeof parsedSubtitleSales === "number" && !isNaN(parsedSubtitleSales)) vendas = parsedSubtitleSales;
   }
-  if ("number" == typeof startTimeRaw && isFinite(startTimeRaw)) {
-    const normalized = new Date(startTimeRaw);
-    startTimeRaw = isNaN(normalized.getTime()) ? null : normalized.toISOString();
+  if (!startTimeRaw) {
+    dLayerMainFallback();
+    if (!dlayerFallback._retryTimeout) {
+      dlayerFallback._retryTimeout = setTimeout(() => {
+        dlayerFallback._retryTimeout = null;
+        dlayerFallback();
+      }, 400);
+    }
+    return;
   }
-  if ("string" != typeof startTimeRaw || startTimeRaw.length === 0) return void dLayerMainFallback();
+  if (dlayerFallback._retryTimeout) {
+    clearTimeout(dlayerFallback._retryTimeout);
+    dlayerFallback._retryTimeout = null;
+  }
   dLayerAlt = startTimeRaw;
   dLayer = dLayerAlt.split("T")[0];
   if (!dLayer) return void dLayerMainFallback();
