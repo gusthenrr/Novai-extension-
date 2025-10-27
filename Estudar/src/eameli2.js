@@ -195,6 +195,159 @@ function ensureVisitsComponentSkeleton(container) {
     container.insertAdjacentHTML("afterbegin", buildVisitsComponentSkeleton());
   }
 }
+
+const NOVAI_SINCE_WRAPPER_ID = "novai-since-wrapper";
+const NOVAI_MEDIA_ALERT_ID = "novai-media-alert";
+const NOVAI_MEDIA_TOOLTIP_ID = "novai-media-tooltip";
+const NOVAI_MEDIA_INFO_ATTR = "data-novai-media-info";
+const NOVAI_CREATED_DAYS_ATTR = "data-novai-created-days";
+const NOVAI_CREATED_DATE_ATTR = "data-novai-created-date";
+const NOVAI_MEDIA_VALUE_ATTR = "data-novai-media-value";
+const NOVAI_MEDIA_POPUP_ID = "eamediapop";
+
+function buildSinceAndMediaMarkup() {
+  return `
+    <div id="${NOVAI_SINCE_WRAPPER_ID}" style="display: flex;align-items: center;justify-content: start;gap: .5rem;">
+      <div id="easince" style="font-size: 0.95rem;font-weight: 700;display: inline-flex;border-radius: 1em;color: rgb(90, 90, 90);box-shadow: rgb(0, 0, 0) 0px 2px 11px -7px;padding: 0.35em 1em;position: relative;transition: 0.35s;min-width: fit-content;cursor:default">
+        <span style=" margin-top: 0.2em;">Criado há: <span ${NOVAI_CREATED_DAYS_ATTR}>?</span> dia(s)</span>
+        <span ${NOVAI_CREATED_DATE_ATTR} style="position: absolute;top: 1.75em;font-size: 0.92em;font-weight: 200;opacity: 0;transition: all 0.35s;">(--/--/----)</span>
+      </div>
+      <div id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;align-items: center;padding: 0.75em 1em;position: relative;z-index: 10;border-radius:2rem;gap: 0.35rem;cursor:default">
+        <span style="font-size: .9rem;">Média:</span>
+        <div style="min-width: fit-content;font-size: 1.2rem;" ${NOVAI_MEDIA_VALUE_ATTR}>-</div>
+        <span style="font-size: .9rem;">vendas/mês</span>
+        <span ${NOVAI_MEDIA_INFO_ATTR} style="display:none;align-items:center;position:relative;">
+          <span class="mfy-info-icon_catalog-sales" style="margin: 0 -0.25rem 0 0.5rem;cursor:pointer;display:inline-flex;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info-icon lucide-info">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 16v-4"></path>
+              <path d="M12 8h.01"></path>
+            </svg>
+          </span>
+          <div id="${NOVAI_MEDIA_TOOLTIP_ID}" class="mfy-catalog-info-tooltip" style="pointer-events: none; display: flex; align-items:center; justify-content:center; position: absolute; bottom: 35px; left: -15rem; background-color: var(--mfy-main); padding: 0 1rem; z-index: 1000; color: white; border-radius: 0.5rem 0.5rem 0 0.5rem; box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.51); width: fit-content; transition: opacity 0.4s ease-in-out; opacity: 0;">
+            <div style="font-size: 0.85em;margin-right:.5rem;display:flex;align-items:center;justify-content:center;gap:0.85rem;">
+              <span style="line-height: 1.1rem;text-align: start;padding: 0 0 0 1rem;">Média de vendas apenas do anúncio vencedor atual deste catálogo.</span>
+            </div>
+          </div>
+        </span>
+      </div>
+      <div id="${NOVAI_MEDIA_ALERT_ID}" class="easalesavg-alert" style="display:none;background: var(--mfy-main);position: relative;z-index: 11;height: 1.75em;border-radius: 100%;padding: 5px;margin-left: -0.5rem;">
+        <img src="https://img.icons8.com/material-outlined/24/ffffff/clock-alert.png">
+      </div>
+    </div>
+  `;
+}
+
+function ensureSinceAndMediaContainer(anchorElement) {
+  if (!anchorElement) return null;
+  let wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+  if (!wrapper) {
+    anchorElement.insertAdjacentHTML("afterbegin", buildSinceAndMediaMarkup());
+    wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+  }
+  if (!wrapper) return null;
+
+  const sinceNode = wrapper.querySelector("#easince");
+  if (sinceNode && !sinceNode.dataset.novaiHoverBound) {
+    sinceNode.dataset.novaiHoverBound = "1";
+    const dateSpan = sinceNode.querySelector(`[${NOVAI_CREATED_DATE_ATTR}]`);
+    sinceNode.addEventListener("mouseover", (function () {
+      sinceNode.style.padding = "0.35em 1em 1.35em 1em";
+      dateSpan && (dateSpan.style.opacity = "100%");
+    }));
+    sinceNode.addEventListener("mouseout", (function () {
+      sinceNode.style.padding = "0.35em 1em 0.35em 1em";
+      dateSpan && (dateSpan.style.opacity = "0%");
+    }));
+  }
+
+  const mediaInfoWrapper = wrapper.querySelector(`[${NOVAI_MEDIA_INFO_ATTR}]`);
+  const tooltip = wrapper.querySelector(`#${NOVAI_MEDIA_TOOLTIP_ID}`);
+  if (mediaInfoWrapper && tooltip && !mediaInfoWrapper.dataset.novaiHoverBound) {
+    mediaInfoWrapper.dataset.novaiHoverBound = "1";
+    const show = () => {
+      if ("none" !== mediaInfoWrapper.style.display) {
+        tooltip.style.opacity = "1";
+      }
+    };
+    const hide = () => {
+      tooltip.style.opacity = "0";
+    };
+    mediaInfoWrapper.addEventListener("mouseover", show);
+    mediaInfoWrapper.addEventListener("mouseout", hide);
+  }
+
+  const mediaAlert = wrapper.querySelector(`#${NOVAI_MEDIA_ALERT_ID}`);
+  if (mediaAlert && !mediaAlert.dataset.novaiHoverBound) {
+    mediaAlert.dataset.novaiHoverBound = "1";
+    mediaAlert.addEventListener("mouseover", (function () {
+      let popup = document.getElementById(NOVAI_MEDIA_POPUP_ID);
+      if (!popup) {
+        mediaAlert.insertAdjacentHTML("afterend", '<div id="' + NOVAI_MEDIA_POPUP_ID + '" class="ui-pdp-buybox" style="pointer-events: none;box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.35) 1px 10px 4px -7px;position: absolute;top: 12rem;padding: 1em;font-size: 14px;font-weight: 400;color: rgb(255, 255, 255);background-color: var(--mfy-main);z-index: 11;display: block;"><b>Anúncio com menos de 30 dias.</b> (Média mensal foi estimada apenas a partir das vendas do primeiro mês).</div>');
+        popup = document.getElementById(NOVAI_MEDIA_POPUP_ID);
+      }
+      popup && (popup.style.display = "block");
+    }));
+    mediaAlert.addEventListener("mouseout", (function () {
+      const popup = document.getElementById(NOVAI_MEDIA_POPUP_ID);
+      popup && (popup.style.display = "none");
+    }));
+  }
+
+  return wrapper;
+}
+
+function updateSinceAndMediaUI(options = {}) {
+  const wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+  if (!wrapper) return;
+
+  const daysRaw = options.days;
+  const daysNumber = Number(daysRaw);
+  const normalizedDays = Number.isFinite(daysNumber) ? Math.max(0, Math.round(daysNumber)) : null;
+  const daysSpan = wrapper.querySelector(`[${NOVAI_CREATED_DAYS_ATTR}]`);
+  if (daysSpan) {
+    daysSpan.textContent = null !== normalizedDays ? normalizedDays : "?";
+  }
+
+  const dateSpan = wrapper.querySelector(`[${NOVAI_CREATED_DATE_ATTR}]`);
+  if (dateSpan) {
+    const formatted = options.dateBR && "string" == typeof options.dateBR && options.dateBR.trim().length > 0 ? options.dateBR : "--/--/----";
+    dateSpan.textContent = `(${formatted})`;
+  }
+
+  const mediaSpan = wrapper.querySelector(`[${NOVAI_MEDIA_VALUE_ATTR}]`);
+  if (mediaSpan) {
+    let value = options.mediaValue;
+    if (typeof value === "number" && !isNaN(value)) {
+      value = value;
+    } else if (typeof value === "string") {
+      value = value.trim();
+      if (!value) value = "-";
+    } else {
+      value = "-";
+    }
+    mediaSpan.textContent = value;
+  }
+
+  const mediaInfoWrapper = wrapper.querySelector(`[${NOVAI_MEDIA_INFO_ATTR}]`);
+  if (mediaInfoWrapper) {
+    mediaInfoWrapper.style.display = options.showCatalogInfo ? "inline-flex" : "none";
+  }
+
+  const mediaAlert = wrapper.querySelector(`#${NOVAI_MEDIA_ALERT_ID}`);
+  if (mediaAlert) {
+    mediaAlert.style.display = options.showMediaAlert ? "inline-flex" : "none";
+  }
+}
+
+function removeSinceAndMediaContainer() {
+  const wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+  if (wrapper && wrapper.parentNode) {
+    wrapper.parentNode.removeChild(wrapper);
+  }
+  const popup = document.getElementById(NOVAI_MEDIA_POPUP_ID);
+  popup && popup.remove();
+}
 // ===== NVAI LOADER TOTAL (drop-in) =====
 class NvaiLoaderTotal {
   constructor(defaults = {}) {
@@ -1141,7 +1294,81 @@ function dLayerMainFallback() {
 function dlayerFallback() {
   const catalogBody = catalogData?.[0]?.body || {};
   const dataLayerEntry = Array.isArray(dataLayer) && dataLayer.length > 0 ? dataLayer[0] : null;
-  let startTimeRaw = catalogBody.date_created ?? dataLayerEntry?.startTime ?? null;
+  const coerceItemId = rawId => {
+    if (!rawId && 0 !== rawId) return null;
+    if (typeof rawId === "number" && isFinite(rawId)) return `MLB${rawId}`;
+    if (typeof rawId === "string") {
+      const trimmed = rawId.trim();
+      if (!trimmed) return null;
+      const mlbMatch = trimmed.match(/^MLB-?(\d+)/i);
+      if (mlbMatch) return `MLB${mlbMatch[1]}`;
+      const numeric = trimmed.match(/(\d+)/);
+      if (numeric) return `MLB${numeric[1]}`;
+    }
+    return null;
+  };
+  const normalizeStartTime = value => {
+    if (!value && 0 !== value) return null;
+    if (value instanceof Date && !isNaN(value.getTime())) return value.toISOString();
+    if (typeof value === "number" && isFinite(value)) {
+      const normalized = new Date(value);
+      return isNaN(normalized.getTime()) ? null : normalized.toISOString();
+    }
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      if (/^\d+$/.test(trimmed)) {
+        const numeric = parseInt(trimmed, 10);
+        if (!isNaN(numeric)) {
+          const normalized = new Date(numeric);
+          if (!isNaN(normalized.getTime())) return normalized.toISOString();
+        }
+      }
+      const normalized = new Date(trimmed);
+      return isNaN(normalized.getTime()) ? null : normalized.toISOString();
+    }
+    return null;
+  };
+  const startTimeCandidates = (() => {
+    const inferredItemId = coerceItemId(
+      dataLayerEntry?.itemId
+      ?? dataLayerEntry?.catalogProductId
+      ?? catalogBody?.id
+    );
+    const localStartTime = inferredItemId && itemsLocalData?.[inferredItemId]?.startTime
+      ? itemsLocalData[inferredItemId].startTime
+      : null;
+    return [
+      catalogBody.date_created,
+      dataLayerEntry?.startTime,
+      dataLayerEntry?.components?.track?.gtm_event?.startTime,
+      dataLayerEntry?.components?.track?.startTime,
+      dataLayerEntry?.gtm_event?.startTime,
+      trackDataParsed?.startTime,
+      trackDataParsed?.components?.track?.gtm_event?.startTime,
+      preLoadedState?.startTime,
+      preLoadedState?.initialState?.startTime,
+      preLoadedState?.initialState?.components?.track?.gtm_event?.startTime,
+      preLoadedState?.pageState?.startTime,
+      preLoadedState?.pageState?.components?.track?.gtm_event?.startTime,
+      altPreloadedState?.startTime,
+      altPreloadedState?.initialState?.startTime,
+      altPreloadedState?.initialState?.components?.track?.gtm_event?.startTime,
+      altPreloadedState?.pageState?.startTime,
+      altPreloadedState?.pageState?.components?.track?.gtm_event?.startTime,
+      melidata_namespace?.track?.gtm_event?.startTime,
+      melidata_namespace?.track?.startTime,
+      localStartTime
+    ].filter(value => value || value === 0);
+  })();
+  let startTimeRaw = null;
+  for (const candidate of startTimeCandidates) {
+    const normalized = normalizeStartTime(candidate);
+    if (normalized) {
+      startTimeRaw = normalized;
+      break;
+    }
+  }
   const vendasAlt = catalogBody.sold_quantity;
   const vendasIsEmpty = typeof vendas === "string" ? vendas.length === 0 : null == vendas;
   if (vendasIsEmpty) {
@@ -1160,11 +1387,20 @@ function dlayerFallback() {
     if (typeof vendasAlt === "number" && !isNaN(vendasAlt)) vendas = vendasAlt;
     else if (typeof parsedSubtitleSales === "number" && !isNaN(parsedSubtitleSales)) vendas = parsedSubtitleSales;
   }
-  if ("number" == typeof startTimeRaw && isFinite(startTimeRaw)) {
-    const normalized = new Date(startTimeRaw);
-    startTimeRaw = isNaN(normalized.getTime()) ? null : normalized.toISOString();
+  if (!startTimeRaw) {
+    dLayerMainFallback();
+    if (!dlayerFallback._retryTimeout) {
+      dlayerFallback._retryTimeout = setTimeout(() => {
+        dlayerFallback._retryTimeout = null;
+        dlayerFallback();
+      }, 400);
+    }
+    return;
   }
-  if ("string" != typeof startTimeRaw || startTimeRaw.length === 0) return void dLayerMainFallback();
+  if (dlayerFallback._retryTimeout) {
+    clearTimeout(dlayerFallback._retryTimeout);
+    dlayerFallback._retryTimeout = null;
+  }
   dLayerAlt = startTimeRaw;
   dLayer = dLayerAlt.split("T")[0];
   if (!dLayer) return void dLayerMainFallback();
@@ -1221,6 +1457,33 @@ function parseSalesText(e) {
     thisItemSales: a
   }
 }
+function upsertCatalogBadge(vendas) {
+  const subtitle = document.querySelector('.ui-pdp-subtitle');
+  if (!subtitle) return;
+
+  // margem visual
+  if (subtitle.parentElement) {
+    subtitle.parentElement.style.margin = '1rem 0';
+  }
+
+  // procura um badge já inserido
+  let badge = subtitle.querySelector('.mfy-catalog-badge');
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.className = 'mfy-catalog-badge';
+    badge.innerHTML =
+      ' (no catálogo)<br>' +
+      '<strong class="mfy-catalog-badge-sales" style="font-weight:900;color:var(--mfy-main);"></strong>' +
+      '<span style="font-size:0.77em;position:relative;top:-0.1em;"> (deste modelo &amp; vendedor)</span>';
+    subtitle.appendChild(badge);
+  }
+
+  const salesNode = badge.querySelector('.mfy-catalog-badge-sales');
+  if (salesNode) salesNode.textContent = `${vendas} vendas`;
+
+  subtitle.setAttribute('data-mfy-sales', String(vendas));
+}
+
 async function fetchProductDataFromPage(rawItemId, t) {
   const altPS = (typeof window !== "undefined" && window.altPreloadedState) ? window.altPreloadedState : altPreloadedState;
   let normalizedItemId = rawItemId ?? dataLayer[0]?.itemId ?? dataLayer[0]?.catalogProductId;
@@ -1265,9 +1528,9 @@ async function fetchProductDataFromPage(rawItemId, t) {
     vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
     let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
     if (a && vendas > 0) {
-      let e = a.innerHTML;
-      a.parentElement.style.margin = "1rem 0", a.innerHTML = e + ' (no catálogo)<br><strong style="font-weight: 900;color: var(--mfy-main);">' + vendas + ' vendas</strong><span style="font-size: 0.77em;position: relative;top: -0.1em;"> (deste modelo &amp; vendedor)</span>', a.setAttribute("sales", vendas)
-    }
+  upsertCatalogBadge(vendas);
+}
+
     t()
   }
   else {
@@ -1320,7 +1583,7 @@ async function fetchProductDataFromPage(rawItemId, t) {
                     const t = s.match(/^[+]?(\d+)(mil)?/i);
                     a = t ? parseInt(t[1], 10) * (t[2] ? 1e3: 1): 0, i && (o = dayjs().diff(i, "day") ? dayjs().diff(i, "day"): 0, o++, (a >= 100 && o > 30 || a < 100 && o >= 90 || a < 5 && o > 45) && document.dispatchEvent(new CustomEvent("StoreProductData", {
                       detail: {
-                        itemId: e,
+                        itemId: normalizedItemId,
                         startTime: i,
                         itemSales: a
                       }
@@ -1335,9 +1598,9 @@ async function fetchProductDataFromPage(rawItemId, t) {
               vendas = a, dias = o, data_br = dayjs(i).locale("pt-br").format("DD/MM/YYYY"), media_vendas = isNaN(Math.round(vendas / (dias / 30))) ? "-": Math.round(vendas / (dias / 30));
               let e = document.getElementsByClassName("ui-pdp-subtitle")[0];
               if (e) {
-                let t = e.innerHTML;
-                e.parentElement.style.margin = "1rem 0", e.innerHTML = t + ' (no catálogo)<br><strong style="font-weight: 900;color: var(--mfy-main);">' + vendas + ' vendas</strong><span style="font-size: 0.77em;position: relative;top: -0.1em;"> (deste modelo &amp; vendedor)</span>', e.setAttribute("sales", vendas)
-              }
+  upsertCatalogBadge(vendas);
+}
+
               let t = document.getElementById("mediabtn");
               if (t && dias > 0) {
                 let e = `
@@ -2660,7 +2923,10 @@ function s() {
           const delay = Math.max(0, 800 - elapsed);
           setTimeout((() => {
             const holder = document.getElementById("visits-component");
-            holder && (holder.outerHTML = t, setTimeout(l, 250));
+            if (holder) {
+              holder.innerHTML = t;
+              setTimeout(l, 250);
+            }
           }
           ), delay);
         }
@@ -2727,28 +2993,24 @@ function s() {
           taxa_mlb = e.sale_fee_amount, preco_Local < cota_minima_MLB ? (t = taxa_cota, n()): (t = 0, n())
         }
         (() => {
-          spot[0].parentElement.setAttribute("style", "flex-direction: column;"), spot[0].insertAdjacentHTML("beforebegin", btn);
-          let e = document.getElementById("easince");
-          e && (e.addEventListener("mouseover", (function () {
-            this.style.padding = "0.35em 1em 1.35em 1em", this.lastChild.style.opacity = "100%"
+          const titleNode = spot[0];
+          if (!titleNode) return;
+          const titleParent = titleNode.parentElement;
+          titleParent && titleParent.setAttribute("style", "flex-direction: column;");
+          if ("pro" === verif) {
+            const wrapper = ensureSinceAndMediaContainer(titleNode);
+            const numericDays = Number(dias);
+            updateSinceAndMediaUI({
+              days: dias,
+              dateBR: data_br,
+              mediaValue: iscatalog && 0 == media_vendas ? "-" : media_vendas,
+              showCatalogInfo: !!(iscatalog && Number.isFinite(numericDays) && numericDays > 0),
+              showMediaAlert: !!alert_media_vendas
+            });
+          } else {
+            removeSinceAndMediaContainer();
           }
-          )), e.addEventListener("mouseout", (function () {
-            this.style.padding = "0.35em 1em 0.35em 1em", this.lastChild.style.opacity = "0%"
-          }
-          )));
-          let t = document.getElementsByClassName("easalesavg-alert")[0];
-          if (t && (t.addEventListener("mouseover", (function () {
-            let e = document.getElementById("eamediapop");
-            if (null == e) {
-              let e = '<div id="eamediapop" class="ui-pdp-buybox" style="pointer-events: none;box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.35) 1px 10px 4px -7px;position: absolute;top: 12rem;padding: 1em;font-size: 14px;font-weight: 400;color: rgb(255, 255, 255);background-color: var(--mfy-main);z-index: 11;display: block;"><b>Anúncio com menos de 30 dias.</b> (Média mensal foi estimada apenas a partir das vendas do primeiro mês).</div>';
-              this.insertAdjacentHTML("afterend", e)
-            }
-            else e.style.display = "block"
-          }
-          )), t.addEventListener("mouseout", (function () {
-            document.getElementById("eamediapop").style.display = "none"
-          }
-          ))), "anuncio" == paginaAtual && "pro" == verif) {
+          if ("anuncio" == paginaAtual && "pro" == verif) {
             const e = Array.from(document.getElementsByClassName("ui-pdp-gallery__wrapper")), t = '<div class="eadownloadicon"><img src="https://img.icons8.com/fluency-systems-regular/48/ffffff/file-download.png" alt="Baixar imagem"></div>', a = '<span class="eagetallimgs ui-pdp-gallery__wrapper"><label class="ui-pdp-gallery__label"><div class="ui-pdp-thumbnail ui-pdp-gallery__thumbnail"><div class="eagetallimgs-inside ui-pdp-thumbnail__picture" style="background: #FFD600;padding: 1em;"><img width="44" height="44" src="https://img.icons8.com/material-rounded/24/ffffff/download-2.png" style=" position: relative; top: -0.5em;"><span style=" color: #fff; position: relative; top: -1em; font-size: 11px;">Todas</span></div></div></label></span>', i = document.getElementsByClassName("ui-pdp-gallery__column")[0], s = [];
             const n = e => {
               e.style.display = "flex", e.style.alignItems = "center", e.style.justifyContent = "center", e.style.width = "44px", e.style.height = "44px", e.style.margin = "0.5em 0 0 0.5em", e.style.background = "#FFD600", e.style.borderRadius = "12px", e.style.cursor = "pointer"
@@ -2855,7 +3117,7 @@ function s() {
         }
         ), 200)
       }
-      else btn = "", spot[0].insertAdjacentHTML("afterbegin", btn)
+      else removeSinceAndMediaContainer()
     }
     spot3 = document.getElementsByClassName("ui-pdp-title"), reflow = document.getElementsByClassName("ui-pdp-header__title-container"), maisFunc = document.getElementById("plusf");
     const headerEl = document.getElementsByClassName("ui-pdp-header")[0];
