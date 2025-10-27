@@ -2511,36 +2511,53 @@ function s() {
           }
           ), delay);
         }
+        const handleVisitsResponse = async e => {
+          const {
+            itemId: t, visitsData: n
+          }
+          = e.detail || {};
+          console.debug("[Novai] VisitsDataResponse event", e.detail);
+
+          try {
+            if (t === item_ID && n) {
+              d(n);
+              return;
+            }
+
+            const authReady = await ensureAuthHeaderForRequests("métricas de visitas");
+            if (!authReady) {
+              const holder = document.getElementById("visits-component");
+              holder && (holder.innerHTML = '<div style="opacity: 0.5;"><span>-</span></div>');
+              return;
+            }
+
+            const response = await fetch(`${mfyProxyLessRestricted}https://api.mercadolibre.com/visits/items?ids=${item_ID}`, eaInit);
+            const body = await response.json();
+            console.debug("[Novai] Visits API response", body);
+            d(body);
+            document.dispatchEvent(new CustomEvent("StoreVisitsData", {
+              detail: {
+                itemId: item_ID,
+                visitsData: body
+              }
+            }));
+          }
+          catch (t) {
+            console.error("[Novai] Visits API error", t);
+            const n = document.getElementById("visits-component");
+            n && (n.innerHTML = '<div style="opacity: 0.5;"><span>-</span></div>');
+          }
+          finally {
+            document.removeEventListener("VisitsDataResponse", handleVisitsResponse);
+          }
+        };
+
+        document.addEventListener("VisitsDataResponse", handleVisitsResponse);
         document.dispatchEvent(new CustomEvent("GetVisitsData", {
           detail: {
             itemId: item_ID
           }
-        }
-        ));
-        const T = e => {
-          const {
-            itemId: t, visitsData: n
-          }
-          = e.detail;
-          console.debug("[Novai] VisitsDataResponse event", e.detail);
-          t === item_ID && n ? d(n): fetch(`${mfyProxyLessRestricted}https://api.mercadolibre.com/visits/items?ids=${item_ID}`, eaInit).then((e => e.json())).then((e => {
-            console.debug("[Novai] Visits API response", e),
-            d(e), document.dispatchEvent(new CustomEvent("StoreVisitsData", {
-              detail: {
-                itemId: item_ID,
-                visitsData: e
-              }
-            }
-            ))
-          }
-          )).catch ((function (t) {
-            console.error("[Novai] Visits API error", t);
-            const n = document.getElementById("visits-component");
-            n && (n.innerHTML = '<div style="opacity: 0.5;"><span>-</span></div>')
-          }
-          )), document.removeEventListener("VisitsDataResponse", T)
-        }
-        ;
+        }));
         function m(e) {
           let t = 0;
           function n() {
@@ -2556,7 +2573,7 @@ function s() {
           }
           taxa_mlb = e.sale_fee_amount, preco_Local < cota_minima_MLB ? (t = taxa_cota, n()): (t = 0, n())
         }
-        document.addEventListener("VisitsDataResponse", T), function () {
+        (() => {
           spot[0].parentElement.setAttribute("style", "flex-direction: column;"), spot[0].insertAdjacentHTML("beforebegin", btn);
           let e = document.getElementById("easince");
           e && (e.addEventListener("mouseover", (function () {
@@ -2638,8 +2655,7 @@ function s() {
               s.href = i, s.download = t, document.body.appendChild(s), s.click(), document.body.removeChild(s)
             }
           }
-        }
-        (), t(), async function () {
+        })(), t(), async function () {
           document.dispatchEvent(new CustomEvent("GetCategoryData", {
             detail: {
               categoryId: categoria_Local
@@ -2739,6 +2755,21 @@ async function ensureAuthorizationToken() {
 
   console.warn("NOVAI: Nenhum token de acesso válido encontrado. Conclua o login na extensão para habilitar as métricas.");
   return !1;
+}
+
+async function ensureAuthHeaderForRequests(context = "requisições protegidas") {
+  const hasHeader = !!(eaHeaders && "function" == typeof eaHeaders.get && eaHeaders.get("Authorization"));
+  if (hasHeader) return !0;
+
+  const ensured = await ensureAuthorizationToken().catch((() => !1));
+  const headerReady = !!(eaHeaders && "function" == typeof eaHeaders.get && eaHeaders.get("Authorization"));
+
+  if (!ensured || !headerReady) {
+    console.warn(`[NOVAI] ${context}: não foi possível preparar um token de acesso válido para consultas à API do Mercado Livre.`);
+    return !1;
+  }
+
+  return !0;
 }
 
 function initializeExtensionFeatures() {
