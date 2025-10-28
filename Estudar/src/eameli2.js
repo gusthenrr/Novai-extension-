@@ -950,6 +950,45 @@ var eaInit = {
 null != document.getElementsByClassName("ui-pdp-title")[0] && (nomeProduto = document.getElementsByClassName("ui-pdp-title")[0].innerHTML);
 var checkeddimensions = "dimensions=15x30x5,150";
 
+function ensureCatalogBody() {
+  if (!Array.isArray(catalogData)) {
+    catalogData = [{ body: {} }];
+  }
+  if (!catalogData[0] || "object" != typeof catalogData[0]) {
+    catalogData[0] = { body: {} };
+  }
+  if (!catalogData[0].body || "object" != typeof catalogData[0].body) {
+    catalogData[0].body = {};
+  }
+  return catalogData[0].body;
+}
+
+function updateCatalogBody(partial = {}) {
+  const body = ensureCatalogBody();
+  for (const [key, rawValue] of Object.entries(partial || {})) {
+    if (null == rawValue) continue;
+    if ("date_created" === key) {
+      const normalized = "string" == typeof rawValue ? rawValue.trim() : rawValue;
+      if (!normalized) continue;
+      if (!body.date_created) {
+        body.date_created = normalized;
+      }
+      continue;
+    }
+    if ("sold_quantity" === key) {
+      const numeric = Number(rawValue);
+      if (!Number.isFinite(numeric)) continue;
+      const current = Number(body.sold_quantity);
+      if (!Number.isFinite(current) || numeric > current) {
+        body.sold_quantity = numeric;
+      }
+      continue;
+    }
+    body[key] = rawValue;
+  }
+  return body;
+}
+
 var toolModal = `
   <div id="mfy-tool-modal" class="toolmodal">
     <div class="andes-modal__portal" style="display:none" id="mfy-modal-portal">
@@ -1292,7 +1331,7 @@ function dLayerMainFallback() {
   NaN === preco_Local && (preco_Local = parseFloat(catalogData[0].body.price)), null == comprador && (comprador = document.documentElement.innerHTML.split("user_id")[1].split(",")[0].split(":")[1]), null == tipo_anuncio && (tipo_anuncio = null == melidata.q ? document.documentElement.innerHTML.split("listing_type_id")[1]?.split('"')[2]: catalogData[0].body.listing_type_id)
 }
 function dlayerFallback() {
-  const catalogBody = catalogData?.[0]?.body || {};
+  const catalogBody = ensureCatalogBody();
   const dataLayerEntry = Array.isArray(dataLayer) && dataLayer.length > 0 ? dataLayer[0] : null;
   const coerceItemId = rawId => {
     if (!rawId && 0 !== rawId) return null;
@@ -1401,6 +1440,7 @@ function dlayerFallback() {
     clearTimeout(dlayerFallback._retryTimeout);
     dlayerFallback._retryTimeout = null;
   }
+  updateCatalogBody({ date_created: startTimeRaw });
   dLayerAlt = startTimeRaw;
   dLayer = dLayerAlt.split("T")[0];
   if (!dLayer) return void dLayerMainFallback();
@@ -1419,6 +1459,7 @@ function dlayerFallback() {
       media_vendas = isNaN(monthlyAvg) ? "Indisponível" : monthlyAvg;
     } else media_vendas = "Indisponível";
   }
+  updateCatalogBody({ sold_quantity: vendas });
   const diasNumber = "number" == typeof dias ? dias : parseFloat(dias);
   if (!isNaN(diasNumber)) dias = diasNumber;
   0 == diasNumber ? media_vendas = "0": diasNumber < 30 && !isNaN(diasNumber) && (alert_media_vendas = !0);
@@ -1525,6 +1566,10 @@ async function fetchProductDataFromPage(rawItemId, t) {
   }
   )), await new Promise((e => setTimeout(e, 100)))), itemsLocalData[normalizedItemId] && itemsLocalData[normalizedItemId].startTime && void 0 !== itemsLocalData[normalizedItemId].itemSales) {
     const n = itemsLocalData[normalizedItemId];
+    updateCatalogBody({
+      date_created: n.startTime,
+      sold_quantity: n.itemSales
+    });
     vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
     let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
     if (a && vendas > 0) {
@@ -1569,6 +1614,21 @@ async function fetchProductDataFromPage(rawItemId, t) {
                   r = d.pageState.initialState || d.initialState;
                   let t = r?.components?.header?.subtitle ?? "";
                   i = r?.startTime ?? r?.components?.track?.gtm_event?.startTime;
+                  const catalogStartTime = r?.startTime
+                    ?? r?.components?.track?.gtm_event?.startTime
+                    ?? r?.components?.track?.startTime
+                    ?? r?.track?.gtm_event?.startTime
+                    ?? r?.track?.startTime
+                    ?? i;
+                  const catalogSoldQuantity = r?.components?.track?.gtm_event?.sold_quantity
+                    ?? r?.components?.track?.sold_quantity
+                    ?? r?.sold_quantity
+                    ?? r?.item?.sold_quantity
+                    ?? r?.listing?.sold_quantity;
+                  updateCatalogBody({
+                    date_created: catalogStartTime,
+                    sold_quantity: catalogSoldQuantity
+                  });
                   let n = t?.split(" | ")[1]?.split(" "), s = "";
                   if (n) {
                     for (let e = 0;
