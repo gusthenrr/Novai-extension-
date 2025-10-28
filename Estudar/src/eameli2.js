@@ -138,7 +138,6 @@ const NOVAI_INJECTED_ELEMENT_IDS = [
   "eaoffSwitch",
   "eareset",
   "easellerbtn",
-  "easince",
   "easortselect",
   "eatoolbox",
   "eatoolsicon",
@@ -228,13 +227,44 @@ function scheduleSinceAndMediaRetry(reason = "missing-anchor") {
   novaiSinceRetryHandle = setTimeout(() => {
     novaiSinceRetryHandle = null;
     try {
-      contentScpt();
+      retrySinceOnly();
     } catch (err) {
       try {
         console.error("[NOVAI] Falha ao reinjetar cartão 'Criado há':", err);
       } catch (_) {}
     }
   }, NOVAI_SINCE_RETRY_DELAY_MS);
+}
+
+function retrySinceOnly() {
+  try {
+    if ("anuncio" !== paginaAtual) return;
+  } catch (_) {
+    return;
+  }
+  try {
+    if (typeof verif !== "undefined" && verif !== "pro") {
+      removeSinceAndMediaContainer();
+      return;
+    }
+  } catch (_) {}
+
+  const headerNode = document.getElementsByClassName("ui-pdp-header")[0];
+  if (!headerNode) {
+    scheduleSinceAndMediaRetry("missing-header-node");
+    return;
+  }
+
+  const titleNode = document.getElementsByClassName("ui-pdp-title")[0];
+  if (!titleNode) {
+    scheduleSinceAndMediaRetry("missing-title-node");
+    return;
+  }
+
+  const wrapper = ensureSinceAndMediaContainer(titleNode);
+  if (!wrapper) {
+    scheduleSinceAndMediaRetry("wrapper-not-ready");
+  }
 }
 
 function buildSinceAndMediaMarkup() {
@@ -537,6 +567,8 @@ function _mfyKeepAliveTick() {
     if (paginaAtual === 'anuncio') {
       const hasSwitch = document.getElementById('eaoffSwitch');
       if (!hasSwitch) return _mfyScheduleReinit('missing eaoffSwitch');
+      const hasSinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+      if (!hasSinceWrapper) scheduleSinceAndMediaRetry('keep-alive-missing-wrapper');
     } else if (paginaAtual === 'lista') {
       const hasCTA = document.getElementById('ealistrequest') || document.getElementById('mfy-catalog-filter-container');
       if (!hasCTA) return _mfyScheduleReinit('missing list widgets');
@@ -558,6 +590,9 @@ function startKeepAlive() {
           m.removedNodes && m.removedNodes.forEach(n => {
             if (n && n.nodeType === 1) {
               const el = n;
+              if (el.id === NOVAI_SINCE_WRAPPER_ID) {
+                scheduleSinceAndMediaRetry('observer-missing-wrapper');
+              }
               if (el.id === 'eaoffSwitch' || el.id === 'ealistrequest' || el.id === 'price-tool' || el.classList?.contains('eamaindropdownmenu')) {
                 removedOurNode = true;
               }
@@ -3237,7 +3272,6 @@ function s() {
         ), 200)
       }
       else {
-        removeSinceAndMediaContainer();
         scheduleSinceAndMediaRetry("missing-header");
       }
     }
