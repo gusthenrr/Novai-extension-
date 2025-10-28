@@ -204,11 +204,117 @@ const NOVAI_CREATED_DAYS_ATTR = "data-novai-created-days";
 const NOVAI_CREATED_DATE_ATTR = "data-novai-created-date";
 const NOVAI_MEDIA_VALUE_ATTR = "data-novai-media-value";
 const NOVAI_MEDIA_POPUP_ID = "eamediapop";
+const NOVAI_SINCE_ANCHOR_SELECTOR = ".ui-pdp-title";
+
+let sinceAndMediaObserver = null;
+let sinceAndMediaObserverTarget = null;
+let sinceAndMediaRecheckTimer = null;
+let sinceAndMediaLastState = null;
+
+function clearSinceAndMediaObserver() {
+  if (sinceAndMediaObserver) {
+    try { sinceAndMediaObserver.disconnect(); } catch (_) {}
+    sinceAndMediaObserver = null;
+  }
+  sinceAndMediaObserverTarget = null;
+}
+
+function getPrimaryTitleAnchor() {
+  return document.querySelector(NOVAI_SINCE_ANCHOR_SELECTOR);
+}
+
+function reapplySinceAndMediaState() {
+  if (!sinceAndMediaLastState) return;
+  updateSinceAndMediaUI({ ...sinceAndMediaLastState });
+}
+
+function scheduleSinceAndMediaRecheck() {
+  if (sinceAndMediaRecheckTimer) return;
+
+  let attemptsRemaining = 12;
+  let stableChecks = 0;
+
+  sinceAndMediaRecheckTimer = setInterval(() => {
+    if (attemptsRemaining-- <= 0 || "pro" !== verif) {
+      clearInterval(sinceAndMediaRecheckTimer);
+      sinceAndMediaRecheckTimer = null;
+      return;
+    }
+
+    const titleNode = getPrimaryTitleAnchor();
+    if (!titleNode) {
+      stableChecks = 0;
+      return;
+    }
+
+    const wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+    const parentHasWrapper = wrapper && titleNode.parentElement && titleNode.parentElement.contains(wrapper);
+
+    if (!parentHasWrapper) {
+      stableChecks = 0;
+      const newWrapper = ensureSinceAndMediaContainer(titleNode);
+      newWrapper && reapplySinceAndMediaState();
+      return;
+    }
+
+    const sinceNode = wrapper.querySelector("#easince");
+    if (sinceNode) {
+      sinceNode.hidden = false;
+      sinceNode.style.setProperty("display", "inline-flex", "important");
+      if (sinceNode.style.removeProperty) {
+        sinceNode.style.removeProperty("visibility");
+      }
+    }
+
+    stableChecks += 1;
+    if (stableChecks >= 3) {
+      clearInterval(sinceAndMediaRecheckTimer);
+      sinceAndMediaRecheckTimer = null;
+    }
+  }, 400);
+}
+
+function maintainSinceAndMediaObserver(parent) {
+  if (!parent || "pro" !== verif) return;
+  if (sinceAndMediaObserver && sinceAndMediaObserverTarget === parent) return;
+
+  clearSinceAndMediaObserver();
+
+  sinceAndMediaObserverTarget = parent;
+  sinceAndMediaObserver = new MutationObserver(() => {
+    if ("pro" !== verif) return;
+
+    if (sinceAndMediaObserverTarget && !document.body.contains(sinceAndMediaObserverTarget)) {
+      clearSinceAndMediaObserver();
+      const freshTitle = getPrimaryTitleAnchor();
+      if (freshTitle) {
+        const wrapper = ensureSinceAndMediaContainer(freshTitle);
+        wrapper && reapplySinceAndMediaState();
+      }
+      return;
+    }
+
+    const titleNode = getPrimaryTitleAnchor();
+    if (!titleNode) return;
+
+    const wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+    if (!wrapper || !titleNode.parentElement || !titleNode.parentElement.contains(wrapper)) {
+      const newWrapper = ensureSinceAndMediaContainer(titleNode);
+      newWrapper && reapplySinceAndMediaState();
+    }
+  });
+
+  try {
+    sinceAndMediaObserver.observe(parent, { childList: true });
+  } catch (_) {
+    clearSinceAndMediaObserver();
+  }
+}
 
 function buildSinceAndMediaMarkup() {
   return `
     <div id="${NOVAI_SINCE_WRAPPER_ID}" style="display: flex;align-items: center;justify-content: start;gap: .5rem;">
-      <div id="easince" style="font-size: 0.95rem;font-weight: 700;display: inline-flex;border-radius: 1em;color: rgb(90, 90, 90);box-shadow: rgb(0, 0, 0) 0px 2px 11px -7px;padding: 0.35em 1em;position: relative;transition: 0.35s;min-width: fit-content;cursor:default">
+      <div id="easince" style="font-size: 0.95rem;font-weight: 700;display: inline-flex!important;border-radius: 1em;color: rgb(90, 90, 90);box-shadow: rgb(0, 0, 0) 0px 2px 11px -7px;padding: 0.35em 1em;position: relative;transition: 0.35s;min-width: fit-content;cursor:default">
         <span style=" margin-top: 0.2em;">Criado há: <span ${NOVAI_CREATED_DAYS_ATTR}>?</span> dia(s)</span>
         <span ${NOVAI_CREATED_DATE_ATTR} style="position: absolute;top: 1.75em;font-size: 0.92em;font-weight: 200;opacity: 0;transition: all 0.35s;">(--/--/----)</span>
       </div>
@@ -240,12 +346,34 @@ function buildSinceAndMediaMarkup() {
 
 function ensureSinceAndMediaContainer(anchorElement) {
   if (!anchorElement) return null;
+
+  const parent = anchorElement.parentElement || anchorElement;
   let wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
-  if (!wrapper) {
-    anchorElement.insertAdjacentHTML("afterbegin", buildSinceAndMediaMarkup());
-    wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+
+  if (wrapper && !parent.contains(wrapper)) {
+    wrapper.remove();
+    wrapper = null;
   }
+
+  if (!wrapper) {
+    const markup = buildSinceAndMediaMarkup();
+    if (anchorElement.parentElement) {
+      anchorElement.insertAdjacentHTML("afterend", markup);
+      wrapper = anchorElement.parentElement.querySelector(`#${NOVAI_SINCE_WRAPPER_ID}`);
+    } else {
+      anchorElement.insertAdjacentHTML("afterbegin", markup);
+      wrapper = anchorElement.querySelector(`#${NOVAI_SINCE_WRAPPER_ID}`);
+    }
+  }
+
   if (!wrapper) return null;
+
+  if (wrapper.parentElement === anchorElement && anchorElement.parentElement) {
+    anchorElement.parentElement.insertBefore(wrapper, anchorElement.nextSibling);
+  }
+
+  maintainSinceAndMediaObserver(parent);
+  scheduleSinceAndMediaRecheck();
 
   const sinceNode = wrapper.querySelector("#easince");
   if (sinceNode && !sinceNode.dataset.novaiHoverBound) {
@@ -259,6 +387,10 @@ function ensureSinceAndMediaContainer(anchorElement) {
       sinceNode.style.padding = "0.35em 1em 0.35em 1em";
       dateSpan && (dateSpan.style.opacity = "0%");
     }));
+  }
+  if (sinceNode) {
+    sinceNode.hidden = false;
+    sinceNode.style.setProperty("display", "inline-flex", "important");
   }
 
   const mediaInfoWrapper = wrapper.querySelector(`[${NOVAI_MEDIA_INFO_ATTR}]`);
@@ -298,8 +430,15 @@ function ensureSinceAndMediaContainer(anchorElement) {
 }
 
 function updateSinceAndMediaUI(options = {}) {
+  sinceAndMediaLastState = { ...options };
   const wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
   if (!wrapper) return;
+
+  const sinceNode = wrapper.querySelector("#easince");
+  if (sinceNode) {
+    sinceNode.hidden = false;
+    sinceNode.style.setProperty("display", "inline-flex", "important");
+  }
 
   const daysRaw = options.days;
   const daysNumber = Number(daysRaw);
@@ -347,6 +486,12 @@ function removeSinceAndMediaContainer() {
   }
   const popup = document.getElementById(NOVAI_MEDIA_POPUP_ID);
   popup && popup.remove();
+  clearSinceAndMediaObserver();
+  if (sinceAndMediaRecheckTimer) {
+    clearInterval(sinceAndMediaRecheckTimer);
+    sinceAndMediaRecheckTimer = null;
+  }
+  sinceAndMediaLastState = null;
 }
 // ===== NVAI LOADER TOTAL (drop-in) =====
 class NvaiLoaderTotal {
@@ -2789,7 +2934,7 @@ function s() {
     }
     function o() {
       if (null != verif && "pro" == verif) {
-        eaSince = '<div style="font-size: 0.95rem;font-weight: 700;display: inline-flex;border-radius: 1em;color: rgb(90, 90, 90);box-shadow: rgb(0, 0, 0) 0px 2px 11px -7px;padding: 0.35em 1em;position: relative;transition: 0.35s;min-width: fit-content;cursor:default" id="easince"><span style=" margin-top: 0.2em;">Criado há: ' + (isNaN(dias) ? "?": dias) + ' dia(s)</span><span style="position: absolute;top: 1.75em;font-size: 0.92em;font-weight: 200;opacity: 0;transition: all 0.35s;">(' + (data_br ?? "--/--/----") + ")</span></div>", btn = !alert_media_vendas && dias > 30 ? `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <span id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;cursor:default">\n                Média: ${iscatalog&&0==media_vendas?"-":media_vendas} vendas/mês\n              </span>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;"`: `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <div id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;gap: 0.25rem;">\n                Média:  <div style="min-width: fit-content;font-size: 1.2rem;">${iscatalog&&0==media_vendas?"-":media_vendas}</div> <span style="font-size: .9rem;">vendas/mês</span>\n              </div>\n              <div class="easalesavg-alert" style="display: inline-flex;background: var(--mfy-main);position: relative;z-index: 11;height: 1.75em;border-radius: 100%;padding: 5px;margin-left: -0.5rem;">\n                <img src="https://img.icons8.com/material-outlined/24/ffffff/clock-alert.png">\n              </div>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;"`, visits = '<span>? Visitas totais <span class="andes-button--loud mfy-main-bg  andes-button" style="margin-left: 0.5em;margin-top: 0.35em;font-size:14px!important;display: inherit;padding: 0.1em 0.4em;"> Conversão de <strong>?%</strong></span></span><br><span class="ui-pdp-subtitle" id="vendaporvisitas" style="position: relative;top: -0.86em;">Vende a cada x Visitas</span>';
+        eaSince = '<div style="font-size: 0.95rem;font-weight: 700;display: inline-flex!important;border-radius: 1em;color: rgb(90, 90, 90);box-shadow: rgb(0, 0, 0) 0px 2px 11px -7px;padding: 0.35em 1em;position: relative;transition: 0.35s;min-width: fit-content;cursor:default" id="easince"><span style=" margin-top: 0.2em;">Criado há: ' + (isNaN(dias) ? "?": dias) + ' dia(s)</span><span style="position: absolute;top: 1.75em;font-size: 0.92em;font-weight: 200;opacity: 0;transition: all 0.35s;">(' + (data_br ?? "--/--/----") + ")</span></div>", btn = !alert_media_vendas && dias > 30 ? `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <span id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;cursor:default">\n                Média: ${iscatalog&&0==media_vendas?"-":media_vendas} vendas/mês\n              </span>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;"`: `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <div id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;gap: 0.25rem;">\n                Média:  <div style="min-width: fit-content;font-size: 1.2rem;">${iscatalog&&0==media_vendas?"-":media_vendas}</div> <span style="font-size: .9rem;">vendas/mês</span>\n              </div>\n              <div class="easalesavg-alert" style="display: inline-flex;background: var(--mfy-main);position: relative;z-index: 11;height: 1.75em;border-radius: 100%;padding: 5px;margin-left: -0.5rem;">\n                <img src="https://img.icons8.com/material-outlined/24/ffffff/clock-alert.png">\n              </div>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;"`, visits = '<span>? Visitas totais <span class="andes-button--loud mfy-main-bg  andes-button" style="margin-left: 0.5em;margin-top: 0.35em;font-size:14px!important;display: inherit;padding: 0.1em 0.4em;"> Conversão de <strong>?%</strong></span></span><br><span class="ui-pdp-subtitle" id="vendaporvisitas" style="position: relative;top: -0.86em;">Vende a cada x Visitas</span>';
         const c = e => e.charAt(0).toUpperCase() + e.slice(1), p = dayjs(), g = 6;
         let f = p.month() - g, u = p.year();
         f < 0 && (u -= 1, f += 12);
