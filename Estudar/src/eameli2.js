@@ -138,7 +138,6 @@ const NOVAI_INJECTED_ELEMENT_IDS = [
   "eaoffSwitch",
   "eareset",
   "easellerbtn",
-  "easince",
   "easortselect",
   "eatoolbox",
   "eatoolsicon",
@@ -205,6 +204,69 @@ const NOVAI_CREATED_DATE_ATTR = "data-novai-created-date";
 const NOVAI_MEDIA_VALUE_ATTR = "data-novai-media-value";
 const NOVAI_MEDIA_POPUP_ID = "eamediapop";
 
+let novaiSinceRetryHandle = null;
+const NOVAI_SINCE_RETRY_DELAY_MS = 500;
+
+function cancelSinceAndMediaRetry() {
+  if (novaiSinceRetryHandle) {
+    clearTimeout(novaiSinceRetryHandle);
+    novaiSinceRetryHandle = null;
+  }
+}
+
+function scheduleSinceAndMediaRetry(reason = "missing-anchor") {
+  if (novaiSinceRetryHandle) return;
+  try {
+    if ("anuncio" !== paginaAtual) return;
+  } catch (_) {
+    return;
+  }
+  try {
+    console.debug(`[NOVAI] Reagendando cartão 'Criado há' (${reason}).`);
+  } catch (_) {}
+  novaiSinceRetryHandle = setTimeout(() => {
+    novaiSinceRetryHandle = null;
+    try {
+      retrySinceOnly();
+    } catch (err) {
+      try {
+        console.error("[NOVAI] Falha ao reinjetar cartão 'Criado há':", err);
+      } catch (_) {}
+    }
+  }, NOVAI_SINCE_RETRY_DELAY_MS);
+}
+
+function retrySinceOnly() {
+  try {
+    if ("anuncio" !== paginaAtual) return;
+  } catch (_) {
+    return;
+  }
+  try {
+    if (typeof verif !== "undefined" && verif !== "pro") {
+      removeSinceAndMediaContainer();
+      return;
+    }
+  } catch (_) {}
+
+  const headerNode = document.getElementsByClassName("ui-pdp-header")[0];
+  if (!headerNode) {
+    scheduleSinceAndMediaRetry("missing-header-node");
+    return;
+  }
+
+  const titleNode = document.getElementsByClassName("ui-pdp-title")[0];
+  if (!titleNode) {
+    scheduleSinceAndMediaRetry("missing-title-node");
+    return;
+  }
+
+  const wrapper = ensureSinceAndMediaContainer(titleNode);
+  if (!wrapper) {
+    scheduleSinceAndMediaRetry("wrapper-not-ready");
+  }
+}
+
 function buildSinceAndMediaMarkup() {
   return `
     <div id="${NOVAI_SINCE_WRAPPER_ID}" style="display: flex;align-items: center;justify-content: start;gap: .5rem;">
@@ -246,6 +308,8 @@ function ensureSinceAndMediaContainer(anchorElement) {
     wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
   }
   if (!wrapper) return null;
+
+  cancelSinceAndMediaRetry();
 
   const sinceNode = wrapper.querySelector("#easince");
   if (sinceNode && !sinceNode.dataset.novaiHoverBound) {
@@ -341,6 +405,7 @@ function updateSinceAndMediaUI(options = {}) {
 }
 
 function removeSinceAndMediaContainer() {
+  cancelSinceAndMediaRetry();
   const wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
   if (wrapper && wrapper.parentNode) {
     wrapper.parentNode.removeChild(wrapper);
@@ -502,6 +567,8 @@ function _mfyKeepAliveTick() {
     if (paginaAtual === 'anuncio') {
       const hasSwitch = document.getElementById('eaoffSwitch');
       if (!hasSwitch) return _mfyScheduleReinit('missing eaoffSwitch');
+      const hasSinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+      if (!hasSinceWrapper) scheduleSinceAndMediaRetry('keep-alive-missing-wrapper');
     } else if (paginaAtual === 'lista') {
       const hasCTA = document.getElementById('ealistrequest') || document.getElementById('mfy-catalog-filter-container');
       if (!hasCTA) return _mfyScheduleReinit('missing list widgets');
@@ -523,6 +590,9 @@ function startKeepAlive() {
           m.removedNodes && m.removedNodes.forEach(n => {
             if (n && n.nodeType === 1) {
               const el = n;
+              if (el.id === NOVAI_SINCE_WRAPPER_ID) {
+                scheduleSinceAndMediaRetry('observer-missing-wrapper');
+              }
               if (el.id === 'eaoffSwitch' || el.id === 'ealistrequest' || el.id === 'price-tool' || el.classList?.contains('eamaindropdownmenu')) {
                 removedOurNode = true;
               }
@@ -3075,7 +3145,10 @@ function s() {
         }
         (() => {
           const titleNode = spot[0];
-          if (!titleNode) return;
+          if (!titleNode) {
+            scheduleSinceAndMediaRetry("missing-title-node");
+            return;
+          }
           const titleParent = titleNode.parentElement;
           titleParent && titleParent.setAttribute("style", "flex-direction: column;");
           if ("pro" === verif) {
@@ -3198,7 +3271,9 @@ function s() {
         }
         ), 200)
       }
-      else removeSinceAndMediaContainer()
+      else {
+        scheduleSinceAndMediaRetry("missing-header");
+      }
     }
     spot3 = document.getElementsByClassName("ui-pdp-title"), reflow = document.getElementsByClassName("ui-pdp-header__title-container"), maisFunc = document.getElementById("plusf");
     const headerEl = document.getElementsByClassName("ui-pdp-header")[0];
