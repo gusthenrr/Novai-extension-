@@ -206,18 +206,9 @@ const NOVAI_MEDIA_VALUE_ATTR = "data-novai-media-value";
 const NOVAI_MEDIA_POPUP_ID = "eamediapop";
 const NOVAI_SINCE_ANCHOR_SELECTOR = ".ui-pdp-title";
 
-let sinceAndMediaObserver = null;
-let sinceAndMediaObserverTarget = null;
-let sinceAndMediaRecheckTimer = null;
+let sinceAndMediaMutationObserver = null;
+let sinceAndMediaMutationScheduled = !1;
 let sinceAndMediaLastState = null;
-
-function clearSinceAndMediaObserver() {
-  if (sinceAndMediaObserver) {
-    try { sinceAndMediaObserver.disconnect(); } catch (_) {}
-    sinceAndMediaObserver = null;
-  }
-  sinceAndMediaObserverTarget = null;
-}
 
 function getPrimaryTitleAnchor() {
   return document.querySelector(NOVAI_SINCE_ANCHOR_SELECTOR);
@@ -228,86 +219,43 @@ function reapplySinceAndMediaState() {
   updateSinceAndMediaUI({ ...sinceAndMediaLastState });
 }
 
-function scheduleSinceAndMediaRecheck() {
-  if (sinceAndMediaRecheckTimer) return;
+function scheduleSinceAndMediaCheck() {
+  if (sinceAndMediaMutationScheduled) return;
+  sinceAndMediaMutationScheduled = !0;
+  setTimeout(() => {
+    sinceAndMediaMutationScheduled = !1;
+    if ("pro" !== verif || "anuncio" !== paginaAtual) return;
 
-  let attemptsRemaining = 12;
-  let stableChecks = 0;
+    const anchor = getPrimaryTitleAnchor();
+    if (!anchor) return;
 
-  sinceAndMediaRecheckTimer = setInterval(() => {
-    if (attemptsRemaining-- <= 0 || "pro" !== verif) {
-      clearInterval(sinceAndMediaRecheckTimer);
-      sinceAndMediaRecheckTimer = null;
-      return;
-    }
-
-    const titleNode = getPrimaryTitleAnchor();
-    if (!titleNode) {
-      stableChecks = 0;
-      return;
-    }
-
-    const wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
-    const parentHasWrapper = wrapper && titleNode.parentElement && titleNode.parentElement.contains(wrapper);
-
-    if (!parentHasWrapper) {
-      stableChecks = 0;
-      const newWrapper = ensureSinceAndMediaContainer(titleNode);
-      newWrapper && reapplySinceAndMediaState();
-      return;
-    }
-
-    const sinceNode = wrapper.querySelector("#easince");
-    if (sinceNode) {
-      sinceNode.hidden = false;
-      sinceNode.style.setProperty("display", "inline-flex", "important");
-      if (sinceNode.style.removeProperty) {
-        sinceNode.style.removeProperty("visibility");
+    let wrapper = anchor.querySelector(`#${NOVAI_SINCE_WRAPPER_ID}`);
+    if (!wrapper) {
+      removeDuplicateElementsById(NOVAI_SINCE_WRAPPER_ID);
+      wrapper = ensureSinceAndMediaContainer(anchor);
+      if (wrapper) {
+        reapplySinceAndMediaState();
       }
     }
-
-    stableChecks += 1;
-    if (stableChecks >= 3) {
-      clearInterval(sinceAndMediaRecheckTimer);
-      sinceAndMediaRecheckTimer = null;
-    }
-  }, 400);
+  }, 50);
 }
 
-function maintainSinceAndMediaObserver(parent) {
-  if (!parent || "pro" !== verif) return;
-  if (sinceAndMediaObserver && sinceAndMediaObserverTarget === parent) return;
+function ensureSinceAndMediaMutationObserver() {
+  if (sinceAndMediaMutationObserver || "undefined" == typeof MutationObserver) return;
 
-  clearSinceAndMediaObserver();
-
-  sinceAndMediaObserverTarget = parent;
-  sinceAndMediaObserver = new MutationObserver(() => {
-    if ("pro" !== verif) return;
-
-    if (sinceAndMediaObserverTarget && !document.body.contains(sinceAndMediaObserverTarget)) {
-      clearSinceAndMediaObserver();
-      const freshTitle = getPrimaryTitleAnchor();
-      if (freshTitle) {
-        const wrapper = ensureSinceAndMediaContainer(freshTitle);
-        wrapper && reapplySinceAndMediaState();
+  sinceAndMediaMutationObserver = new MutationObserver(mutations => {
+    for (const mutation of mutations) {
+      if ("childList" === mutation.type) {
+        scheduleSinceAndMediaCheck();
+        break;
       }
-      return;
-    }
-
-    const titleNode = getPrimaryTitleAnchor();
-    if (!titleNode) return;
-
-    const wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
-    if (!wrapper || !titleNode.parentElement || !titleNode.parentElement.contains(wrapper)) {
-      const newWrapper = ensureSinceAndMediaContainer(titleNode);
-      newWrapper && reapplySinceAndMediaState();
     }
   });
 
   try {
-    sinceAndMediaObserver.observe(parent, { childList: true });
+    sinceAndMediaMutationObserver.observe(document.body, { childList: true, subtree: true });
   } catch (_) {
-    clearSinceAndMediaObserver();
+    sinceAndMediaMutationObserver = null;
   }
 }
 
@@ -347,33 +295,14 @@ function buildSinceAndMediaMarkup() {
 function ensureSinceAndMediaContainer(anchorElement) {
   if (!anchorElement) return null;
 
-  const parent = anchorElement.parentElement || anchorElement;
-  let wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
-
-  if (wrapper && !parent.contains(wrapper)) {
-    wrapper.remove();
-    wrapper = null;
-  }
-
+  let wrapper = anchorElement.querySelector(`#${NOVAI_SINCE_WRAPPER_ID}`);
   if (!wrapper) {
-    const markup = buildSinceAndMediaMarkup();
-    if (anchorElement.parentElement) {
-      anchorElement.insertAdjacentHTML("afterend", markup);
-      wrapper = anchorElement.parentElement.querySelector(`#${NOVAI_SINCE_WRAPPER_ID}`);
-    } else {
-      anchorElement.insertAdjacentHTML("afterbegin", markup);
-      wrapper = anchorElement.querySelector(`#${NOVAI_SINCE_WRAPPER_ID}`);
-    }
+    removeDuplicateElementsById(NOVAI_SINCE_WRAPPER_ID);
+    anchorElement.insertAdjacentHTML("afterbegin", buildSinceAndMediaMarkup());
+    wrapper = anchorElement.querySelector(`#${NOVAI_SINCE_WRAPPER_ID}`);
   }
 
   if (!wrapper) return null;
-
-  if (wrapper.parentElement === anchorElement && anchorElement.parentElement) {
-    anchorElement.parentElement.insertBefore(wrapper, anchorElement.nextSibling);
-  }
-
-  maintainSinceAndMediaObserver(parent);
-  scheduleSinceAndMediaRecheck();
 
   const sinceNode = wrapper.querySelector("#easince");
   if (sinceNode && !sinceNode.dataset.novaiHoverBound) {
@@ -391,6 +320,9 @@ function ensureSinceAndMediaContainer(anchorElement) {
   if (sinceNode) {
     sinceNode.hidden = false;
     sinceNode.style.setProperty("display", "inline-flex", "important");
+    if (sinceNode.style.removeProperty) {
+      sinceNode.style.removeProperty("visibility");
+    }
   }
 
   const mediaInfoWrapper = wrapper.querySelector(`[${NOVAI_MEDIA_INFO_ATTR}]`);
@@ -426,11 +358,17 @@ function ensureSinceAndMediaContainer(anchorElement) {
     }));
   }
 
+  ensureSinceAndMediaMutationObserver();
+
   return wrapper;
 }
 
 function updateSinceAndMediaUI(options = {}) {
-  sinceAndMediaLastState = { ...options };
+  if (options && "object" == typeof options) {
+    sinceAndMediaLastState = { ...options };
+  } else {
+    sinceAndMediaLastState = null;
+  }
   const wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
   if (!wrapper) return;
 
@@ -486,11 +424,11 @@ function removeSinceAndMediaContainer() {
   }
   const popup = document.getElementById(NOVAI_MEDIA_POPUP_ID);
   popup && popup.remove();
-  clearSinceAndMediaObserver();
-  if (sinceAndMediaRecheckTimer) {
-    clearInterval(sinceAndMediaRecheckTimer);
-    sinceAndMediaRecheckTimer = null;
+  if (sinceAndMediaMutationObserver) {
+    try { sinceAndMediaMutationObserver.disconnect(); } catch (_) {}
+    sinceAndMediaMutationObserver = null;
   }
+  sinceAndMediaMutationScheduled = !1;
   sinceAndMediaLastState = null;
 }
 // ===== NVAI LOADER TOTAL (drop-in) =====
