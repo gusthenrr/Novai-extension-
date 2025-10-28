@@ -205,6 +205,38 @@ const NOVAI_CREATED_DATE_ATTR = "data-novai-created-date";
 const NOVAI_MEDIA_VALUE_ATTR = "data-novai-media-value";
 const NOVAI_MEDIA_POPUP_ID = "eamediapop";
 
+let novaiSinceRetryHandle = null;
+const NOVAI_SINCE_RETRY_DELAY_MS = 500;
+
+function cancelSinceAndMediaRetry() {
+  if (novaiSinceRetryHandle) {
+    clearTimeout(novaiSinceRetryHandle);
+    novaiSinceRetryHandle = null;
+  }
+}
+
+function scheduleSinceAndMediaRetry(reason = "missing-anchor") {
+  if (novaiSinceRetryHandle) return;
+  try {
+    if ("anuncio" !== paginaAtual) return;
+  } catch (_) {
+    return;
+  }
+  try {
+    console.debug(`[NOVAI] Reagendando cartão 'Criado há' (${reason}).`);
+  } catch (_) {}
+  novaiSinceRetryHandle = setTimeout(() => {
+    novaiSinceRetryHandle = null;
+    try {
+      contentScpt();
+    } catch (err) {
+      try {
+        console.error("[NOVAI] Falha ao reinjetar cartão 'Criado há':", err);
+      } catch (_) {}
+    }
+  }, NOVAI_SINCE_RETRY_DELAY_MS);
+}
+
 function buildSinceAndMediaMarkup() {
   return `
     <div id="${NOVAI_SINCE_WRAPPER_ID}" style="display: flex;align-items: center;justify-content: start;gap: .5rem;">
@@ -246,6 +278,8 @@ function ensureSinceAndMediaContainer(anchorElement) {
     wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
   }
   if (!wrapper) return null;
+
+  cancelSinceAndMediaRetry();
 
   const sinceNode = wrapper.querySelector("#easince");
   if (sinceNode && !sinceNode.dataset.novaiHoverBound) {
@@ -341,6 +375,7 @@ function updateSinceAndMediaUI(options = {}) {
 }
 
 function removeSinceAndMediaContainer() {
+  cancelSinceAndMediaRetry();
   const wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
   if (wrapper && wrapper.parentNode) {
     wrapper.parentNode.removeChild(wrapper);
@@ -3075,7 +3110,10 @@ function s() {
         }
         (() => {
           const titleNode = spot[0];
-          if (!titleNode) return;
+          if (!titleNode) {
+            scheduleSinceAndMediaRetry("missing-title-node");
+            return;
+          }
           const titleParent = titleNode.parentElement;
           titleParent && titleParent.setAttribute("style", "flex-direction: column;");
           if ("pro" === verif) {
@@ -3198,7 +3236,10 @@ function s() {
         }
         ), 200)
       }
-      else removeSinceAndMediaContainer()
+      else {
+        removeSinceAndMediaContainer();
+        scheduleSinceAndMediaRetry("missing-header");
+      }
     }
     spot3 = document.getElementsByClassName("ui-pdp-title"), reflow = document.getElementsByClassName("ui-pdp-header__title-container"), maisFunc = document.getElementById("plusf");
     const headerEl = document.getElementsByClassName("ui-pdp-header")[0];
