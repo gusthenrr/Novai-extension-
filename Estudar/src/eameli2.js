@@ -179,6 +179,135 @@ function removeNovaiInjectedNodes(contextLabel = "manual-cleanup") {
   }
 }
 
+// --- NOVAI KPI styles (injeta 1x no <head>) ---
+function ensureNovaiKpiStyles() {
+  if (document.getElementById('novai-kpi-styles')) return;
+  const css = `
+/* ===== NOVAI KPI CARDS – estilo puro ===== */
+:root {
+  --novai-ml-yellow: #ffe600;
+  --novai-fg: #222;
+  --novai-muted: #6b7280;     /* cinza */
+  --novai-border: #e5e7eb;    /* borda clara */
+  --novai-bg: #ffffff;        /* fundo card */
+  --novai-shadow: 0 6px 18px rgba(0,0,0,.06);
+}
+
+/* deixa só os círculos “clicáveis” */
+#novai-chart text, #novai-chart line, #novai-chart path, #novai-chart rect { pointer-events: none; }
+#novai-chart circle { pointer-events: all; }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --novai-fg: #f3f4f6;
+    --novai-muted: #9ca3af;
+    --novai-border: #272a30;
+    --novai-bg: #0f1115;
+    --novai-shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+
+/* container genérico */
+.novai-kpi-grid {
+  display: grid; width: 100%; box-sizing: border-box; gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 900px) { .novai-kpi-grid { grid-template-columns: 1fr; } .novai-kpi-card.big { grid-column: auto; } }
+@media (max-width: 1100px) { .novai-kpi-grid { grid-template-columns: repeat(2, minmax(160px, 1fr)); } }
+@media (max-width: 720px) { .novai-kpi-grid { grid-template-columns: 1fr; } }
+
+#novai-fat-card { position: relative; overflow: visible; }
+
+#novai-chart-tip{
+  position:absolute; left:0; top:0; transform:translate(-9999px,-9999px);
+  pointer-events:none; background:#111; color:#fff;
+  border:1px solid var(--novai-ml-yellow);
+  box-shadow:0 8px 18px rgba(0,0,0,.35);
+  border-radius:8px; padding:6px 8px; white-space:nowrap;
+  font:500 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto;
+  transition:opacity .08s linear; opacity:0;
+  z-index: 2147483647 !important;  /* > panel */
+}
+
+/* Painel do gráfico (fixo) */
+#novai-chart-panel{
+  position: fixed !important; inset: auto auto auto auto; /* JS define left/top */
+  background:#111; border:1px solid #fff; border-radius:12px;
+  box-shadow:0 10px 25px rgba(0,0,0,.12);
+  padding:10px 12px; width:420px; height:240px;
+  display:none; z-index: 2147483646 !important;
+}
+
+.novai-chart-head{ display:flex; align-items:center; justify-content:center; gap:8px; margin:0 6px 8px; text-align:center; }
+.novai-chart-title{ font:600 12px/1.4 system-ui, -apple-system, Segoe UI, Roboto; color:#fff; }
+.novai-chart-hint{ font:400 12px/1.4 system-ui, -apple-system, Segoe UI, Roboto; color:#9ca3af; }
+
+/* card base */
+.novai-kpi-card {
+  position: relative; background: #222; color: #fff;
+  border: 1px solid #fff; border-radius: 12px; padding: 10px 12px;
+  overflow: hidden;
+}
+/* filete amarelo superior */
+.novai-kpi-card::before {
+  content: ""; position: absolute; top: -1px; left: -1px; right: -1px;
+  height: 4px; background: var(--novai-ml-yellow);
+  border-top-left-radius: inherit; border-top-right-radius: inherit; pointer-events:none;
+}
+
+.novai-kpi-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.novai-kpi-icon { width:26px; height:26px; border-radius:999px; background: rgba(255, 230, 0, .25);
+  display:inline-flex; align-items:center; justify-content:center; font-size:14px; }
+.novai-kpi-title { color:#fff; text-transform:uppercase; letter-spacing:.04em; font-weight:700; font-size:12px; }
+
+.novai-kpi-card.big { grid-column: 1 / -1; }
+
+.novai-kpi-value { color:#fff; font-weight:900; font-size:24px; line-height:1.1; margin:2px 0 6px; word-break:break-word; }
+
+.novai-kpi-sub { display:flex; align-items:baseline; gap:8px; color:#bbb; font-size:12px; }
+
+/* badges utilitárias (mantidas se precisar) */
+.novai-badge { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius:999px;
+  border:1px solid var(--novai-border); font-weight:600; font-size:12px; background:transparent; }
+.novai-badge.up{ color:#0ea5e9; } .novai-badge.ok{ color:#10b981; } .novai-badge.down{ color:#ef4444; }
+
+.novai-compact .novai-kpi-value{ font-size:20px; }
+.novai-compact .novai-kpi-title{ font-size:11px; }
+.novai-compact .novai-badge{ padding:1px 6px; font-size:11px; }
+
+.novai-muted { color: var(--novai-muted); }
+.novai-sep { height:1px; margin:8px 0; background:var(--novai-border); }
+
+/* Subtitle Pills (se quiser usar em outros cards) */
+.novai-subtitle { display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; margin:2px 0 6px; font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto; }
+.novai-pill { display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; background:#222; color:#fff; border:1px solid #fff; box-shadow:var(--novai-shadow); white-space:nowrap; gap:8px; }
+.novai-pill::before { content:""; width:8px; height:8px; border-radius:999px; background:var(--novai-ml-yellow); flex:0 0 8px; }
+.novai-pill--yellow { display:inline-flex; align-items:center; padding:2px 10px; border-radius:999px; background:var(--novai-ml-yellow); color:#111; border:1px solid #111; font-weight:800; }
+.novai-pill .nv-dot { width:8px; height:8px; border-radius:999px; background:var(--novai-ml-yellow); flex:0 0 8px; }
+.novai-dot { color:var(--novai-muted); font-weight:700; transform:translateY(-1px); }
+
+/* Métricas strip (se usar) */
+.novai-metrics-strip {
+  position:absolute; top:0; left:0; right:0; display:flex; gap:10px; align-items:center; justify-content:flex-start;
+  background:#111; color:#fff; border-bottom:1px solid var(--novai-ml-yellow,#ffe600);
+  padding:6px 8px; z-index:10; font:600 12px/1 system-ui,-apple-system,Segoe UI,Roboto;
+}
+.novai-metrics-strip b { color:var(--novai-ml-yellow,#ffe600); font-weight:900; }
+
+/* Barra de carregamento (compat se precisar) */
+#novai-loading{ margin:6px 0 10px 0; }
+#novai-loading .novai-loading-wrap{ display:flex; align-items:center; gap:10px; }
+#novai-loading .novai-loading-text{ color:#fff; background:#111; border:1px solid #fff; padding:6px 10px; border-radius:9999px; font-weight:700; font-size:12px; }
+#novai-loading .novai-loading-bar{ position:relative; width:220px; height:8px; background:#222; border:1px solid var(--novai-ml-yellow,#ffe600); border-radius:9999px; overflow:hidden; }
+#novai-loading .novai-loading-bar-inner{ position:absolute; left:0; top:0; bottom:0; width:40%; background: var(--novai-ml-yellow,#ffe600); opacity:.9; animation: novai-bar-move 1.2s linear infinite; }
+@keyframes novai-bar-move { 0% { transform: translateX(-40%); } 100% { transform: translateX(220px); } }
+`;
+  const style = document.createElement('style');
+  style.id = 'novai-kpi-styles';
+  style.textContent = css;
+  (document.head || document.documentElement).appendChild(style);
+}
+
 function ensureMainComponentSkeleton(container) {
   if (!container) return;
   removeDuplicateElementsById("main-component-skeleton");
@@ -1272,23 +1401,60 @@ var eafollow_url = "https://www.metrify.com.br/seguir-anuncio/";
 
 var eagrossrev = `
 <span id="eagrossrev">
-  <div>
-    <img src="https://img.icons8.com/windows/32/c7c7c7/old-cash-register.png"
-         style="width: 1.5em;height: 1.5em;position: relative;top: 0.21em;margin-right: 0.5em;">
-    <span style="font-size: 0.92em;font-weight: 900;">
-      <span class="eahiddenlabel2 revtitle">Faturando:</span>
-      <span class="eagrossrev-title" style="font-size: 1.35em;">R$0,00</span>
-      <span class="revtitle">/mês</span>
-    </span>
-  </div>
-  <div class="earevstats">
-    <span style="font-size: 11px;" class="ui-pdp-review__amount" id="mfy_rev_estimate">Média de faturamento estimada. </span><br>
-    <button class="andes-button--loud mfy-main-bg  revbtn1"  style="padding: .1em .5em;border-radius: 5px;margin: 2px;">1 Dia</button>
-    <button class="andes-button--loud mfy-main-bg  revbtn7"  style="padding: .1em .5em;border-radius: 5px;margin: 2px;">7 Dias</button>
-    <button class="andes-button--loud mfy-main-bg  revbtn30" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">30 dias</button>
-    <button class="andes-button--loud mfy-main-bg  revbtn60" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">60 dias</button>
-    <button class="andes-button--loud mfy-main-bg  revbtn90" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">90 dias</button>
-    <button class="andes-button--loud mfy-main-bg  revbtntotal" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">Total</button>
+  <div class="novai-kpi-grid">
+    <!-- CARD PRINCIPAL: FATURAMENTO -->
+    <div class="novai-kpi-card big" id="novai-fat-card" style="position:relative;">
+      <div class="novai-kpi-head">
+        <div class="novai-kpi-icon">💰</div>
+        <div class="novai-kpi-title">FATURAMENTO</div>
+      </div>
+
+      <!-- Mantemos a classe .eagrossrev-title para compatibilidade com sua lógica -->
+      <div id="novai-faturamento" class="novai-kpi-value eagrossrev-title">--</div>
+
+      <!-- Sub-linha: mantém .revperiod para sua troca /mês /semana /dia -->
+      <div class="novai-kpi-sub">
+        <span class="revtitle revperiod">/mês</span>
+        <span id="novai-dias" class="novai-muted">--</span>
+      </div>
+
+      <!-- Mantemos .earevstats pois seu código injeta extras aqui quando é catálogo -->
+      <div class="earevstats" style="display:none">
+        <span style="font-size: 11px;" class="ui-pdp-review__amount" id="mfy_rev_estimate">Média de faturamento estimada. </span><br>
+        <button class="andes-button--loud mfy-main-bg  revbtn1"  style="padding: .1em .5em;border-radius: 5px;margin: 2px;">1 Dia</button>
+        <button class="andes-button--loud mfy-main-bg  revbtn7"  style="padding: .1em .5em;border-radius: 5px;margin: 2px;">7 Dias</button>
+        <button class="andes-button--loud mfy-main-bg  revbtn30" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">30 dias</button>
+        <button class="andes-button--loud mfy-main-bg  revbtn60" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">60 dias</button>
+        <button class="andes-button--loud mfy-main-bg  revbtn90" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">90 dias</button>
+        <button class="andes-button--loud mfy-main-bg  revbtntotal" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">Total</button>
+      </div>
+
+      <!-- Painel do gráfico (hover) -->
+      <div id="novai-chart-panel">
+        <div class="novai-chart-head">
+          <span class="novai-chart-title">Faturamento mensal e quantidade vendidas (estimadas)</span>
+        </div>
+        <svg id="novai-chart" viewBox="0 0 400 180" width="100%" height="180" role="img" aria-label="Gráfico de faturamento"></svg>
+      </div>
+    </div>
+
+    <!-- CARD VISUALIZAÇÕES -->
+    <div class="novai-kpi-card">
+      <div class="novai-kpi-head">
+        <div class="novai-kpi-icon">👁️</div>
+        <div class="novai-kpi-title">VISUALIZAÇÕES</div>
+      </div>
+      <div id="novai-visitas" class="novai-kpi-value">--</div>
+    </div>
+
+    <!-- CARD CONVERSÃO -->
+    <div class="novai-kpi-card">
+      <div class="novai-kpi-head">
+        <div class="novai-kpi-icon">📈</div>
+        <div class="novai-kpi-title">CONVERSÃO</div>
+      </div>
+      <div id="novai-conversao" class="novai-kpi-value">--</div>
+    </div>
   </div>
 </span>
 `;
@@ -2537,11 +2703,31 @@ function contentScpt() {
       let n = document.getElementById("eacattrendsbtn");
       n.addEventListener("click", t)
     }
-    spot0[0].insertAdjacentHTML("afterbegin", analytics_ui), i(), function () {
+    ensureNovaiKpiStyles();
+    spot0[0].insertAdjacentHTML("afterbegin", analytics_ui);
+    (function bindNovaiChartHover() {
+      const fatCard = document.getElementById('novai-fat-card');
+      const panel = document.getElementById('novai-chart-panel');
+      if (!fatCard || !panel) return;
+
+      const follow = (ev) => {
+        const x = ev.clientX + 12;
+        const y = ev.clientY - (panel.offsetHeight + 12);
+        panel.style.left = x + 'px';
+        panel.style.top = Math.max(8, y) + 'px';
+      };
+
+      fatCard.addEventListener('mouseenter', () => { panel.style.display = 'block'; });
+      fatCard.addEventListener('mouseleave', () => { panel.style.display = 'none'; });
+      fatCard.addEventListener('mousemove', follow);
+    })();
+    i();
+    (function () {
       let e = document.getElementById("eahealthmeter"), t = document.getElementById("eameter_modal");
       e && e.remove(), t && t.remove()
-    }
-    (), t(), function () {
+    })();
+    t();
+    (function () {
       let e = eadataRetrieve("eaActive");
       const t = document.getElementById("eaoffSwitch");
       if (!t) return;
@@ -2562,15 +2748,17 @@ function contentScpt() {
         ), 1e3)
       }
       ))
-    }
-    (), n(), iscatalog && (document.getElementById("eaoffSwitch")?.setAttribute("style", "top: 0.35em;"), document.getElementById("eaadvsearchBtn")?.setAttribute("style", "left: 0.25em;")), a(), function () {
+    })();
+    n();
+    iscatalog && (document.getElementById("eaoffSwitch")?.setAttribute("style", "top: 0.35em;"), document.getElementById("eaadvsearchBtn")?.setAttribute("style", "left: 0.25em;"));
+    a();
+    (function () {
       const e = document.getElementById("highlights");
       if (e) {
         const t = e.cloneNode(!0);
         t.style.marginBottom = "1rem", e.remove(), document.querySelector(".ui-pdp-header")?.insertAdjacentElement("beforebegin", t)
       }
-    }
-    ()
+    })();
   }
   function n(e) {
     taxaML_verif = parseFloat(e) < parseFloat(cota_minima_MLB) ? taxa_mlb - taxa_cota: taxa_mlb, taxa_percentual = (taxaML_verif / preco_Local).toFixed(3)
