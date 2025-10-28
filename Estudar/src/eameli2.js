@@ -205,6 +205,83 @@ const NOVAI_CREATED_DATE_ATTR = "data-novai-created-date";
 const NOVAI_MEDIA_VALUE_ATTR = "data-novai-media-value";
 const NOVAI_MEDIA_POPUP_ID = "eamediapop";
 
+function coerceItemId(rawId) {
+  if (null == rawId) return null;
+  if ("number" == typeof rawId && isFinite(rawId)) return `MLB${rawId}`;
+  if ("string" == typeof rawId) {
+    const trimmed = rawId.trim();
+    if (!trimmed) return null;
+    const mlbMatch = trimmed.match(/^MLB-?(\d+)/i);
+    if (mlbMatch) return `MLB${mlbMatch[1]}`;
+    if (/^\d+$/.test(trimmed)) return `MLB${trimmed}`;
+    const numericMatch = trimmed.match(/(\d+)/);
+    if (numericMatch) return `MLB${numericMatch[1]}`;
+  }
+  return null;
+}
+
+function normalizeStartTime(value) {
+  if (null == value) return null;
+  if (value instanceof Date && !isNaN(value.getTime())) return value.toISOString();
+  if ("number" == typeof value && isFinite(value)) {
+    const asDate = new Date(value);
+    return isNaN(asDate.getTime()) ? null : asDate.toISOString();
+  }
+  if ("string" == typeof value) {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (/^\d+$/.test(trimmed)) {
+      const numeric = parseInt(trimmed, 10);
+      if (!isNaN(numeric)) {
+        const asDate = new Date(numeric);
+        if (!isNaN(asDate.getTime())) return asDate.toISOString();
+      }
+    }
+    const asDate = new Date(trimmed);
+    return isNaN(asDate.getTime()) ? null : asDate.toISOString();
+  }
+  return null;
+}
+
+function getCurrentNormalizedItemId() {
+  const catalogBody = catalogData?.[0]?.body || {};
+  const dataLayerEntry = Array.isArray(dataLayer) && dataLayer.length > 0 ? dataLayer[0] : null;
+  return coerceItemId(
+    dataLayerEntry?.itemId
+    ?? dataLayerEntry?.catalogProductId
+    ?? catalogBody?.id
+  );
+}
+
+function syncCatalogBodyWithLocalData(rawItemId) {
+  const normalizedId = coerceItemId(rawItemId ?? getCurrentNormalizedItemId());
+  if (!normalizedId) return;
+  const localData = itemsLocalData?.[normalizedId];
+  if (!localData) return;
+
+  catalogData = Array.isArray(catalogData) ? catalogData : [];
+  catalogData[0] = catalogData[0] || {};
+  catalogData[0].body = catalogData[0].body || {};
+
+  const body = catalogData[0].body;
+  if (!body.id) body.id = normalizedId;
+
+  const currentDateIso = normalizeStartTime(body.date_created);
+  const localDateIso = normalizeStartTime(localData.startTime);
+  if (!currentDateIso && localDateIso) {
+    body.date_created = localDateIso;
+  }
+
+  if ((null == body.sold_quantity || isNaN(parseFloat(body.sold_quantity))) && typeof localData.itemSales === "number" && !isNaN(localData.itemSales)) {
+    body.sold_quantity = localData.itemSales;
+  }
+
+  const entry = Array.isArray(dataLayer) && dataLayer.length > 0 ? (dataLayer[0] = dataLayer[0] || {}) : (dataLayer[0] = {});
+  if (!normalizeStartTime(entry.startTime) && localDateIso) {
+    entry.startTime = localDateIso;
+  }
+}
+
 function buildSinceAndMediaMarkup() {
   return `
     <div id="${NOVAI_SINCE_WRAPPER_ID}" style="display: flex;align-items: center;justify-content: start;gap: .5rem;">
@@ -849,6 +926,22 @@ document.addEventListener("ProductDataResponse", (function (e) {
   catch (t) {
     itemsLocalData = e.detail
   }
+  syncCatalogBodyWithLocalData();
+}
+)), document.addEventListener("StoreProductData", (function (e) {
+  const detail = e.detail || {};
+  const normalizedId = coerceItemId(detail.itemId);
+  if (!normalizedId) return;
+  const nextEntry = {
+    ...(itemsLocalData?.[normalizedId] || {}),
+    ...(detail.startTime ? { startTime: detail.startTime } : {}),
+    ...("number" == typeof detail.itemSales && !isNaN(detail.itemSales) ? { itemSales: detail.itemSales } : {})
+  };
+  itemsLocalData = {
+    ...itemsLocalData,
+    [normalizedId]: nextEntry
+  };
+  syncCatalogBodyWithLocalData(normalizedId);
 }
 )), document.addEventListener("ScrapedURL", (function (e) {
   const {
@@ -1294,41 +1387,6 @@ function dLayerMainFallback() {
 function dlayerFallback() {
   const catalogBody = catalogData?.[0]?.body || {};
   const dataLayerEntry = Array.isArray(dataLayer) && dataLayer.length > 0 ? dataLayer[0] : null;
-  const coerceItemId = rawId => {
-    if (!rawId && 0 !== rawId) return null;
-    if (typeof rawId === "number" && isFinite(rawId)) return `MLB${rawId}`;
-    if (typeof rawId === "string") {
-      const trimmed = rawId.trim();
-      if (!trimmed) return null;
-      const mlbMatch = trimmed.match(/^MLB-?(\d+)/i);
-      if (mlbMatch) return `MLB${mlbMatch[1]}`;
-      const numeric = trimmed.match(/(\d+)/);
-      if (numeric) return `MLB${numeric[1]}`;
-    }
-    return null;
-  };
-  const normalizeStartTime = value => {
-    if (!value && 0 !== value) return null;
-    if (value instanceof Date && !isNaN(value.getTime())) return value.toISOString();
-    if (typeof value === "number" && isFinite(value)) {
-      const normalized = new Date(value);
-      return isNaN(normalized.getTime()) ? null : normalized.toISOString();
-    }
-    if (typeof value === "string") {
-      const trimmed = value.trim();
-      if (!trimmed) return null;
-      if (/^\d+$/.test(trimmed)) {
-        const numeric = parseInt(trimmed, 10);
-        if (!isNaN(numeric)) {
-          const normalized = new Date(numeric);
-          if (!isNaN(normalized.getTime())) return normalized.toISOString();
-        }
-      }
-      const normalized = new Date(trimmed);
-      return isNaN(normalized.getTime()) ? null : normalized.toISOString();
-    }
-    return null;
-  };
   const startTimeCandidates = (() => {
     const inferredItemId = coerceItemId(
       dataLayerEntry?.itemId
@@ -1525,6 +1583,7 @@ async function fetchProductDataFromPage(rawItemId, t) {
   }
   )), await new Promise((e => setTimeout(e, 100)))), itemsLocalData[normalizedItemId] && itemsLocalData[normalizedItemId].startTime && void 0 !== itemsLocalData[normalizedItemId].itemSales) {
     const n = itemsLocalData[normalizedItemId];
+    syncCatalogBodyWithLocalData(normalizedItemId);
     vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
     let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
     if (a && vendas > 0) {
@@ -1596,6 +1655,23 @@ async function fetchProductDataFromPage(rawItemId, t) {
             }
             if (o > 0 && null != a) {
               vendas = a, dias = o, data_br = dayjs(i).locale("pt-br").format("DD/MM/YYYY"), media_vendas = isNaN(Math.round(vendas / (dias / 30))) ? "-": Math.round(vendas / (dias / 30));
+              const normalizedStart = normalizeStartTime(i);
+              if (normalizedStart) {
+                catalogData = Array.isArray(catalogData) ? catalogData : [];
+                catalogData[0] = catalogData[0] || {};
+                catalogData[0].body = catalogData[0].body || {};
+                if (!catalogData[0].body.id) catalogData[0].body.id = normalizedItemId;
+                if (!normalizeStartTime(catalogData[0].body.date_created)) {
+                  catalogData[0].body.date_created = normalizedStart;
+                }
+                if ((null == catalogData[0].body.sold_quantity || isNaN(parseFloat(catalogData[0].body.sold_quantity))) && typeof vendas === "number" && !isNaN(vendas)) {
+                  catalogData[0].body.sold_quantity = vendas;
+                }
+                const entry = Array.isArray(dataLayer) && dataLayer.length > 0 ? (dataLayer[0] = dataLayer[0] || {}) : (dataLayer[0] = {});
+                if (!normalizeStartTime(entry.startTime)) {
+                  entry.startTime = normalizedStart;
+                }
+              }
               let e = document.getElementsByClassName("ui-pdp-subtitle")[0];
               if (e) {
   upsertCatalogBadge(vendas);
