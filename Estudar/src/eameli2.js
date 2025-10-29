@@ -1272,23 +1272,78 @@ var eafollow_url = "https://www.metrify.com.br/seguir-anuncio/";
 
 var eagrossrev = `
 <span id="eagrossrev">
-  <div>
-    <img src="https://img.icons8.com/windows/32/c7c7c7/old-cash-register.png"
-         style="width: 1.5em;height: 1.5em;position: relative;top: 0.21em;margin-right: 0.5em;">
-    <span style="font-size: 0.92em;font-weight: 900;">
-      <span class="eahiddenlabel2 revtitle">Faturando:</span>
-      <span class="eagrossrev-title" style="font-size: 1.35em;">R$0,00</span>
-      <span class="revtitle">/mês</span>
-    </span>
-  </div>
-  <div class="earevstats">
-    <span style="font-size: 11px;" class="ui-pdp-review__amount" id="mfy_rev_estimate">Média de faturamento estimada. </span><br>
-    <button class="andes-button--loud mfy-main-bg  revbtn1"  style="padding: .1em .5em;border-radius: 5px;margin: 2px;">1 Dia</button>
-    <button class="andes-button--loud mfy-main-bg  revbtn7"  style="padding: .1em .5em;border-radius: 5px;margin: 2px;">7 Dias</button>
-    <button class="andes-button--loud mfy-main-bg  revbtn30" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">30 dias</button>
-    <button class="andes-button--loud mfy-main-bg  revbtn60" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">60 dias</button>
-    <button class="andes-button--loud mfy-main-bg  revbtn90" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">90 dias</button>
-    <button class="andes-button--loud mfy-main-bg  revbtntotal" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">Total</button>
+  <style>
+    #eagrossrev .eagrossrev-card {
+      background: #111;
+      color: #f5f5f5;
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 1.75rem 1.5rem 1.5rem;
+      gap: 1.25rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    #eagrossrev .eagrossrev-card-accent {
+      background: #ffc400;
+      height: 6px;
+      width: 100%;
+      flex-shrink: 0;
+    }
+
+    #eagrossrev .eagrossrev-card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    #eagrossrev .eagrossrev-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    #eagrossrev .eagrossrev-icon {
+      width: 2.25rem;
+      height: 2.25rem;
+      filter: invert(88%);
+    }
+
+    #eagrossrev .revtitle {
+      color: #ffc400;
+    }
+
+    #eagrossrev .earevstats {
+      color: inherit;
+      font-size: 0.9em;
+    }
+
+    #eagrossrev .earevstats .andes-button--loud {
+      margin: 0.25rem 0.25rem 0 0;
+    }
+  </style>
+  <div class="eagrossrev-card">
+    <div class="eagrossrev-card-accent"></div>
+    <div class="eagrossrev-card-content">
+      <div class="eagrossrev-card-header">
+        <img class="eagrossrev-icon" src="https://img.icons8.com/windows/32/c7c7c7/old-cash-register.png" alt="Ícone de faturamento">
+        <span style="font-size: 1.05em;font-weight: 900;">
+          <span class="eahiddenlabel2 revtitle">Faturando:</span>
+          <span class="eagrossrev-title" style="font-size: 1.55em;">R$0,00</span>
+          <span class="revtitle">/mês</span>
+        </span>
+      </div>
+      <div class="earevstats">
+        <span style="font-size: 11px;" class="ui-pdp-review__amount" id="mfy_rev_estimate">Média de faturamento estimada. </span><br>
+        <button class="andes-button--loud mfy-main-bg  revbtn1"  style="padding: .1em .5em;border-radius: 5px;">1 Dia</button>
+        <button class="andes-button--loud mfy-main-bg  revbtn7"  style="padding: .1em .5em;border-radius: 5px;">7 Dias</button>
+        <button class="andes-button--loud mfy-main-bg  revbtn30" style="padding: .1em .5em;border-radius: 5px;">30 dias</button>
+        <button class="andes-button--loud mfy-main-bg  revbtn60" style="padding: .1em .5em;border-radius: 5px;">60 dias</button>
+        <button class="andes-button--loud mfy-main-bg  revbtn90" style="padding: .1em .5em;border-radius: 5px;">90 dias</button>
+        <button class="andes-button--loud mfy-main-bg  revbtntotal" style="padding: .1em .5em;border-radius: 5px;">Total</button>
+      </div>
+    </div>
   </div>
 </span>
 `;
