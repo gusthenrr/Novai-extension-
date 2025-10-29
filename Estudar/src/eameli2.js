@@ -2341,6 +2341,7 @@ function contentScpt() {
       e.addEventListener("click", (function (e) {
         let n = document.getElementsByClassName("eatoolboxbar")[0];
         t ? (t = !1, n.setAttribute("class", "eatoolboxbar"), this.getElementsByTagName("img")[0].setAttribute("style", "width: 1.11em;transform: rotate(180deg);margin: 2px;transition: all 0.2s;")): (t = !0, n.setAttribute("class", "eatoolboxbar eatoolboxbaropen"), this.getElementsByTagName("img")[0].setAttribute("style", "width: 1.11em;transform: rotate(90deg);margin: 2px;transition: all 0.2s;"))
+        anchorMoreToolsButton(0);
       }
       )), function () {
         let e = isNaN(media_vendas * preco_Local) ? 0: media_vendas * preco_Local, t = parseSalesText(document.getElementsByClassName("ui-pdp-subtitle")[0].innerText).thisItemSales, n = isNaN(t * preco_Local) ? 0: t * preco_Local, a = document.getElementsByClassName("eagrossrev-title")[0], i = document.getElementsByClassName("earevstats")[0], s = i ? i.querySelectorAll(".eagrossrev-catalog-title") : null;
@@ -2645,6 +2646,67 @@ function contentScpt() {
       let n = document.getElementById("eacattrendsbtn");
       n.addEventListener("click", t)
     }
+    const anchorMoreToolsButton = (retries = 3) => {
+      const moreTools = document.getElementById("eamoretools");
+      if (!moreTools) {
+        if (retries > 0) {
+          setTimeout(() => anchorMoreToolsButton(retries - 1), 250);
+        }
+        return;
+      }
+
+      const toolbox = document.getElementById("eatoolbox");
+
+      const mainElement = document.querySelector("main");
+      if (!mainElement) {
+        if (retries > 0) {
+          setTimeout(() => anchorMoreToolsButton(retries - 1), 250);
+        }
+        return;
+      }
+
+      try {
+        const computed = window.getComputedStyle(mainElement);
+        if (computed && computed.position === "static") {
+          mainElement.style.position = "relative";
+        }
+      } catch (_) {}
+
+      if (moreTools.parentElement !== mainElement) {
+        mainElement.appendChild(moreTools);
+      }
+
+      if (toolbox && toolbox.parentElement !== mainElement) {
+        mainElement.appendChild(toolbox);
+      }
+
+      moreTools.style.position = "absolute";
+      moreTools.style.top = "1rem";
+      moreTools.style.right = "1rem";
+
+      if (toolbox) {
+        const buttonRect = typeof moreTools.getBoundingClientRect === "function"
+          ? moreTools.getBoundingClientRect()
+          : null;
+        const measuredWidth = buttonRect && buttonRect.width ? buttonRect.width : moreTools.offsetWidth;
+        const fallbackWidth = Number.isFinite(measuredWidth) && measuredWidth > 0 ? measuredWidth : 56;
+        toolbox.style.position = "absolute";
+        toolbox.style.top = "1rem";
+        toolbox.style.right = `calc(1rem + ${Math.round(fallbackWidth)}px)`;
+        toolbox.style.display = "flex";
+        toolbox.style.justifyContent = "flex-end";
+        toolbox.style.alignItems = "center";
+        toolbox.style.maxWidth = "min(20rem, calc(100vw - 7rem))";
+        toolbox.style.width = "min(18rem, calc(100vw - 7rem))";
+        toolbox.style.zIndex = "95";
+      }
+
+      if (!anchorMoreToolsButton._resizeBound) {
+        anchorMoreToolsButton._resizeBound = !0;
+        window.addEventListener("resize", () => anchorMoreToolsButton(0));
+      }
+    };
+
     const headerNode = spot0[0];
     if (headerNode) {
       const titleNode = headerNode.querySelector(".ui-pdp-title");
@@ -2654,6 +2716,7 @@ function contentScpt() {
         headerNode.insertAdjacentHTML("afterbegin", analytics_ui);
       }
     }
+    anchorMoreToolsButton();
     i(), function () {
       let e = document.getElementById("eahealthmeter"), t = document.getElementById("eameter_modal");
       e && e.remove(), t && t.remove()
@@ -4760,11 +4823,13 @@ function mfyStart() {
   position: relative;
   background-color: #fff;
   z-index: 31;
-  right: -2em;
   border: 1px solid #ebebeb;
-  margin-bottom: -2em;
+  margin-bottom: 0;
   box-shadow: rgb(0 0 0 / 7%) 0 3px 6px;
   pointer-events: none;
+  width: 100%;
+  transition: opacity 0.21s ease, transform 0.21s ease;
+  transform: translateX(0.5rem);
 }
 .eatoolboxicon {
   z-index: 100;
@@ -4779,7 +4844,8 @@ function mfyStart() {
   border-radius: 1em;
   display: inline-flex;
   position: absolute;
-  right: 0em;
+  top: 1rem;
+  right: 1rem;
 }
 .eatoolboxbaropen {
   pointer-events: auto;
@@ -4792,13 +4858,13 @@ function mfyStart() {
   position: relative;
   background-color: #fff;
   z-index: 31;
-  top: -.5rem;
+  top: 0;
   transition: all 0.21s;
-  right: 0;
-  width: 102%;
+  width: 100%;
   border: 1px solid #ebebeb;
-  margin-bottom: -1em;
+  margin-bottom: 0;
   box-shadow: rgb(0 0 0 / 7%) 0px 3px 6px;
+  transform: translateX(0);
 }
 
 .novai-kpi-card{
