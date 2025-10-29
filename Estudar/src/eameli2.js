@@ -1271,26 +1271,27 @@ var eatoolbox_close = `
 var eafollow_url = "https://www.metrify.com.br/seguir-anuncio/";
 
 var eagrossrev = `
-<span id="eagrossrev">
-  <div>
-    <img src="https://img.icons8.com/windows/32/c7c7c7/old-cash-register.png"
-         style="width: 1.5em;height: 1.5em;position: relative;top: 0.21em;margin-right: 0.5em;">
-    <span style="font-size: 0.92em;font-weight: 900;">
-      <span class="eahiddenlabel2 revtitle">Faturando:</span>
-      <span class="eagrossrev-title" style="font-size: 1.35em;">R$0,00</span>
-      <span class="revtitle">/mês</span>
-    </span>
+<div id="eagrossrev" class="novai-kpi-card">
+  <div class="novai-kpi-head">
+    <div class="novai-kpi-icon">💰</div>
+    <div class="novai-kpi-title">Faturamento:</div>
   </div>
-  <div class="earevstats">
-    <span style="font-size: 11px;" class="ui-pdp-review__amount" id="mfy_rev_estimate">Média de faturamento estimada. </span><br>
-    <button class="andes-button--loud mfy-main-bg  revbtn1"  style="padding: .1em .5em;border-radius: 5px;margin: 2px;">1 Dia</button>
-    <button class="andes-button--loud mfy-main-bg  revbtn7"  style="padding: .1em .5em;border-radius: 5px;margin: 2px;">7 Dias</button>
-    <button class="andes-button--loud mfy-main-bg  revbtn30" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">30 dias</button>
-    <button class="andes-button--loud mfy-main-bg  revbtn60" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">60 dias</button>
-    <button class="andes-button--loud mfy-main-bg  revbtn90" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">90 dias</button>
-    <button class="andes-button--loud mfy-main-bg  revbtntotal" style="padding: .1em .5em;border-radius: 5px;margin: 2px;">Total</button>
+
+  <div class="novai-kpi-value">
+    <span class="eagrossrev-title">R$0,00</span>
+    <span class="revtitle">/mês</span>
   </div>
-</span>
+
+  <div class="novai-kpi-sub earevstats">
+    <span class="ui-pdp-review__amount novai-muted" id="mfy_rev_estimate">Estimativa.</span>
+    <button class="andes-button--loud mfy-main-bg revbtn1">1 Dia</button>
+    <button class="andes-button--loud mfy-main-bg revbtn7">7 Dias</button>
+    <button class="andes-button--loud mfy-main-bg revbtn30">30 dias</button>
+    <button class="andes-button--loud mfy-main-bg revbtn60">60 dias</button>
+    <button class="andes-button--loud mfy-main-bg revbtn90">90 dias</button>
+    <button class="andes-button--loud mfy-main-bg revbtntotal">Total</button>
+  </div>
+</div>
 `;
 
 var ranksearch = `
@@ -2328,10 +2329,31 @@ function contentScpt() {
           if (t instanceof Element) {
           t.remove(), a.parentElement.insertAdjacentElement("afterbegin", t);
           }
-          a.parentElement.parentElement.setAttribute("style", "display: flex;flex-direction: column;"), a.innerHTML = '<div style="padding: 0rem 1rem;margin: 0 .75rem;font-size: .85rem;width: fit-content;border-radius:1rem;border:1px solid #ebebeb;">Catálogo & Anúncio vencedor</div>', i && i.insertAdjacentHTML("beforeend", '<div style="display:flex;flex-direction:column;margin-top:1rem;"><span style="font-size: 0.92em;font-weight: 900;"><span class="ui-pdp-review__amount">-Anúncio</span> <span class="eagrossrev-catalog-title" style="font-size: 1.35em;">R$0</span><span class="revtitle revperiod">/mês</span></span>\n            <span style="font-size: 0.92em;font-weight: 900;"><span class="ui-pdp-review__amount">- Catálogo:</span> <span class="eagrossrev-catalog-title" style="font-size: 1.35em;">R$0</span><span class="revtitle"> Total</span></span></div>'), s?.length > 0 && (s[1].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`), document.getElementsByClassName("eagrossrev-catalog-title")[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`
+          a.parentElement.parentElement.setAttribute("style", "display: flex;flex-direction: column;");
+          a.innerHTML = '<div style="padding: 0rem 1rem;margin: 0 .75rem;font-size: .85rem;width: fit-content;border-radius:1rem;border:1px solid #ebebeb;">Catálogo & Anúncio vencedor</div>';
+          if (i && !i.querySelector('.eagrossrev-breakdown')) {
+            i.insertAdjacentHTML(
+              "beforeend",
+              `<div class="eagrossrev-breakdown"
+                   style="display:flex;flex-direction:column;margin-top:1rem;color:#d1d5db">
+                 <span style="font-size:.92em;font-weight:900;">
+                   <span class="ui-pdp-review__amount" style="color:#d1d5db">- Anúncio</span>
+                   <span class="eagrossrev-catalog-title" style="font-size:1.35em;color:#fff">R$0</span>
+                   <span class="revtitle revperiod" style="color:#d1d5db">/mês</span>
+                 </span>
+                 <span style="font-size:.92em;font-weight:900;margin-top:.25rem;">
+                   <span class="ui-pdp-review__amount" style="color:#d1d5db">- Catálogo:</span>
+                   <span class="eagrossrev-catalog-title" style="font-size:1.35em;color:#fff">R$0</span>
+                   <span class="revtitle" style="color:#d1d5db"> Total</span>
+                 </span>
+               </div>`
+            );
+          }
+          s?.length > 0 && (s[1].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`), document.getElementsByClassName("eagrossrev-catalog-title")[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`
         }
         else a.innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`;
-        i.setAttribute("style", "transition:all 0.35s;padding: 0em 1em 0.35em 1.7em;color: gray;display: none;margin-top: -4em;opacity: 0");
+  // Keep the KPI area visible from the start and show the breakdown below it
+  i.setAttribute("style", "transition:all 0.35s;padding: 0em 1em 0.35em 1.7em;color: gray;display: block;margin-top: 0;opacity: 1");
         let o = document.getElementById("eagrossrev"), r = document.getElementsByClassName("ui-pdp__header-top-brand")[0], l = document.getElementsByClassName("ui-pdp-highlights")[0];
         if (r) {
           let e = r.getElementsByClassName("ui-pdp__header-top-brand__image-container")[0], t = document.getElementsByClassName("ui-pdp-subtitle")[0];
@@ -2339,13 +2361,12 @@ function contentScpt() {
         }
         let d = document.getElementsByClassName("ui-pdp-header")[0];
         d && iscatalog && l && d.setAttribute("style", "display: block!important;");
+        // Keep the breakdown visible and in place even on hover
         o.addEventListener("mouseover", (function () {
-          iscatalog ? i.setAttribute("style", "transition:all 0.35s;;margin-top: 0em;padding: 0em 1em 0.35em 1.7em;color: gray;opacity: 1"): i.setAttribute("style", "transition:all 0.35s;;margin-top: -1em;padding: 0em 1em 0.35em 1.7em;color: gray;opacity: 1")
-        }
-        )), o.addEventListener("mouseout", (function () {
-          i.setAttribute("style", "transition:all 0.35s;;padding: 0em 1em 0.35em 1.7em;color: gray;display: none;margin-top: -4em;opacity: 0")
-        }
-        ));
+          i.setAttribute("style", "transition:all 0.35s;padding: 0em 1em 0.35em 1.7em;color: gray;display: block;margin-top: 0;opacity: 1");
+        })), o.addEventListener("mouseout", (function () {
+          i.setAttribute("style", "transition:all 0.35s;padding: 0em 1em 0.35em 1.7em;color: gray;display: block;margin-top: 0;opacity: 1");
+        }));
         let m = document.getElementsByClassName("revbtn1")[0], c = document.getElementsByClassName("revbtn7")[0], p = document.getElementsByClassName("revbtn30")[0], g = document.getElementsByClassName("revbtn60")[0], f = document.getElementsByClassName("revbtn90")[0], u = document.getElementsByClassName("revbtntotal")[0], y = document.getElementsByClassName("revtitle");
         dias / vendas > 1 && (m.style.display = "none");
         dias <= 30 && (f.style.display = "none", g.style.display = "none", p.style.display = "none");
@@ -2353,49 +2374,49 @@ function contentScpt() {
         let h = document.getElementsByClassName("revperiod");
         m.addEventListener("click", (function (t) {
           let n = isNaN(e / 30) ? 0: e / 30;
-          s?.length > 0 ? s[0].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = "Faturamento:", y[1].innerHTML = " /dia";
+          s?.length > 0 ? s[0].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = " /dia";
           for (let e = 0;
           e < h?.length;
           e++) h[e].innerHTML = " /dia"
         }
         )), c.addEventListener("click", (function () {
           let t = isNaN(e / 2) ? 0: e / 2;
-          s?.length > 0 ? s[0].innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = "Faturamento:", y[1].innerHTML = " /semana";
+          s?.length > 0 ? s[0].innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = " /semana";
           for (let e = 0;
           e < h?.length;
           e++) h[e].innerHTML = " /semana"
         }
         )), p.addEventListener("click", (function (t) {
           let n = isNaN(e) ? 0: e;
-          s?.length > 0 ? s[0].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = "Faturamento:", y[1].innerHTML = " /mês";
+          s?.length > 0 ? s[0].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = " /mês";
           for (let e = 0;
           e < h?.length;
           e++) h[e].innerHTML = " /mês"
         }
         )), g.addEventListener("click", (function () {
           let t = isNaN(2 * e) ? 0: 2 * e;
-          s?.length > 0 ? s[0].innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = "Faturamento:", y[1].innerHTML = " /60 dias";
+          s?.length > 0 ? s[0].innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = " /60 dias";
           for (let e = 0;
           e < h?.length;
           e++) h[e].innerHTML = " /60 dias"
         }
         )), f.addEventListener("click", (function () {
           let t = isNaN(3 * e) ? 0: 3 * e;
-          s?.length > 0 ? s[0].innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = "Faturamento:", y[1].innerHTML = " /90 dias";
+          s?.length > 0 ? s[0].innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = " /90 dias";
           for (let e = 0;
           e < h?.length;
           e++) h[e].innerHTML = " /90 dias"
         }
         )), u.addEventListener("click", (function () {
           let e = isNaN(vendas * preco_Local) ? 0: vendas * preco_Local;
-          s?.length > 0 ? s[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = "Faturamento:", y[1].innerHTML = " /Total";
+          s?.length > 0 ? s[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = " /Total";
           for (let e = 0;
           e < h?.length;
           e++) h[e].innerHTML = " /Total"
         }
         ));
         let b = document.getElementById("mfy_rev_estimate");
-        b && (b.innerHTML = "Média de faturamento estimada por períodos")
+        b && (b.innerHTML = "Estimativa por períodos:")
       }
       ()
     }
@@ -4538,7 +4559,671 @@ function mfyStart() {
     detail: ""
   }
   )), window.location.href.startsWith("https://lista") || window.location.href.startsWith("https://produto") | window.location.href.startsWith("https://www.mercadolivre")) {
-    let e = '.select {\n      position: relative;\n      min-width: 200px;\n    }\n    .select svg {\n      position: absolute;\n      right: 12px;\n      top: calc(50% - 3px);\n      width: 10px;\n      height: 6px;\n      stroke-width: 2px;\n      stroke: #9098a9;\n      fill: none;\n      stroke-linecap: round;\n      stroke-linejoin: round;\n      pointer-events: none;\n    }\n    .select select {\n      margin-left: 1rem;\n      -webkit-appearance: none;\n      padding: 7px 40px 7px 12px;\n      width: 100%;\n      border: 1px solid #e8eaed;\n      border-radius: 5px;\n      background: #fff;\n      box-shadow: 0 1px 3px -2px #9098a9;\n      cursor: pointer;\n      font-family: inherit;\n      font-size: 14px;\n      transition: all 150ms ease;\n    }\n    .select select:required:invalid {\n      color: #5a667f;\n    }\n    .select select option {\n      color: #223254;\n    }\n    .select select option[value=""][disabled] {\n      display: none;\n    }\n    .select select:focus {\n      outline: none;\n      border-color: #07f;\n      box-shadow: 0 0 0 2px rgba(0,119,255,0.2);\n    }\n    .select select:hover + svg {\n      stroke: #07f;\n    }\n    .sprites {\n      position: absolute;\n      width: 0;\n      height: 0;\n      pointer-events: none;\n      user-select: none;\n    }\n    ' + "*{ scrollbar-width: auto; scrollbar-color: #c2c2c2 #ffffff;} *::-webkit-scrollbar{ width: 11px; height:11px} *::-webkit-scrollbar-track{ background: #ffffff11;} *::-webkit-scrollbar-thumb{ background-color: #c2c2c2; border-radius: 10px; }" + ".eatoolboxbar{opacity: 0;overflow: hidden;color: #333333;height: 3.75em;border-radius: 2em;display: block;font-weight: bold;position: relative;background-color: #fff;z-index: 31;right: -2em;border: 1px solid #ebebeb;margin-bottom: -2em;box-shadow: rgb(0 0 0 / 7%) 0 3px 6px;pointer-events: none;}.eatoolboxicon{z-index: 100;overflow: hidden;cursor: alias;align-items: center;color: rgb(52, 131, 250);font-weight: 700;font-size: 1.36em;background-color: rgb(250, 250, 250);padding: 0.35em 0.31em;border-radius: 1em;display: inline-flex;position: absolute;right: 0em;}.eatoolboxbaropen{pointer-events: auto;opacity: 1;color: #333333;height: 3.75em;border-radius: 2em;display: block;font-weight: bold;position: relative;background-color: #fff;z-index: 31;top:-.5rem;transition: all 0.21s; right: 0;width: 102%;border: 1px solid #ebebeb;margin-bottom: -1em;box-shadow: rgb(0 0 0 / 7%) 0px 3px 6px;}" + "#eagrossrev{transition:all 0.35s;overflow:hidden;flex-wrap: wrap;box-shadow:rgb(0 0 0 / 11%) 0 3px 6px,rgb(0 0 0 / 10%) 0 3px 6px;color:rgb(90, 90, 90);font-weight:400;font-size:.91em;position:absolute;z-index:21;background-color:#ffffff;padding:.5em .75em .35em .75em;line-height:2.1em;cursor:pointer;border-radius:2em} earevstats{transition: all 0.21s} /* #eagrossrev:hover .eahiddenlabel2{opacity:1;margin-right:0;font-weight:900;transition:all .35s} .eahiddenlabel2{opacity:0;margin-right:-5em;font-weight:900;transition:all .35s}*/ .eahiddenlabel2{opacity:1;margin-right:0;font-weight:900;transition:all .35s}" + "#eaoffSwitch{overflow: hidden;display: inline-flex;box-shadow: rgb(0 0 0 / 11%) 0px 3px 6px, rgb(0 0 0 / 10%) 0px 3px 6px;color: var(--mfy-main);font-weight: 400;font-size: 0.91em;position: relative;z-index:30;background-color: #ffffff;top:-0.31em; left:1em; min-width: 3.1em; height: 3.1em; padding: 0.5em 0.75em 0.35em 0.75em;line-height: 2.1em;cursor: pointer;border-radius: 2em;} #eaoffSwitch:hover > .eahiddenlabel{opacity: 1;margin-right: 0em;font-weight: 900;transition: all 0.35s;}" + "#eaadvsearchBtn{overflow: hidden;display: none /* inline-flex */;box-shadow: rgb(0 0 0 / 11%) 0px 3px 6px, rgb(0 0 0 / 10%) 0px 3px 6px;color: var(--mfy-main);font-weight: 400;font-size: 0.91em;position: absolute;z-index:31;background-color: #ffffff;top: 0.35em;height: 3.1em;/* font-size: 0.7em; */padding: 0.5em 0.75em 0.35em 0.75em;line-height: 2.1em;cursor: pointer;border-radius: 2em;} #eaadvsearchBtn:hover > .eahiddenlabel{opacity: 1;margin-right: 0em;font-weight: 900;transition: all 0.35s;} .eahiddenlabel{opacity: 0;margin-right: -12.2em;font-weight: 900;transition: all 0.35s;}" + ".eagetallimgs{display: inline-block;} .eagetallimgs-inside{transform: scale(1);transition: all 0.14s;line-height: 1.3em;}.eagetallimgs-inside:hover{transform: scale(1.1);line-height:1em;}.eadownloadicon{padding: 4px;position: relative;z-index: 11;background: var(--mfy-main);width: 2em;height: 2em;border-radius: 7px;margin-top: -2em;cursor: grabbing;opacity: 0.7;transform: scale(0.75);transition: all 0.21s;}.eadownloadicon:hover{opacity: 1;transform: scale(1);transition: all 0.35s;}" + `.eadrop01 li{padding: 11px;padding-right: 21px;} .eadrop01 li a{color: #333;text-decoration: none;} .eadrop01 li:hover{background-color: #f5f5f5} .eadropdown:hover{ background-color:var(--mfy-main)!important; transition:all 0.35s;} .eadropdown:hover img{filter: brightness(35);} .eadropxtra li{padding: 11px;padding-left: 21px; border-bottom: 1px solid #7e7e7e1f;} .eadropxtra li a{color: #333} .eadropxtra li:hover{background-color: #fff} .eameter{opacity: 0;margin-right: -2.77em;transition: all 0.35s;pointer-events: none;} #eahealthmeter:hover .eameter{pointer-events: none;opacity:100; margin-right: 0; transition: all 0.35s;} .smooth{transition:all 0.35s;opacity: 100%;} .new-loader{display: flex; height: 21rem; align-content: center} .new-hdn{display:none;} .hdn{transform: rotateX(90deg);overflow:hidden;padding: 0px;height: 0em;transition:opacity 0.5s;} .hdn2{transition:all 0.5s ease-in-out;display:none;-webkit-box-shadow: 0 0px 0px 0 #fff0!important; background-color:#fff0!important; border-top: 0px solid #fff0!important;margin-top: -6.1em!important;overflow:hidden;padding: 0px;height:0em!important;transition:opacity 0.35s;} .transp{opacity: 0%;} .detalhamento{transition:all 0.5s ease-in-out;opacity:100%;text-align: -webkit-left;margin: 2em 1em 0em 2em;padding: 0.7em 0em 0em 3.5em;margin-top: 1em; border-top: 1px solid #80808075;} .alinharvertical{padding: 1em 0em;}.eafollow_ad{border: 1px solid lightgray;border-radius: 2em;display: flex;align-items: center;position: absolute;right: 1px;padding: 0.35em 0.75em;cursor: pointer;}.eafollow_img{margin-top: 3px;width: 1.75em;filter: grayscale(100%);opacity: 35%; transition: all 0.14s;}.eafollow_img:hover{width: 2em;filter: grayscale(0%);opacity:100%;transition: all 0.14s;} \n\n      :root {\n        --mfy-main: ${mfyMainColor};\n        --mfy-dark: #212936;\n  --mfy-outline: #eef0f3;\n  --mfy-success: #57dd98;\n  --mfy-smoke: #f9fafb;\n  --mfy-main-font: "Montserrat", sans-serif;\n  --mfy-outline-10: #eef0f310;\n  --mfy-dark-50: #21293650;\n  --mfy-dark-35: #21293635;\n  --mfy-main-14: #7933ff14;\n  --mfy-warning: #fbbd23;\n  --mfy-danger: #ff4545;\n      }\n\n      .mfy-main-bg{\n        background-color: var(--mfy-main);\n      }\n\n      .tippy-box[data-theme~="mfy"] {\n        background-color: var(--mfy-main);\n        color: white;\n      }\n\n    .tracked-results-maindiv {\t\n      display: flex;flex-direction: column;width: 100%;overflow-y: scroll;max-height: 40vh;\n      height: 40vh;\n    }\n    @media only screen and (min-height: 900px) {\n      .tracked-results-maindiv {\n        max-height: 38rem;\n        height: 38rem;\n      }\n    }\n    .track-menu-button {\n      color: rgb(0,0,0,.5);font-weight: 600;font-size: 1rem;border: 1px solid rgb(0,0,0,.1);padding: 0.5em 1em;margin: 0em 1em;cursor: pointer;box-shadow: rgb(0 0 0 / 10%) 0px 1px 2px 0px;border-radius: 1em;\n    }\n    .track-menu-button_active {\n      font-weight: 700;background-color: #fff; padding: 0.5em 1em; margin: 0em 1em; cursor: pointer; box-shadow: rgb(0 0 0 / 10%) 0px 1px 2px 0px; border-radius: 1em; \n    }\n\n    .starttime{\n      font-size: 0.86rem;\n    }\n    .mfy-result-button{\n      text-align: center; border: 1px solid rgb(0 0 0 / 10%); display: flex; justify-content: center; padding: 0.5rem; border-radius: 5rem; cursor: pointer; margin-top: 1em;    transition: 0.35s all;\n    }\n    .mfy-result-button:hover{\n      background-color: #F56565;box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;transform: translate(0px, 7px);transition: 0.35s all;\n    }\n    .mfy-result-button:hover img{\n      filter: invert(1) brightness(100);\n    }\n\n    .mfy-result-button_options{\n      display: flex; flex-direction: row; justify-content: center;\n    }\n\n    .mfy-result-button_style{\n      border: 1px solid rgb(0 0 0 / 10%); display: flex; justify-content: center; padding: 0.5rem; border-radius: 5rem; cursor: pointer; /* margin-top: 1em; */    transition: 0.35s all;\n    }\n    .mfy-result-button_style:hover{\n      box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;transform: translate(0px, 7px);transition: 0.35s all; border: 2px solid rgb(0 0 0 / 10%);\n    }\n    .result-div{\n      margin-bottom: 0.75em;display: flex;flex-direction: row;background-color: #fff;height: 14rem;width: 100%;justify-content: center;align-items: center;box-shadow: rgb(0 0 0 / 10%) 0px 1px 2px 0px;border-radius: 0.71rem;border-left: 7px solid; border-color: #00000020;\n    }\n    \n    #pav-slider input:focus-visible {\n      outline: none !important;\n    }\n    pav-slider :focus-visible {\n      outline: none !important;\n    }\n    .track-btn{\n      border: 2px solid #ededed; border-radius: 2rem; margin: 1em; padding: 0.5em 1em; cursor: pointer; display: flex; align-items: center; justify-content: center;\n      transition: all 0.35s;\n    }\n    .track-btn:hover{\n      transform: scale(0.9); box-shadow: rgba(0, 0, 0, 0.04) 0px 3px 5px;\n      transition: all 0.35s;\n    }\n    .eabanner{ \n      margin: auto;\n      margin-bottom: 1rem;\n      width: 100%;\n      height: 200px;\n      box-shadow: rgb(0 0 0 / 14%) -1px 20px 16px -10px;\n      border-radius: 0.5rem;\n      display: flex;\n      justify-content: center;\n      align-items: end;\n      cursor: pointer;\n    }\n    .notificationtext{\n      border-radius: 0.5rem;\n      transition: all 0.35s;\n      opacity: 0;\n      height: 100%;\n      width: 100%;\n      display: flex;\n      flex-direction: column;\n      align-items: center;\n      justify-content: flex-end;\n      padding: 1rem;\n    }\n    .eabanner:hover .notificationtext{\n      border-radius: 0.5rem;\n      transition: all 0.35s;\n      opacity: 1;\n      font-size: 1em;\n      height: 100%;\n      width: 100%;\n      display: flex;\n      flex-direction: column;\n      align-items: center;\n      justify-content: flex-end;\n      padding: 1rem;\n      color: white;\n      background: var(--mfy-main);\n      /* background: linear-gradient(0deg, rgba(0,0,0,1) 11%, rgba(0,0,0,0) 100%); */\n    }\n    .myml-nav__section-title{\n      opacity: 1;\n    }\n    .toolmodal {\n      position: fixed;top: 0;background-color: #000000ab;width:100vw;height: 100vh;z-index: 999;backdrop-filter: blur(11px);display: flex;justify-content: center;align-items: center;\n    }\n\n    #snackbar {\n      visibility: hidden;\n      color: #fff;\n      background-color: #333;\n      min-width: 250px;\n      margin-left: -125px;\n      border-radius: 2px;\n      padding: 16px;\n      text-align: center;\n      left: 50%;\n      bottom: 30px;\n      z-index: 1;\n      position: fixed;\n    }\n\n    /* This will be activated when the snackbar's class is 'show' which will be added through JS */\n    #snackbar.show {\n      visibility: visible;\n      -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;\n      animation: fadein 0.5s, fadeout 0.5s 2.5s;\n    }\n\n    /* Animations for fading in and out */\n    @-webkit-keyframes fadein {\n      from {bottom: 0; opacity: 0;}\n      to {bottom: 30px; opacity: 1;}\n    }\n\n    @keyframes fadein {\n      from {bottom: 0; opacity: 0;}\n      to {bottom: 30px; opacity: 1;}\n    }\n\n    @-webkit-keyframes fadeout {\n      from {bottom: 30px; opacity: 1;}\n      to {bottom: 0; opacity: 0;}\n    }\n\n    @keyframes fadeout {\n      from {bottom: 30px; opacity: 1;}\n      to {bottom: 0; opacity: 0;}\n    }\n\n    </style>\n    `, t = document.createElement("style");
+    let e = `
+    :root{
+  --novai-ml-yellow:#ffe600;
+  --novai-fg:#222222;
+  --novai-muted:#6b7280;
+  --novai-border:#e5e7eb;
+  --novai-bg:#ffffff;
+  --novai-shadow:0 6px 18px rgba(0,0,0,.06);
+  /* bridge p/ estilos antigos */
+  --mfy-main: var(--novai-ml-yellow);
+  --mfy-dark: #212936;
+  --mfy-main-font: "Montserrat", sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --novai-fg:#f3f4f6;
+    --novai-muted:#9ca3af;
+    --novai-border:#272a30;
+    --novai-bg:#0f1115;
+    --novai-shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+}
+.select {
+  position: relative;
+  min-width: 200px;
+}
+.select svg {
+  position: absolute;
+  right: 12px;
+  top: calc(50% - 3px);
+  width: 10px;
+  height: 6px;
+  stroke-width: 2px;
+  stroke: #9098a9;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.select select {
+  margin-left: 1rem;
+  -webkit-appearance: none;
+  padding: 7px 40px 7px 12px;
+  width: 100%;
+  border: 1px solid #e8eaed;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 1px 3px -2px #9098a9;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  transition: all 150ms ease;
+}
+.select select:required:invalid {
+  color: #5a667f;
+}
+.select select option {
+  color: #223254;
+}
+.select select option[value=""][disabled] {
+  display: none;
+}
+.select select:focus {
+  outline: none;
+  border-color: #07f;
+  box-shadow: 0 0 0 2px rgba(0,119,255,0.2);
+}
+.select select:hover + svg {
+  stroke: #07f;
+}
+.sprites {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+* {
+  scrollbar-width: auto;
+  scrollbar-color: #c2c2c2 #ffffff;
+}
+*::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+*::-webkit-scrollbar-track {
+  background: #ffffff11;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #c2c2c2;
+  border-radius: 10px;
+}
+
+.eatoolboxbar {
+  opacity: 0;
+  overflow: hidden;
+  color: #333333;
+  height: 3.75em;
+  border-radius: 2em;
+  display: block;
+  font-weight: bold;
+  position: relative;
+  background-color: #fff;
+  z-index: 31;
+  right: -2em;
+  border: 1px solid #ebebeb;
+  margin-bottom: -2em;
+  box-shadow: rgb(0 0 0 / 7%) 0 3px 6px;
+  pointer-events: none;
+}
+.eatoolboxicon {
+  z-index: 100;
+  overflow: hidden;
+  cursor: alias;
+  align-items: center;
+  color: rgb(52, 131, 250);
+  font-weight: 700;
+  font-size: 1.36em;
+  background-color: rgb(250, 250, 250);
+  padding: 0.35em 0.31em;
+  border-radius: 1em;
+  display: inline-flex;
+  position: absolute;
+  right: 0em;
+}
+.eatoolboxbaropen {
+  pointer-events: auto;
+  opacity: 1;
+  color: #333333;
+  height: 3.75em;
+  border-radius: 2em;
+  display: block;
+  font-weight: bold;
+  position: relative;
+  background-color: #fff;
+  z-index: 31;
+  top: -.5rem;
+  transition: all 0.21s;
+  right: 0;
+  width: 102%;
+  border: 1px solid #ebebeb;
+  margin-bottom: -1em;
+  box-shadow: rgb(0 0 0 / 7%) 0px 3px 6px;
+}
+
+.novai-kpi-card{
+  position:relative;
+  background:#222;
+  color:#fff;
+  border:0;                 /* <<< sem borda */
+  border-radius:12px;
+  padding:10px 12px;
+  box-shadow:var(--novai-shadow);
+  overflow:hidden;
+}
+/* Faixa amarela no topo */
+.novai-kpi-card::before{
+  content:"";
+  position:absolute;
+  top:0; left:0; right:0;   /* <<< sem -1px */
+  height:4px;
+  background:var(--novai-ml-yellow);
+  border-top-left-radius:inherit;
+  border-top-right-radius:inherit;
+  pointer-events:none;
+}
+
+/* Cabeçalho (ícone + título) */
+.novai-kpi-head{
+  display:flex; align-items:center; gap:8px;
+  margin-bottom:6px;
+}
+.novai-kpi-icon{
+  width:26px; height:26px; border-radius:999px;
+  background: rgba(255,230,0,.25);
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:14px;
+}
+.novai-kpi-title{
+  color:#fff; text-transform:uppercase; letter-spacing:.04em;
+  font-weight:700; font-size:12px;
+}
+
+/* Valor + subtítulo */
+.novai-kpi-value{
+  color: #ffffff; font-weight:900; font-size:24px; line-height:1.1;
+  margin:2px 0 6px;
+}
+.novai-kpi-sub{ display:flex; align-items:baseline; gap:8px; color:#bbb; font-size:12px; }
+.novai-muted{ color: #bbb; }
+
+/* Integra o seu card antigo (#eagrossrev) ao skin Novai */
+#eagrossrev.novai-kpi-card{
+  /* anula o absolute antigo se houver: */
+  position:relative !important;
+  left:auto; right:auto; top:auto;
+  display:block; width:auto;
+  color:#fff;
+}
+
+/* Linha de botões de período */
+#eagrossrev .earevstats{
+  display:flex; align-items:center; flex-wrap:wrap; gap:.25em;
+}
+#eagrossrev .earevstats button{
+  padding:.2em .6em; border-radius:6px; margin:2px;
+  border:1px solid rgba(255,255,255,.15);
+  background:transparent; color:#fff; font-weight:700;
+  transition:.2s;
+}
+#eagrossrev .earevstats button:hover{
+  background: var(--novai-ml-yellow); color:#111; border-color:var(--novai-ml-yellow);
+}
+#eagrossrev .earevstats button:active{ transform:translateY(1px); }
+/* Texto auxiliar */
+#eagrossrev #mfy_rev_estimate{
+  color:#fff; font-size:11px; margin-right:6px;
+}
+/* ESTADO SELECIONADO — bem aparente em amarelo */
+#eagrossrev .earevstats button.is-active,
+#eagrossrev .earevstats button[aria-pressed="true"]{
+  background:var(--novai-ml-yellow);
+  color:#111;
+  border-color:var(--novai-ml-yellow);
+  box-shadow:0 0 0 2px rgba(255,230,0,.25) inset;
+}
+#eaoffSwitch {
+  overflow: hidden;
+  display: inline-flex;
+  box-shadow: rgb(0 0 0 / 11%) 0px 3px 6px, rgb(0 0 0 / 10%) 0px 3px 6px;
+  color: var(--mfy-main);
+  font-weight: 400;
+  font-size: 0.91em;
+  position: relative;
+  z-index: 30;
+  background-color: #ffffff;
+  top: -0.31em;
+  left: 1em;
+  min-width: 3.1em;
+  height: 3.1em;
+  padding: 0.5em 0.75em 0.35em 0.75em;
+  line-height: 2.1em;
+  cursor: pointer;
+  border-radius: 2em;
+}
+#eaoffSwitch:hover > .eahiddenlabel {
+  opacity: 1;
+  margin-right: 0em;
+  font-weight: 900;
+  transition: all 0.35s;
+}
+
+#eaadvsearchBtn {
+  overflow: hidden;
+  display: none; /* inline-flex */
+  box-shadow: rgb(0 0 0 / 11%) 0px 3px 6px, rgb(0 0 0 / 10%) 0px 3px 6px;
+  color: var(--mfy-main);
+  font-weight: 400;
+  font-size: 0.91em;
+  position: absolute;
+  z-index: 31;
+  background-color: #ffffff;
+  top: 0.35em;
+  height: 3.1em;
+  /* font-size: 0.7em; */
+  padding: 0.5em 0.75em 0.35em 0.75em;
+  line-height: 2.1em;
+  cursor: pointer;
+  border-radius: 2em;
+}
+#eaadvsearchBtn:hover > .eahiddenlabel {
+  opacity: 1;
+  margin-right: 0em;
+  font-weight: 900;
+  transition: all 0.35s;
+}
+.eahiddenlabel {
+  opacity: 0;
+  margin-right: -12.2em;
+  font-weight: 900;
+  transition: all 0.35s;
+}
+
+.eagetallimgs {
+  display: inline-block;
+}
+.eagetallimgs-inside {
+  transform: scale(1);
+  transition: all 0.14s;
+  line-height: 1.3em;
+}
+.eagetallimgs-inside:hover {
+  transform: scale(1.1);
+  line-height: 1em;
+}
+.eadownloadicon {
+  padding: 4px;
+  position: relative;
+  z-index: 11;
+  background: var(--mfy-main);
+  width: 2em;
+  height: 2em;
+  border-radius: 7px;
+  margin-top: -2em;
+  cursor: grabbing;
+  opacity: 0.7;
+  transform: scale(0.75);
+  transition: all 0.21s;
+}
+.eadownloadicon:hover {
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.35s;
+}
+
+.eadrop01 li {
+  padding: 11px;
+  padding-right: 21px;
+}
+.eadrop01 li a {
+  color: #333;
+  text-decoration: none;
+}
+.eadrop01 li:hover {
+  background-color: #f5f5f5;
+}
+.eadropdown:hover {
+  background-color: var(--mfy-main) !important;
+  transition: all 0.35s;
+}
+.eadropdown:hover img {
+  filter: brightness(35);
+}
+.eadropxtra li {
+  padding: 11px;
+  padding-left: 21px;
+  border-bottom: 1px solid #7e7e7e1f;
+}
+.eadropxtra li a {
+  color: #333;
+}
+.eadropxtra li:hover {
+  background-color: #fff;
+}
+.eameter {
+  opacity: 0;
+  margin-right: -2.77em;
+  transition: all 0.35s;
+  pointer-events: none;
+}
+#eahealthmeter:hover .eameter {
+  pointer-events: none;
+  opacity: 100;
+  margin-right: 0;
+  transition: all 0.35s;
+}
+.smooth {
+  transition: all 0.35s;
+  opacity: 100%;
+}
+.new-loader {
+  display: flex;
+  height: 21rem;
+  align-content: center;
+}
+.new-hdn {
+  display: none;
+}
+.hdn {
+  transform: rotateX(90deg);
+  overflow: hidden;
+  padding: 0px;
+  height: 0em;
+  transition: opacity 0.5s;
+}
+.hdn2 {
+  transition: all 0.5s ease-in-out;
+  display: none;
+  -webkit-box-shadow: 0 0px 0px 0 #fff0 !important;
+  background-color: #fff0 !important;
+  border-top: 0px solid #fff0 !important;
+  margin-top: -6.1em !important;
+  overflow: hidden;
+  padding: 0px;
+  height: 0em !important;
+  transition: opacity 0.35s;
+}
+.transp {
+  opacity: 0%;
+}
+.detalhamento {
+  transition: all 0.5s ease-in-out;
+  opacity: 100%;
+  text-align: -webkit-left;
+  margin: 2em 1em 0em 2em;
+  padding: 0.7em 0em 0em 3.5em;
+  margin-top: 1em;
+  border-top: 1px solid #80808075;
+}
+.alinharvertical {
+  padding: 1em 0em;
+}
+.eafollow_ad {
+  border: 1px solid lightgray;
+  border-radius: 2em;
+  display: flex;
+  align-items: center;
+  position: absolute;
+  right: 1px;
+  padding: 0.35em 0.75em;
+  cursor: pointer;
+}
+.eafollow_img {
+  margin-top: 3px;
+  width: 1.75em;
+  filter: grayscale(100%);
+  opacity: 35%;
+  transition: all 0.14s;
+}
+.eafollow_img:hover {
+  width: 2em;
+  filter: grayscale(0%);
+  opacity: 100%;
+  transition: all 0.14s;
+}
+
+:root {
+  --mfy-main: ${mfyMainColor};
+  --mfy-dark: #212936;
+  --mfy-outline: #eef0f3;
+  --mfy-success: #57dd98;
+  --mfy-smoke: #f9fafb;
+  --mfy-main-font: "Montserrat", sans-serif;
+  --mfy-outline-10: #eef0f310;
+  --mfy-dark-50: #21293650;
+  --mfy-dark-35: #21293635;
+  --mfy-main-14: #7933ff14;
+  --mfy-warning: #fbbd23;
+  --mfy-danger: #ff4545;
+}
+
+.mfy-main-bg {
+  background-color: var(--mfy-main);
+}
+
+.tippy-box[data-theme~="mfy"] {
+  background-color: var(--mfy-main);
+  color: white;
+}
+
+.tracked-results-maindiv {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow-y: scroll;
+  max-height: 40vh;
+  height: 40vh;
+}
+@media only screen and (min-height: 900px) {
+  .tracked-results-maindiv {
+    max-height: 38rem;
+    height: 38rem;
+  }
+}
+.track-menu-button {
+  color: rgb(0,0,0,.5);
+  font-weight: 600;
+  font-size: 1rem;
+  border: 1px solid rgb(0,0,0,.1);
+  padding: 0.5em 1em;
+  margin: 0em 1em;
+  cursor: pointer;
+  box-shadow: rgb(0 0 0 / 10%) 0px 1px 2px 0px;
+  border-radius: 1em;
+}
+.track-menu-button_active {
+  font-weight: 700;
+  background-color: #fff;
+  padding: 0.5em 1em;
+  margin: 0em 1em;
+  cursor: pointer;
+  box-shadow: rgb(0 0 0 / 10%) 0px 1px 2px 0px;
+  border-radius: 1em;
+}
+
+.starttime {
+  font-size: 0.86rem;
+}
+.mfy-result-button {
+  text-align: center;
+  border: 1px solid rgb(0 0 0 / 10%);
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 5rem;
+  cursor: pointer;
+  margin-top: 1em;
+  transition: 0.35s all;
+}
+.mfy-result-button:hover {
+  background-color: #F56565;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+  transform: translate(0px, 7px);
+  transition: 0.35s all;
+}
+.mfy-result-button:hover img {
+  filter: invert(1) brightness(100);
+}
+.mfy-result-button_options {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+.mfy-result-button_style {
+  border: 1px solid rgb(0 0 0 / 10%);
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 5rem;
+  cursor: pointer;
+  /* margin-top: 1em; */
+  transition: 0.35s all;
+}
+.mfy-result-button_style:hover {
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+  transform: translate(0px, 7px);
+  transition: 0.35s all;
+  border: 2px solid rgb(0 0 0 / 10%);
+}
+.result-div {
+  margin-bottom: 0.75em;
+  display: flex;
+  flex-direction: row;
+  background-color: #fff;
+  height: 14rem;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  box-shadow: rgb(0 0 0 / 10%) 0px 1px 2px 0px;
+  border-radius: 0.71rem;
+  border-left: 7px solid;
+  border-color: #00000020;
+}
+
+#pav-slider input:focus-visible {
+  outline: none !important;
+}
+pav-slider :focus-visible {
+  outline: none !important;
+}
+.track-btn {
+  border: 2px solid #ededed;
+  border-radius: 2rem;
+  margin: 1em;
+  padding: 0.5em 1em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.35s;
+}
+.track-btn:hover {
+  transform: scale(0.9);
+  box-shadow: rgba(0, 0, 0, 0.04) 0px 3px 5px;
+  transition: all 0.35s;
+}
+.eabanner {
+  margin: auto;
+  margin-bottom: 1rem;
+  width: 100%;
+  height: 200px;
+  box-shadow: rgb(0 0 0 / 14%) -1px 20px 16px -10px;
+  border-radius: 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: end;
+  cursor: pointer;
+}
+.notificationtext {
+  border-radius: 0.5rem;
+  transition: all 0.35s;
+  opacity: 0;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem;
+}
+.eabanner:hover .notificationtext {
+  border-radius: 0.5rem;
+  transition: all 0.35s;
+  opacity: 1;
+  font-size: 1em;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem;
+  color: white;
+  background: var(--mfy-main);
+  /* background: linear-gradient(0deg, rgba(0,0,0,1) 11%, rgba(0,0,0,0) 100%); */
+}
+.myml-nav__section-title {
+  opacity: 1;
+}
+.toolmodal {
+  position: fixed;
+  top: 0;
+  background-color: #000000ab;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999;
+  backdrop-filter: blur(11px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#snackbar {
+  visibility: hidden;
+  color: #fff;
+  background-color: #333;
+  min-width: 250px;
+  margin-left: -125px;
+  border-radius: 2px;
+  padding: 16px;
+  text-align: center;
+  left: 50%;
+  bottom: 30px;
+  z-index: 1;
+  position: fixed;
+}
+/* This will be activated when the snackbar's class is 'show' which will be added through JS */
+#snackbar.show {
+  visibility: visible;
+  -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+/* Animations for fading in and out */
+@-webkit-keyframes fadein {
+  from { bottom: 0; opacity: 0; }
+  to   { bottom: 30px; opacity: 1; }
+}
+@keyframes fadein {
+  from { bottom: 0; opacity: 0; }
+  to   { bottom: 30px; opacity: 1; }
+}
+@-webkit-keyframes fadeout {
+  from { bottom: 30px; opacity: 1; }
+  to   { bottom: 0; opacity: 0; }
+}
+@keyframes fadeout {
+  from { bottom: 30px; opacity: 1; }
+  to   { bottom: 0; opacity: 0; }
+}
+
+</style>
+`;
+let t = document.createElement("style");
+
     t.innerHTML = e, document.body.appendChild(t);
     let n = document.createElement("link");
     n.rel = "preconnect", n.href = "https://fonts.googleapis.com";
