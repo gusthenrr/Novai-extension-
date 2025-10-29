@@ -167,6 +167,70 @@
     color: #bbb;
     font-size: 12px;
   }
+
+  /* faturamento detalhado */
+  #eagrossrev .earevstats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    color: #d1d5db;
+  }
+
+  #eagrossrev .novai-rev-controls {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #eagrossrev.novai-rev-expanded .novai-rev-controls {
+    display: flex;
+  }
+
+  #eagrossrev .novai-rev-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  #eagrossrev .novai-rev-button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #d1d5db;
+    padding: 0.25em 0.75em;
+    border-radius: 6px;
+    font-size: 12px;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+
+  #eagrossrev .novai-rev-button:hover {
+    border-color: rgba(255,255,255,0.35);
+  }
+
+  #eagrossrev .novai-rev-button.novai-active {
+    background-color: var(--novai-ml-yellow);
+    color: #222;
+    border-color: var(--novai-ml-yellow);
+  }
+
+  #eagrossrev .eagrossrev-breakdown {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    color: #d1d5db;
+  }
+
+  #eagrossrev.novai-rev-has-breakdown .eagrossrev-breakdown {
+    display: flex;
+  }
+
+  #eagrossrev .eagrossrev-breakdown span {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: .92em;
+    font-weight: 900;
+  }
   
   /* badges de tendência */
   .novai-badge {
