@@ -2645,7 +2645,16 @@ function contentScpt() {
       let n = document.getElementById("eacattrendsbtn");
       n.addEventListener("click", t)
     }
-    spot0[0].insertAdjacentHTML("afterbegin", analytics_ui), i(), function () {
+    const headerNode = spot0[0];
+    if (headerNode) {
+      const titleNode = headerNode.querySelector(".ui-pdp-title");
+      if (titleNode) {
+        titleNode.insertAdjacentHTML("afterend", analytics_ui);
+      } else {
+        headerNode.insertAdjacentHTML("afterbegin", analytics_ui);
+      }
+    }
+    i(), function () {
       let e = document.getElementById("eahealthmeter"), t = document.getElementById("eameter_modal");
       e && e.remove(), t && t.remove()
     }
