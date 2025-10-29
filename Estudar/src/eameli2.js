@@ -1271,7 +1271,7 @@ var eatoolbox_close = `
 var eafollow_url = "https://www.metrify.com.br/seguir-anuncio/";
 
 var eagrossrev = `
-<div id="eagrossrev" class="novai-kpi-card">
+<div id="eagrossrev" class="novai-kpi-card novai-rev-card">
   <div class="novai-kpi-head">
     <div class="novai-kpi-icon">💰</div>
     <div class="novai-kpi-title">Faturamento:</div>
@@ -1283,13 +1283,29 @@ var eagrossrev = `
   </div>
 
   <div class="novai-kpi-sub earevstats">
-    <span class="ui-pdp-review__amount novai-muted" id="mfy_rev_estimate">Estimativa.</span>
-    <button class="andes-button--loud mfy-main-bg revbtn1">1 Dia</button>
-    <button class="andes-button--loud mfy-main-bg revbtn7">7 Dias</button>
-    <button class="andes-button--loud mfy-main-bg revbtn30">30 dias</button>
-    <button class="andes-button--loud mfy-main-bg revbtn60">60 dias</button>
-    <button class="andes-button--loud mfy-main-bg revbtn90">90 dias</button>
-    <button class="andes-button--loud mfy-main-bg revbtntotal">Total</button>
+    <div class="novai-rev-controls">
+      <span class="ui-pdp-review__amount novai-muted" id="mfy_rev_estimate">Estimativa por períodos.</span>
+      <div class="novai-rev-buttons">
+        <button class="andes-button--loud mfy-main-bg novai-rev-button revbtn1">1 Dia</button>
+        <button class="andes-button--loud mfy-main-bg novai-rev-button revbtn7">7 Dias</button>
+        <button class="andes-button--loud mfy-main-bg novai-rev-button revbtn30">30 dias</button>
+        <button class="andes-button--loud mfy-main-bg novai-rev-button revbtn60">60 dias</button>
+        <button class="andes-button--loud mfy-main-bg novai-rev-button revbtn90">90 dias</button>
+        <button class="andes-button--loud mfy-main-bg novai-rev-button revbtntotal">Total</button>
+      </div>
+    </div>
+    <div class="eagrossrev-breakdown">
+      <span>
+        <span class="ui-pdp-review__amount">- Anúncio</span>
+        <span class="eagrossrev-catalog-title">R$0</span>
+        <span class="revtitle revperiod">/mês</span>
+      </span>
+      <span>
+        <span class="ui-pdp-review__amount">- Catálogo:</span>
+        <span class="eagrossrev-catalog-title">R$0</span>
+        <span class="revtitle"> Total</span>
+      </span>
+    </div>
   </div>
 </div>
 `;
@@ -2322,7 +2338,8 @@ function contentScpt() {
         t ? (t = !1, n.setAttribute("class", "eatoolboxbar"), this.getElementsByTagName("img")[0].setAttribute("style", "width: 1.11em;transform: rotate(180deg);margin: 2px;transition: all 0.2s;")): (t = !0, n.setAttribute("class", "eatoolboxbar eatoolboxbaropen"), this.getElementsByTagName("img")[0].setAttribute("style", "width: 1.11em;transform: rotate(90deg);margin: 2px;transition: all 0.2s;"))
       }
       )), function () {
-        let e = isNaN(media_vendas * preco_Local) ? 0: media_vendas * preco_Local, t = parseSalesText(document.getElementsByClassName("ui-pdp-subtitle")[0].innerText).thisItemSales, n = isNaN(t * preco_Local) ? 0: t * preco_Local, a = document.getElementsByClassName("eagrossrev-title")[0], i = document.getElementsByClassName("earevstats")[0], s = document.getElementsByClassName("eagrossrev-catalog-title");
+        let e = isNaN(media_vendas * preco_Local) ? 0: media_vendas * preco_Local, t = parseSalesText(document.getElementsByClassName("ui-pdp-subtitle")[0].innerText).thisItemSales, n = isNaN(t * preco_Local) ? 0: t * preco_Local, a = document.getElementsByClassName("eagrossrev-title")[0], i = document.getElementsByClassName("earevstats")[0], s = i ? i.querySelectorAll(".eagrossrev-catalog-title") : null;
+        const o = document.getElementById("eagrossrev");
         if (iscatalog) {
           a.setAttribute("class", ""), a.parentElement.lastChild.remove(), a.parentElement.setAttribute("style", "font-size: 0.92em;display: flex;font-weight: 900;");
           let t = a.parentElement.previousElementSibling || a.parentElement.previousSibling;
@@ -2331,90 +2348,92 @@ function contentScpt() {
           }
           a.parentElement.parentElement.setAttribute("style", "display: flex;flex-direction: column;");
           a.innerHTML = '<div style="padding: 0rem 1rem;margin: 0 .75rem;font-size: .85rem;width: fit-content;border-radius:1rem;border:1px solid #ebebeb;">Catálogo & Anúncio vencedor</div>';
-          if (i && !i.querySelector('.eagrossrev-breakdown')) {
-            i.insertAdjacentHTML(
-              "beforeend",
-              `<div class="eagrossrev-breakdown"
-                   style="display:flex;flex-direction:column;margin-top:1rem;color:#d1d5db">
-                 <span style="font-size:.92em;font-weight:900;">
-                   <span class="ui-pdp-review__amount" style="color:#d1d5db">- Anúncio</span>
-                   <span class="eagrossrev-catalog-title" style="font-size:1.35em;color:#fff">R$0</span>
-                   <span class="revtitle revperiod" style="color:#d1d5db">/mês</span>
-                 </span>
-                 <span style="font-size:.92em;font-weight:900;margin-top:.25rem;">
-                   <span class="ui-pdp-review__amount" style="color:#d1d5db">- Catálogo:</span>
-                   <span class="eagrossrev-catalog-title" style="font-size:1.35em;color:#fff">R$0</span>
-                   <span class="revtitle" style="color:#d1d5db"> Total</span>
-                 </span>
-               </div>`
-            );
-          }
-          s?.length > 0 && (s[1].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`), document.getElementsByClassName("eagrossrev-catalog-title")[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`
+          o?.classList.add("novai-rev-has-breakdown");
+          s?.length > 0 && (s[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`);
+          s?.length > 1 && (s[1].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`);
         }
-        else a.innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`;
-  // Keep the KPI area visible from the start and show the breakdown below it
-  i.setAttribute("style", "transition:all 0.35s;padding: 0em 1em 0.35em 1.7em;color: gray;display: block;margin-top: 0;opacity: 1");
-        let o = document.getElementById("eagrossrev"), r = document.getElementsByClassName("ui-pdp__header-top-brand")[0], l = document.getElementsByClassName("ui-pdp-highlights")[0];
+        else {
+          a.innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`;
+          o?.classList.remove("novai-rev-has-breakdown");
+        }
+        i?.setAttribute("style", "transition:all 0.35s;padding: 0em 1em 0.35em 1.7em;color: #d1d5db;");
+        let r = document.getElementsByClassName("ui-pdp__header-top-brand")[0], l = document.getElementsByClassName("ui-pdp-highlights")[0];
         if (r) {
           let e = r.getElementsByClassName("ui-pdp__header-top-brand__image-container")[0], t = document.getElementsByClassName("ui-pdp-subtitle")[0];
           t.parentElement.style.margin = e || l ? "1.5rem 0 0 0": "1rem 0px 1rem"
         }
         let d = document.getElementsByClassName("ui-pdp-header")[0];
         d && iscatalog && l && d.setAttribute("style", "display: block!important;");
-        // Keep the breakdown visible and in place even on hover
-        o.addEventListener("mouseover", (function () {
-          i.setAttribute("style", "transition:all 0.35s;padding: 0em 1em 0.35em 1.7em;color: gray;display: block;margin-top: 0;opacity: 1");
-        })), o.addEventListener("mouseout", (function () {
-          i.setAttribute("style", "transition:all 0.35s;padding: 0em 1em 0.35em 1.7em;color: gray;display: block;margin-top: 0;opacity: 1");
-        }));
+        if (o && !o.dataset.novaiRevHover) {
+          const e = () => o.classList.add("novai-rev-expanded");
+          const t = () => o.classList.remove("novai-rev-expanded");
+          o.addEventListener("mouseenter", e);
+          o.addEventListener("mouseleave", t);
+          o.addEventListener("focusin", e);
+          o.addEventListener("focusout", t);
+          o.dataset.novaiRevHover = "1";
+        }
         let m = document.getElementsByClassName("revbtn1")[0], c = document.getElementsByClassName("revbtn7")[0], p = document.getElementsByClassName("revbtn30")[0], g = document.getElementsByClassName("revbtn60")[0], f = document.getElementsByClassName("revbtn90")[0], u = document.getElementsByClassName("revbtntotal")[0], y = document.getElementsByClassName("revtitle");
-        dias / vendas > 1 && (m.style.display = "none");
-        dias <= 30 && (f.style.display = "none", g.style.display = "none", p.style.display = "none");
-        e <= 0 && (m.style.display = "none", c.style.display = "none", p.style.display = "none", g.style.display = "none", f.style.display = "none");
+        dias / vendas > 1 && m && (m.style.display = "none");
+        dias <= 30 && (f && (f.style.display = "none"), g && (g.style.display = "none"), p && (p.style.display = "none"));
+        e <= 0 && (m && (m.style.display = "none"), c && (c.style.display = "none"), p && (p.style.display = "none"), g && (g.style.display = "none"), f && (f.style.display = "none"));
         let h = document.getElementsByClassName("revperiod");
+        const buttons = [m, c, p, g, f, u].filter(Boolean);
+        const setActiveButton = (button) => {
+          buttons.forEach((btn) => btn.classList.remove("novai-active"));
+          button?.classList.add("novai-active");
+        };
         m.addEventListener("click", (function (t) {
           let n = isNaN(e / 30) ? 0: e / 30;
           s?.length > 0 ? s[0].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = " /dia";
           for (let e = 0;
           e < h?.length;
-          e++) h[e].innerHTML = " /dia"
+          e++) h[e].innerHTML = " /dia";
+          setActiveButton(m);
         }
         )), c.addEventListener("click", (function () {
           let t = isNaN(e / 2) ? 0: e / 2;
           s?.length > 0 ? s[0].innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = " /semana";
           for (let e = 0;
           e < h?.length;
-          e++) h[e].innerHTML = " /semana"
+          e++) h[e].innerHTML = " /semana";
+          setActiveButton(c);
         }
         )), p.addEventListener("click", (function (t) {
           let n = isNaN(e) ? 0: e;
           s?.length > 0 ? s[0].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = " /mês";
           for (let e = 0;
           e < h?.length;
-          e++) h[e].innerHTML = " /mês"
+          e++) h[e].innerHTML = " /mês";
+          setActiveButton(p);
         }
         )), g.addEventListener("click", (function () {
           let t = isNaN(2 * e) ? 0: 2 * e;
           s?.length > 0 ? s[0].innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = " /60 dias";
           for (let e = 0;
           e < h?.length;
-          e++) h[e].innerHTML = " /60 dias"
+          e++) h[e].innerHTML = " /60 dias";
+          setActiveButton(g);
         }
         )), f.addEventListener("click", (function () {
           let t = isNaN(3 * e) ? 0: 3 * e;
           s?.length > 0 ? s[0].innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(t.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = " /90 dias";
           for (let e = 0;
           e < h?.length;
-          e++) h[e].innerHTML = " /90 dias"
+          e++) h[e].innerHTML = " /90 dias";
+          setActiveButton(f);
         }
         )), u.addEventListener("click", (function () {
           let e = isNaN(vendas * preco_Local) ? 0: vendas * preco_Local;
           s?.length > 0 ? s[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`: a.innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`, y[0].innerHTML = " /Total";
           for (let e = 0;
           e < h?.length;
-          e++) h[e].innerHTML = " /Total"
+          e++) h[e].innerHTML = " /Total";
+          setActiveButton(u);
         }
         ));
+        const defaultButton = [p, c, m, g, f, u].find((btn) => btn && btn.style.display !== "none");
+        defaultButton && setActiveButton(defaultButton);
         let b = document.getElementById("mfy_rev_estimate");
         b && (b.innerHTML = "Estimativa por períodos:")
       }
@@ -4760,31 +4779,81 @@ function mfyStart() {
   color:#fff;
 }
 
-/* Linha de botões de período */
+/* Controles e detalhamento do faturamento */
 #eagrossrev .earevstats{
-  display:flex; align-items:center; flex-wrap:wrap; gap:.25em;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:10px;
+  color:#d1d5db;
 }
-#eagrossrev .earevstats button{
-  padding:.2em .6em; border-radius:6px; margin:2px;
-  border:1px solid rgba(255,255,255,.15);
-  background:transparent; color:#fff; font-weight:700;
-  transition:.2s;
+#eagrossrev .novai-rev-controls{
+  display:none;
+  flex-direction:column;
+  gap:8px;
 }
-#eagrossrev .earevstats button:hover{
-  background: var(--novai-ml-yellow); color:#111; border-color:var(--novai-ml-yellow);
+#eagrossrev.novai-rev-expanded .novai-rev-controls{
+  display:flex;
 }
-#eagrossrev .earevstats button:active{ transform:translateY(1px); }
+#eagrossrev .novai-rev-buttons{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+#eagrossrev .novai-rev-button{
+  background:transparent;
+  border:1px solid rgba(255,255,255,.18);
+  color:#d1d5db;
+  padding:.25em .75em;
+  border-radius:6px;
+  font-size:12px;
+  font-weight:700;
+  transition:background-color .2s ease,color .2s ease,border-color .2s ease;
+}
+#eagrossrev .novai-rev-button:hover{
+  border-color:rgba(255,255,255,.35);
+}
+#eagrossrev .novai-rev-button:active{
+  transform:translateY(1px);
+}
 /* Texto auxiliar */
 #eagrossrev #mfy_rev_estimate{
-  color:#fff; font-size:11px; margin-right:6px;
+  color:#fff;
+  font-size:11px;
 }
-/* ESTADO SELECIONADO — bem aparente em amarelo */
-#eagrossrev .earevstats button.is-active,
-#eagrossrev .earevstats button[aria-pressed="true"]{
+/* Estado selecionado para qualquer variação de classe */
+#eagrossrev .novai-rev-button.novai-active,
+#eagrossrev .novai-rev-button.is-active,
+#eagrossrev .novai-rev-button[aria-pressed="true"]{
   background:var(--novai-ml-yellow);
   color:#111;
   border-color:var(--novai-ml-yellow);
   box-shadow:0 0 0 2px rgba(255,230,0,.25) inset;
+}
+#eagrossrev .eagrossrev-breakdown{
+  display:none;
+  flex-direction:column;
+  gap:6px;
+  color: #d1d5db;
+}
+#eagrossrev.novai-rev-has-breakdown .eagrossrev-breakdown{
+  display:flex;
+}
+#eagrossrev .eagrossrev-breakdown span{
+  display:flex;
+  align-items:baseline;
+  gap:6px;
+  font-size:.92em;
+  font-weight:900;
+  color:#fff;
+}
+
+#eagrossrev .eagrossrev-breakdown .eagrossrev-catalog-title{
+  font-size:1.35em;
+  color: #ffffff;
+}
+#eagrossrev .eagrossrev-breakdown .revtitle{
+  color:#d1d5db;
 }
 #eaoffSwitch {
   overflow: hidden;
