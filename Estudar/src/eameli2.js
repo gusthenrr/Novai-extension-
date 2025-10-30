@@ -341,31 +341,44 @@ function buildSinceMarkup() {
 
 function buildMediaMarkup() {
   return `
-    <div id="${NOVAI_MEDIA_WRAPPER_ID}" style="display: flex;align-items: center;justify-content: start;gap: .5rem;">
-      <div id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;align-items: center;padding: 0.75em 1em;position: relative;z-index: 10;border-radius:2rem;gap: 0.35rem;cursor:default">
-        <span style="font-size: .9rem;">Média:</span>
-        <div style="min-width: fit-content;font-size: 1.2rem;" ${NOVAI_MEDIA_VALUE_ATTR}>-</div>
-        <span style="font-size: .9rem;">vendas/mês</span>
-        <span ${NOVAI_MEDIA_INFO_ATTR} style="display:none;align-items:center;position:relative;">
-          <span class="mfy-info-icon_catalog-sales" style="margin: 0 -0.25rem 0 0.5rem;cursor:pointer;display:inline-flex;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info-icon lucide-info">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M12 16v-4"></path>
-              <path d="M12 8h.01"></path>
-            </svg>
-          </span>
-          <div id="${NOVAI_MEDIA_TOOLTIP_ID}" class="mfy-catalog-info-tooltip" style="pointer-events: none; display: flex; align-items:center; justify-content:center; position: absolute; bottom: 35px; left: -15rem; background-color: var(--mfy-main); padding: 0 1rem; z-index: 1000; color: white; border-radius: 0.5rem 0.5rem 0 0.5rem; box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.51); width: fit-content; transition: opacity 0.4s ease-in-out; opacity: 0;">
-            <div style="font-size: 0.85em;margin-right:.5rem;display:flex;align-items:center;justify-content:center;gap:0.85rem;">
-              <span style="line-height: 1.1rem;text-align: start;padding: 0 0 0 1rem;">Média de vendas apenas do anúncio vencedor atual deste catálogo.</span>
-            </div>
-          </div>
-        </span>
+    <div id="${NOVAI_MEDIA_WRAPPER_ID}" style="margin-top:8px;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
+      <div id="mediabtn" style="display:inline-flex;align-items:center;gap:.45rem;background:var(--novai-ml-yellow,#ffe600);color:#111;border-radius:999px;padding:.35rem .9rem;font-weight:900;font-size:.95rem;box-shadow:var(--novai-shadow,0 10px 24px rgba(0,0,0,.22));">
+        <span style="font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;opacity:.8;">Média</span>
+        <span ${NOVAI_MEDIA_VALUE_ATTR} style="font-size:1rem;min-width:fit-content;">-</span>
+        <span style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">vendas/mês</span>
       </div>
-      <div id="${NOVAI_MEDIA_ALERT_ID}" class="easalesavg-alert" style="display:none;background: var(--mfy-main);position: relative;z-index: 11;height: 1.75em;border-radius: 100%;padding: 5px;margin-left: -0.5rem;">
-        <img src="https://img.icons8.com/material-outlined/24/ffffff/clock-alert.png">
+      <span ${NOVAI_MEDIA_INFO_ATTR} style="display:none;align-items:center;position:relative;">
+        <span class="mfy-info-icon_catalog-sales" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(255,230,0,.2);color:#111;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info-icon lucide-info">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 16v-4"></path>
+            <path d="M12 8h.01"></path>
+          </svg>
+        </span>
+        <div id="${NOVAI_MEDIA_TOOLTIP_ID}" class="mfy-catalog-info-tooltip" style="pointer-events:none;display:flex;align-items:center;justify-content:center;position:absolute;top:calc(100% + 8px);right:0;background-color:var(--novai-ml-yellow,#ffe600);padding:.65rem .85rem;z-index:1000;color:#111;border-radius:12px;box-shadow:var(--novai-shadow,0 12px 24px rgba(0,0,0,.3));width:220px;transition:opacity .3s ease;opacity:0;">
+          <span style="font-size:.78rem;line-height:1.15rem;font-weight:700;text-align:left;">Média de vendas apenas do anúncio vencedor atual deste catálogo.</span>
+        </div>
+      </span>
+      <div id="${NOVAI_MEDIA_ALERT_ID}" class="easalesavg-alert" style="display:none;position:relative;margin-left:.1rem;background:var(--novai-ml-yellow,#ffe600);color:#111;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;box-shadow:var(--novai-shadow,0 12px 24px rgba(0,0,0,.28));">
+        <img src="https://img.icons8.com/material-outlined/18/111111/clock-alert.png" alt="Alerta de média" style="filter:none;">
       </div>
     </div>
   `;
+}
+
+function ensureMediaWrapperInsideVisitsCard() {
+  const visitsValueRow = document.querySelector("#visits-left .novai-kpi-value");
+  if (!visitsValueRow) return null;
+
+  let mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
+  if (!mediaWrapper) {
+    visitsValueRow.insertAdjacentHTML("afterend", buildMediaMarkup());
+    mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
+  } else {
+    visitsValueRow.insertAdjacentElement("afterend", mediaWrapper);
+  }
+
+  return mediaWrapper;
 }
 
 function ensureSinceAndMediaContainer(anchorElement) {
@@ -382,15 +395,23 @@ function ensureSinceAndMediaContainer(anchorElement) {
     sinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
   }
 
-  let mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
-  if (!mediaWrapper) {
-    anchorElement.insertAdjacentHTML("afterbegin", buildMediaMarkup());
-    mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
+  const mediaWrapper = ensureMediaWrapperInsideVisitsCard();
+
+  const missingSince = !sinceWrapper;
+  const missingMedia = !mediaWrapper;
+
+  if (missingSince) {
+    scheduleSinceAndMediaRetry("since-wrapper-missing");
+  }
+  if (missingMedia) {
+    scheduleSinceAndMediaRetry("visits-card-not-ready");
   }
 
-  if (!sinceWrapper && !mediaWrapper) return null;
+  if (missingSince && missingMedia) return null;
 
-  cancelSinceAndMediaRetry();
+  if (!missingSince && !missingMedia) {
+    cancelSinceAndMediaRetry();
+  }
 
   const sinceNode = sinceWrapper ? sinceWrapper.querySelector("#easince") : null;
   if (sinceNode && !sinceNode.dataset.novaiHoverBound) {
@@ -1846,7 +1867,7 @@ async function fetchProductDataFromPage(rawItemId, t) {
 }
 
               let t = document.getElementById("mediabtn");
-              if (t && dias > 0) {
+              if (t && dias > 0 && !t.querySelector(`[${NOVAI_MEDIA_VALUE_ATTR}]`)) {
                 let e = `
 <span class="mfy-info-icon_catalog-sales" style="margin: 0 -0.75rem 0 0.75rem;cursor:pointer;">
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -2119,6 +2140,8 @@ function updateVisitsComponentContent({
 }) {
   const container = document.getElementById("visits-component");
   if (!container) return;
+
+  ensureMediaWrapperInsideVisitsCard();
 
   if (typeof isCatalog === "boolean") {
     container.setAttribute("data-iscatalog", isCatalog ? "true" : "false");
