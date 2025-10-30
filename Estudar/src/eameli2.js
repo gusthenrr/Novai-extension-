@@ -1280,7 +1280,7 @@ var eagrossrev = `
 <div id="eagrossrev" class="novai-kpi-card novai-rev-card">
   <div class="novai-kpi-head">
     <div class="novai-kpi-icon">💰</div>
-    <div class="novai-kpi-title">Faturamento:</div>
+    <div class="novai-kpi-title">Faturamento</div>
   </div>
 
   <div class="novai-kpi-value">
@@ -1613,7 +1613,7 @@ function upsertCatalogBadge(vendas) {
   'style="border-radius:8px;'+
   'background: #fff172ff;display:inline-block;padding:.18rem .55rem;line-height:1;font-weight:700;color: #111111;font-size:0.9em;"></strong>'+
   '<span style="font-size:.9em;margin-left:.1rem;color:#111;font-weight:700;'+
-  'position:relative;top:-.05em;">deste modelo & vendedor</span>';
+  'position:relative;top:-.05em;">desse modelo e vendedor</span>';  
     subtitle.appendChild(badge);
   }
 
@@ -1845,7 +1845,7 @@ function buildMainComponentSkeleton() {
       .mfy-left .mfy-conv { font-size:14px; padding:4px 12px; margin-top:4px; }
 
       .mfy-right{ text-align:right; }
-      .mfy-right .mfy-label{ font-size:14px; }
+      .mfy-right .mfy-label{ font-size:16px; font-weight:bold}
       .mfy-right .mfy-value{ font-size:16px; font-weight:bold; color: var(--mfy-main); }
 
       .mfy-rev-card{
@@ -1909,120 +1909,120 @@ function buildMainComponentSkeleton() {
 }
 
 function buildVisitsComponentSkeleton() {
-  const shimmer = "background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite;";
+  const shimmer = "background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size:200% 100%; animation: loading 1.5s infinite;";
   return `
-  <div id="visits-component" data-iscatalog="${iscatalog ? "true" : "false"}" data-loaded="false">
+  <div id="visits-component">
     <style>
-      @keyframes loading {
-        0%   { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
+      @keyframes loading { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+      .skeleton-text{ ${shimmer} border-radius:4px; height:1em; display:inline-block; }
+      .skeleton-pill{ ${shimmer} border-radius:12px; height:1.2em; display:inline-block; }
+
+      :root{ --novai-ml-yellow:#ffe600; --novai-shadow:0 6px 18px rgba(0,0,0,.12); }
+      #visits-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+      /* Card Novai */
+      .novai-kpi-card{
+        position:relative; background:#222; color:#fff; border:0;
+        border-radius:12px; padding:12px 14px; box-shadow:var(--novai-shadow); overflow:hidden;
       }
-      .skeleton-text {
-        ${shimmer}
-        border-radius: 4px;
-        height: 1em;
-        display: inline-block;
+      .novai-kpi-card::before{
+        content:""; position:absolute; top:0; left:0; right:0; height:4px; background:var(--novai-ml-yellow);
       }
-      .skeleton-pill {
-        ${shimmer}
-        border-radius: 12px;
-        height: 1.2em;
-        display: inline-block;
+      .novai-kpi-head{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+      .novai-kpi-icon{ width:26px; height:26px; border-radius:999px; background:rgba(255,230,0,.25); display:inline-flex; align-items:center; justify-content:center; font-size:14px; }
+      .novai-kpi-title{ text-transform:uppercase; letter-spacing:.04em; font-weight:700; font-size:12px; }
+
+      /* VISITAS */
+      #visits-left .novai-kpi-head #eabtn-chart{
+        margin-left:auto;
+        border-radius:2rem; width:2.1em; height:2.1em; padding:.14em .5em;
+        display:inline-flex; align-items:center; justify-content:center;
+        transition:.2s; border:1px solid rgba(255,255,255,.2);
+        background:transparent;
       }
+      #visits-left #eabtn-chart:hover{ background:var(--novai-ml-yellow); border-color:var(--novai-ml-yellow); }
+      #visits-left #eabtn-chart:hover img{ filter:invert(1) brightness(0.2); }
+
+      /* número + rótulo na mesma linha, menores */
+      #visits-left .novai-kpi-value{
+        display:flex; align-items:baseline; gap:8px; margin:4px 0 10px;
+      }
+      #visits-left [data-visits-total]{ font-size:18px; font-weight:800; color:#fff; }
+      #visits-left .visits-total-label{ font-size:12px; font-weight:700; opacity:.9; }
+
+      /* CONVERSÃO */
+      #visits-right .venda-row{ display:flex; align-items:baseline; gap:8px; margin-top:2px; }
+      #visits-right .venda-label{ font-size:14px; font-weight:700; color:#fff; opacity:.95; }
+      #visits-right .venda-valor{ font-size:15px; font-weight:900; color:#fff; line-height:1; }
+      #visits-right .visitas-label{ font-size:10px; font-weight:100; color:#fff;}
+
+      /* pílula da conversão: ligeiramente maior */
+      #visits-right .conv-pill{
+        display:inline-flex; align-items:center; gap:.4rem;
+        margin-top:8px;
+        background:var(--novai-ml-yellow); color:#111; border-radius:999px;
+        padding:.3rem 1rem; font-weight:900; font-size:14px; width:max-content;
+      }
+
+      #eadivider{ display:none; }
+      #visits-component .ui-pdp-review__amount, #visits-component .revtitle{ color:#d1d5db; }
     </style>
 
-    <div style="display:flex; ${iscatalog ? "margin: 0 0 5rem 0;" : "margin: 0 0 1.25rem 0;"} gap: 1rem;">
-      <div
-        id="eabtn-chart"
-        class="andes-button--loud mfy-main-bg andes-button"
-        style="
-          border-radius: 2rem;
-          width: 2.35em;
-          height: 2.35em;
-          padding: 0.14em 0.5em;
-          display: inline-flex;
-          position: relative;
-          z-index: 10;
-          transition: 0.35s;
-          align-items: center;
-        "
-      >
-        <img
-          src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png"
-          style="width: 1.35em; margin: auto;"
-        >
-        <div
-          id="eabtn-chart-tooltip"
-          style="
-            width: fit-content;
-            display: none;
-            flex-direction: column;
-            text-align: start;
-            line-height: 1;
-            font-size: 1rem;
-            color: var(--mfy-main);
-            padding: 1rem;
-            opacity: 0;
-          "
-        >
-          Anúncio com menos de 30 dias,
-          <span style="opacity: .5;">gráfico sem dados suficientes.</span>
+    <div id="visits-grid">
+      <!-- ===== LEFT: VISITAS ===== -->
+      <div id="visits-left" class="novai-kpi-card">
+        <div class="novai-kpi-head">
+          <div class="novai-kpi-icon">👁️</div>
+          <div class="novai-kpi-title">VISITAS</div>
+
+          <!-- Botão do gráfico no cabeçalho (mantém ids/classes) -->
+          <div id="eabtn-chart" class="andes-button--loud mfy-main-bg andes-button">
+            <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width:1.2em; margin:auto;">
+            <div id="eabtn-chart-tooltip"
+                 style="width:fit-content; display:none; flex-direction:column; text-align:start; line-height:1; font-size:1rem; color:var(--mfy-main); padding:1rem; opacity:0;">
+              ${typeof iscatalog !== 'undefined' && iscatalog
+                ? 'Anúncio com menos de 30 dias,<span style="opacity:.5;"> gráfico sem dados suficientes.</span>'
+                : 'Clique para ver o gráfico de visitas.'}
+            </div>
+          </div>
+        </div>
+
+        <div class="novai-kpi-value">
+          <span class="visits-total-label">Visitas totais:</span>
+          <span data-visits-total class="skeleton-text" style="width:80px;"></span>
         </div>
       </div>
 
-      <div style="display: flex; gap: 1rem; min-width: fit-content; justify-content: space-between; ${iscatalog ? "align-items: center;" : ""}">
-        <div style="display: flex; flex-direction: column; min-width: fit-content;">
-          <div style="display: flex; gap: ${iscatalog ? "0.35rem" : "0.5rem"}; ${iscatalog ? "align-items: center;" : ""}">
-            <span data-visits-total class="skeleton-text" style="width: ${iscatalog ? "80px" : "60px"};"></span>
-            <span>Visitas totais</span>
-          </div>
-
-          <div
-            class="mfy-main-bg"
-            style="
-              position: relative;
-              font-size: 14px !important;
-              min-width: fit-content;
-              padding: 0.2rem 1em;
-              display: flex;
-              gap: .25rem;
-              color: #fff;
-              border-radius: 1rem;
-              ${iscatalog ? "margin-top: 0.35rem;" : ""}
-            "
-          >
-            <span style="min-width: fit-content;">Conversão:</span>
-            <span data-conversion-value class="skeleton-text" style="width: 30px;"></span>
-          </div>
+      <!-- ===== RIGHT: CONVERSÃO ===== -->
+      <div id="visits-right" class="novai-kpi-card">
+        <div class="novai-kpi-head">
+          <div class="novai-kpi-icon">📈</div>
+          <div class="novai-kpi-title">CONVERSÃO</div>
         </div>
 
-        <div
-          id="vendaporvisitas"
-          data-default-display=""
-          style="
-            position: relative;
-            text-align: end;
-            ${iscatalog ? "display: block;" : ""}
-          "
-        >
-          Vende a cada:<br>
-          <span data-visits-per-sale class="skeleton-text" style="width: 80px;"></span> <span class="visits-per-sale-unit">Visitas</span>
+        <!-- Vende a cada: mesma linha, menor -->
+        <div id="vendaporvisitas" class="venda-row">
+          <span class="venda-label">Vende a cada:</span>
+          <span class="venda-valor"><span data-visits-per-sale class="skeleton-text" style="width:80px;"></span></span>
+          <span class="visitas-label">visitas </span>
+        </div>
+
+        <!-- Conversão mais visível (pílula) -->
+        <div class="conv-pill">
+          <span>Conversão:</span>
+          <span data-conversion-value class="conv-value"><span class="skeleton-text" style="width:30px;"></span></span><span></span>
         </div>
       </div>
     </div>
 
-    <div
-      id="eadivider"
-      style="
-        background-color: #00000014;
-        height: 1px;
-        width: 22.7em;
-        margin: 0 0 1rem 0;
-      "
-    ></div>
+    <div id="eadivider"></div>
   </div>
-`;
+  `;
 }
+
+
+
+
 
 function updateVisitsComponentContent({
   totalVisits,
