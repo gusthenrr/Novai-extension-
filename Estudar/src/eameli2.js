@@ -1146,6 +1146,12 @@ function updateCatalogBody(partial = {}) {
       }
       continue;
     }
+    if ("seller_sold_quantity" === key) {
+      const numeric = Number(rawValue);
+      if (!Number.isFinite(numeric)) continue;
+      body.seller_sold_quantity = numeric;
+      continue;
+    }
     body[key] = rawValue;
   }
   return body;
@@ -1511,6 +1517,10 @@ function dLayerMainFallback() {
 }
 function dlayerFallback() {
   const catalogBody = ensureCatalogBody();
+  const catalogSoldFromPage = getCatalogSoldQuantityFromPage();
+  if (Number.isFinite(catalogSoldFromPage)) {
+    updateCatalogBody({ sold_quantity: catalogSoldFromPage });
+  }
   const dataLayerEntry = Array.isArray(dataLayer) && dataLayer.length > 0 ? dataLayer[0] : null;
   const coerceItemId = rawId => {
     if (!rawId && 0 !== rawId) return null;
@@ -1587,7 +1597,11 @@ function dlayerFallback() {
       break;
     }
   }
-  const vendasAlt = catalogBody.sold_quantity;
+  const sellerStoredSales = Number(catalogBody?.seller_sold_quantity);
+  const catalogStoredSales = Number(catalogBody?.sold_quantity);
+  const vendasAlt = Number.isFinite(sellerStoredSales)
+    ? sellerStoredSales
+    : (Number.isFinite(catalogStoredSales) ? catalogStoredSales : null);
   const vendasIsEmpty = typeof vendas === "string" ? vendas.length === 0 : null == vendas;
   if (vendasIsEmpty) {
     const parsedSubtitleSales = (() => {
@@ -1603,7 +1617,10 @@ function dlayerFallback() {
       return isNaN(numeric) ? null : numeric;
     })();
     if (typeof vendasAlt === "number" && !isNaN(vendasAlt)) vendas = vendasAlt;
-    else if (typeof parsedSubtitleSales === "number" && !isNaN(parsedSubtitleSales)) vendas = parsedSubtitleSales;
+    else if (typeof parsedSubtitleSales === "number" && !isNaN(parsedSubtitleSales)) {
+      vendas = parsedSubtitleSales;
+      updateCatalogBody({ sold_quantity: parsedSubtitleSales });
+    }
   }
   if (!startTimeRaw) {
     dLayerMainFallback();
@@ -1638,7 +1655,7 @@ function dlayerFallback() {
       media_vendas = isNaN(monthlyAvg) ? "Indisponível" : monthlyAvg;
     } else media_vendas = "Indisponível";
   }
-  updateCatalogBody({ sold_quantity: vendas });
+  updateCatalogBody({ seller_sold_quantity: vendas });
   const diasNumber = "number" == typeof dias ? dias : parseFloat(dias);
   if (!isNaN(diasNumber)) dias = diasNumber;
   0 == diasNumber ? media_vendas = "0": diasNumber < 30 && !isNaN(diasNumber) && (alert_media_vendas = !0);
@@ -1675,6 +1692,78 @@ function parseSalesText(e) {
   return{
     salesText: n,
     thisItemSales: a
+  }
+}
+
+function extractNumericSoldQuantity(rawText) {
+  if (!rawText && 0 !== rawText) return null;
+  const text = String(rawText).replace(/\s+/g, " ").trim();
+  if (!/vendid/i.test(text)) return null;
+  const regex = /([+]?[\d.,]+)\s*(milhão|milhoes|milhões|mil|m)?\s+vendid/gi;
+  let best = null;
+  let match;
+  while ((match = regex.exec(text))) {
+    const numericText = (match[1] || "")
+      .replace(/\s+/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".")
+      .replace("+", "");
+    let value = parseFloat(numericText);
+    if (!Number.isFinite(value)) continue;
+    const magnitude = match[2] ? match[2].toLowerCase() : "";
+    if (magnitude.startsWith("milh")) value *= 1e6;
+    else if (magnitude.startsWith("mil") || "m" === magnitude) value *= 1e3;
+    value = Math.round(value);
+    if (!Number.isFinite(value)) continue;
+    best = null === best ? value : Math.max(best, value);
+  }
+  return best;
+}
+
+function getCatalogSoldQuantityFromPage() {
+  try {
+    const subtitleEl = document.querySelector(".ui-pdp-subtitle") || document.querySelector(".ui-pdp-header__subtitle");
+    if (!subtitleEl) return null;
+    let cleanedText = "";
+    try {
+      const clone = subtitleEl.cloneNode(!0);
+      if (clone && typeof clone.querySelectorAll === "function") {
+        const selectorsToStrip = [
+          ".mfy-catalog-badge",
+          ".mfy-catalog-badge *",
+          ".mfy-info-icon_catalog-sales",
+          ".mfy-info-icon_catalog-sales *",
+          "[data-mfy-sales]",
+          "[data-novai-media]",
+          "[data-novai-sales]",
+          "#mediabtn",
+          "#" + NOVAI_MEDIA_WRAPPER_ID,
+          "#" + NOVAI_MEDIA_TOOLTIP_ID
+        ].join(",");
+        clone.querySelectorAll(selectorsToStrip).forEach((node) => node.remove());
+        cleanedText = (clone.textContent || "").replace(/\s+/g, " ").trim();
+      }
+    } catch (_) {}
+    if (!cleanedText) {
+      cleanedText = (subtitleEl.textContent || subtitleEl.innerText || "").replace(/\s+/g, " ").trim();
+    }
+    let quantity = extractNumericSoldQuantity(cleanedText);
+    if (Number.isFinite(quantity)) return quantity;
+    const ariaLabel = subtitleEl.getAttribute("aria-label");
+    quantity = extractNumericSoldQuantity(ariaLabel);
+    if (Number.isFinite(quantity)) return quantity;
+    const attrValue = subtitleEl.getAttribute("data-initial-sold-quantity")
+      ?? subtitleEl.getAttribute("data-meli-total-sold")
+      ?? subtitleEl.getAttribute("data-original-sold-quantity");
+    if (attrValue) {
+      const numericAttr = Number(attrValue);
+      if (Number.isFinite(numericAttr)) return Math.round(numericAttr);
+      const parsedAttr = extractNumericSoldQuantity(String(attrValue));
+      if (Number.isFinite(parsedAttr)) return parsedAttr;
+    }
+    return null;
+  } catch (_) {
+    return null;
   }
 }
 function upsertCatalogBadge(vendas) {
@@ -1752,7 +1841,7 @@ async function fetchProductDataFromPage(rawItemId, t) {
     const n = itemsLocalData[normalizedItemId];
     updateCatalogBody({
       date_created: n.startTime,
-      sold_quantity: n.itemSales
+      seller_sold_quantity: n.itemSales
     });
     vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
     let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
@@ -1840,6 +1929,7 @@ async function fetchProductDataFromPage(rawItemId, t) {
             }
             if (o > 0 && null != a) {
               vendas = a, dias = o, data_br = dayjs(i).locale("pt-br").format("DD/MM/YYYY"), media_vendas = isNaN(Math.round(vendas / (dias / 30))) ? "-": Math.round(vendas / (dias / 30));
+              updateCatalogBody({ seller_sold_quantity: vendas });
               let e = document.getElementsByClassName("ui-pdp-subtitle")[0];
               if (e) {
   upsertCatalogBadge(vendas);
@@ -2484,7 +2574,15 @@ function contentScpt() {
           return Number.isFinite(numeric) ? numeric : 0;
         };
         const catalogBody = typeof ensureCatalogBody === "function" ? ensureCatalogBody() : {};
-        const catalogSoldQuantity = ensureFinite(catalogBody?.sold_quantity);
+        const catalogSoldQuantityValue = Number(catalogBody?.sold_quantity);
+        const sellerSoldQuantityValue = Number(catalogBody?.seller_sold_quantity);
+        const catalogSoldQuantity = ensureFinite(Number.isFinite(catalogSoldQuantityValue) ? catalogSoldQuantityValue : 0);
+        const sellerSoldQuantity = Number.isFinite(sellerSoldQuantityValue)
+          ? sellerSoldQuantityValue
+          : (() => {
+            const vendasNumeric = Number(vendas);
+            return Number.isFinite(vendasNumeric) ? vendasNumeric : 0;
+          })();
         const catalogCreatedAt = catalogBody?.date_created;
         let catalogAgeDays = 0;
         if (catalogCreatedAt) {
@@ -2494,7 +2592,7 @@ function contentScpt() {
           }
         }
         const listingMonthlyRevenue = ensureFinite(e);
-        const listingTotalRevenue = ensureFinite(vendas * preco_Local);
+        const listingTotalRevenue = ensureFinite(sellerSoldQuantity * preco_Local);
         const catalogTotalRevenue = catalogSoldQuantity > 0 ? ensureFinite(catalogSoldQuantity * preco_Local) : ensureFinite(n);
         const catalogMonthlyRevenue = (() => {
           if (catalogSoldQuantity > 0 && catalogAgeDays > 0) {
@@ -3548,7 +3646,11 @@ function s() {
       const normalized = parseFloat(subtitleSales.replace(/\./g, "").replace(",", "."));
       subtitleSales = isNaN(normalized) ? subtitleSales: normalized;
     }
-    if (("string" == typeof vendas && 0 == vendas.length || null == vendas) && null != subtitleSales) vendas = subtitleSales;
+    if (("string" == typeof vendas && 0 == vendas.length || null == vendas) && null != subtitleSales) {
+      vendas = subtitleSales;
+      const numericSubtitleSales = Number(vendas);
+      Number.isFinite(numericSubtitleSales) && updateCatalogBody({ seller_sold_quantity: numericSubtitleSales });
+    }
     dLayer && "" == data_br ? (data_br = dayjs(dLayer).locale("pt-br").format("DD/MM/YYYY"), dataMilisec = Date.parse(dLayer), eadiff = eanow - dataMilisec, dias = Math.round(eadiff / (8.64 * Math.pow(10, 7))), media_vendas = 0 == dias || isNaN(vendas) ? "Indisponível (0 dias)": Math.round(vendas / (dias / 30)), o()): o()
   }
 }
