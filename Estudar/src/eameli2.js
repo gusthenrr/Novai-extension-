@@ -212,6 +212,10 @@ const NOVAI_CREATED_DATE_ATTR = "data-novai-created-date";
 const NOVAI_MEDIA_VALUE_ATTR = "data-novai-media-value";
 const NOVAI_MEDIA_POPUP_ID = "eamediapop";
 
+const novaiSinceMediaState = {
+  options: null
+};
+
 let novaiSinceRetryHandle = null;
 const NOVAI_SINCE_RETRY_DELAY_MS = 500;
 
@@ -277,7 +281,7 @@ function retrySinceOnly() {
 
 function buildSinceMarkup() {
   return `
-<div id="${NOVAI_SINCE_WRAPPER_ID}" style="display:flex;align-items:center;">
+<div id="${NOVAI_SINCE_WRAPPER_ID}" style="display:flex;align-items:flex-start;gap:6px;margin:4px 0;width:100%;max-width:100%;">
   <style>
     /* Grid: 2 colunas (● | texto), 2 linhas (linha 1 = "Criado há", linha 2 = data) */
     #easince.nv-since{
@@ -322,9 +326,9 @@ function buildSinceMarkup() {
      class="nv-since"
      style="display:inline-flex;align-items:center;gap:8px;
             background:#1f1f1f;color:#fff;border-radius:999px;
-            padding:3px 10px;            /* era 4px 10px */
-            font-weight:800;font-size:.82rem;
-            box-shadow:0 6px 12px rgba(0,0,0,.12);cursor:default;">
+            padding:3px 10px;
+            font-weight:700;font-size:.78rem;
+            box-shadow:0 4px 10px rgba(0,0,0,.12);cursor:default;">
     <span class="since-dot" aria-hidden="true"></span>
 
     <span class="since-line">
@@ -465,13 +469,21 @@ function ensureSinceAndMediaContainer(anchorElement) {
     mediaAlert.addEventListener("focusout", hideAlert);
   }
 
-  return sinceWrapper || mediaWrapper;
+  const rendered = sinceWrapper || mediaWrapper;
+  renderSinceAndMediaUI();
+  return rendered;
 }
 
-function updateSinceAndMediaUI(options = {}) {
+function renderSinceAndMediaUI() {
+  const options = novaiSinceMediaState.options;
+  if (!options) return;
+
   const sinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
   const mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
-  if (!sinceWrapper && !mediaWrapper) return;
+  if (!sinceWrapper && !mediaWrapper) {
+    scheduleSinceAndMediaRetry("ui-missing");
+    return;
+  }
 
   const daysRaw = options.days;
   const daysNumber = Number(daysRaw);
@@ -514,6 +526,12 @@ function updateSinceAndMediaUI(options = {}) {
       mediaAlert.style.display = options.showMediaAlert ? "inline-flex" : "none";
     }
   }
+}
+
+function updateSinceAndMediaUI(options = {}) {
+  const previous = novaiSinceMediaState.options || {};
+  novaiSinceMediaState.options = { ...previous, ...options };
+  renderSinceAndMediaUI();
 }
 
 function removeSinceAndMediaContainer() {
@@ -2030,19 +2048,19 @@ function buildVisitsComponentSkeleton() {
       .skeleton-pill{ ${shimmer} border-radius:12px; height:1.2em; display:inline-block; }
 
       :root{ --novai-ml-yellow:#ffe600; --novai-shadow:0 6px 18px rgba(0,0,0,.12); }
-      #visits-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+      #visits-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 
       /* Card Novai */
       .novai-kpi-card{
-        position:relative; background:#222; color:#fff; border:0;
-        border-radius:12px; padding:12px 14px; box-shadow:var(--novai-shadow); overflow:hidden;
+        position:relative; background:#262626; color:#fff; border:0;
+        border-radius:10px; padding:10px 12px; box-shadow:0 4px 12px rgba(0,0,0,.16); overflow:hidden;
       }
       .novai-kpi-card::before{
         content:""; position:absolute; top:0; left:0; right:0; height:4px; background:var(--novai-ml-yellow);
       }
-      .novai-kpi-head{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-      .novai-kpi-icon{ width:26px; height:26px; border-radius:999px; background:rgba(255,230,0,.25); display:inline-flex; align-items:center; justify-content:center; font-size:14px; }
-      .novai-kpi-title{ text-transform:uppercase; letter-spacing:.04em; font-weight:700; font-size:12px; }
+      .novai-kpi-head{ display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+      .novai-kpi-icon{ width:22px; height:22px; border-radius:999px; background:rgba(255,230,0,.2); display:inline-flex; align-items:center; justify-content:center; font-size:13px; }
+      .novai-kpi-title{ text-transform:uppercase; letter-spacing:.04em; font-weight:700; font-size:11px; }
 
       /* VISITAS */
       #visits-left .novai-kpi-head #eabtn-chart{
@@ -2057,39 +2075,40 @@ function buildVisitsComponentSkeleton() {
 
       /* número + rótulo na mesma linha, menores */
       #visits-left .novai-kpi-value{
-        display:flex; align-items:baseline; gap:8px; margin:4px 0 10px;
+        display:flex; align-items:baseline; gap:6px; margin:6px 0 8px;
       }
-      #visits-left [data-visits-total]{ font-size:18px; font-weight:800; color:#fff; }
-      #visits-left .visits-total-label{ font-size:12px; font-weight:700; opacity:.9; }
+      #visits-left [data-visits-total]{ font-size:16px; font-weight:800; color:#fff; }
+      #visits-left .visits-total-label{ font-size:11px; font-weight:700; opacity:.85; }
 
-      #novai-media-anchor{ margin-top:6px; }
+      #novai-media-anchor{ margin-top:4px; display:flex; }
       #novai-media-anchor .novai-media-placeholder{
         ${shimmer}
         border-radius:999px;
-        height:1.3em;
-        width:140px;
+        height:1.15em;
+        width:120px;
         display:block;
       }
 
       #visits-left #novai-media-wrapper{
         display:inline-flex;
         align-items:center;
-        gap:.45rem;
+        gap:.35rem;
         background:var(--novai-ml-yellow);
         color:#111;
         border-radius:999px;
-        padding:.35rem .9rem;
-        font-weight:800;
-        font-size:12px;
-        box-shadow:0 10px 18px rgba(0,0,0,.18);
+        padding:.25rem .7rem;
+        font-weight:700;
+        font-size:11px;
+        box-shadow:0 6px 14px rgba(0,0,0,.15);
         position:relative;
         width:max-content;
+        line-height:1.2;
       }
-      #visits-left #novai-media-wrapper .novai-media-value{ font-size:14px; font-weight:900; }
+      #visits-left #novai-media-wrapper .novai-media-value{ font-size:13px; font-weight:800; }
       #visits-left #novai-media-wrapper .novai-media-info{ display:inline-flex; align-items:center; position:relative; }
       #visits-left #novai-media-wrapper .novai-media-info-btn{
-        width:22px;
-        height:22px;
+        width:20px;
+        height:20px;
         border-radius:50%;
         border:none;
         display:inline-flex;
@@ -2163,17 +2182,17 @@ function buildVisitsComponentSkeleton() {
       #visits-left #novai-media-wrapper .novai-media-alert-tooltip strong{ display:block; margin-bottom:4px; }
 
       /* CONVERSÃO */
-      #visits-right .venda-row{ display:flex; align-items:baseline; gap:8px; margin-top:2px; }
-      #visits-right .venda-label{ font-size:14px; font-weight:700; color:#fff; opacity:.95; }
-      #visits-right .venda-valor{ font-size:15px; font-weight:900; color:#fff; line-height:1; }
-      #visits-right .visitas-label{ font-size:10px; font-weight:100; color:#fff;}
+      #visits-right .venda-row{ display:flex; align-items:baseline; gap:6px; margin-top:2px; }
+      #visits-right .venda-label{ font-size:13px; font-weight:700; color:#fff; opacity:.95; }
+      #visits-right .venda-valor{ font-size:14px; font-weight:800; color:#fff; line-height:1; }
+      #visits-right .visitas-label{ font-size:10px; font-weight:400; color:#fff;}
 
       /* pílula da conversão: ligeiramente maior */
       #visits-right .conv-pill{
-        display:inline-flex; align-items:center; gap:.4rem;
-        margin-top:8px;
+        display:inline-flex; align-items:center; gap:.35rem;
+        margin-top:6px;
         background:var(--novai-ml-yellow); color:#111; border-radius:999px;
-        padding:.3rem 1rem; font-weight:900; font-size:14px; width:max-content;
+        padding:.25rem .85rem; font-weight:700; font-size:13px; width:max-content;
       }
 
       #eadivider{ display:none; }
@@ -3534,7 +3553,12 @@ function s() {
             return;
           }
           const titleParent = titleNode.parentElement;
-          titleParent && titleParent.setAttribute("style", "flex-direction: column;");
+          if (titleParent) {
+            titleParent.style.display = "flex";
+            titleParent.style.flexDirection = "column";
+            titleParent.style.alignItems = "flex-start";
+            titleParent.style.gap = "4px";
+          }
           if ("pro" === verif) {
             const wrapper = ensureSinceAndMediaContainer(titleNode);
             const numericDays = Number(dias);
