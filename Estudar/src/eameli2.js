@@ -278,58 +278,64 @@ function buildSinceMarkup() {
   return `
 <div id="${NOVAI_SINCE_WRAPPER_ID}" style="display:flex;align-items:center;">
   <style>
-    /* Grid: 2 colunas (● | texto), 2 linhas (linha 1 = "Criado há", linha 2 = data) */
+    /* Grid compacto: 2 colunas (● | texto), 2 linhas (linha 1 = "Criado há", linha 2 = data) */
     #easince.nv-since{
-  display:inline-grid !important;
-  grid-template-columns:8px auto;
-  grid-template-rows:auto auto;
-  row-gap:0;                  /* sem gap vertical */
-  align-items:start;
-}
-    /* ● fica SEMPRE ao lado do "Criado há" (linha 1) */
+      display:grid !important;                  /* evita gap de baseline do inline-grid */
+      grid-template-columns:8px auto;
+      grid-template-rows:min-content min-content;
+      column-gap:8px; row-gap:0;
+      align-items:center;
+      line-height:1;                            /* elimina “linha fantasma” embaixo */
+      vertical-align:middle;
+    }
+    /* ● sempre ao lado do "Criado há" (só na linha 1) */
     #easince .since-dot{
       grid-column:1; grid-row:1;
       width:8px; height:8px; border-radius:50%;
       background:var(--novai-ml-yellow,#ffe600);
       align-self:center;
     }
-    /* Linha 1: "Criado há X dias" não quebra */
+    /* Linha 1: "Criado há X dias" não quebra e fica encorpada */
     #easince .since-line{
-  grid-column:2; grid-row:1;
-  white-space:nowrap; word-break:keep-all;
-  line-height:1;              /* encurta a altura da linha */
-}
-    /* Linha 2: data, embaixo, branca e colada */
+      grid-column:2; grid-row:1;
+      white-space:nowrap; word-break:keep-all;
+      line-height:1;
+    }
+    #easince .since-line .since-text{ opacity:.95; font-size:.95rem; }   /* maior */
+    #easince .since-line .since-days{ font-weight:900; font-size:1rem; } /* um tico maior */
+
+    /* Linha 2: data – aparece no hover, sem reservar espaço quando oculta */
     #easince .novai-since-date{
-  grid-column:2; grid-row:2;
-  display:block; text-align:left;
-  color:#fff !important;
-  line-height:1;
-  opacity:0; max-height:0; overflow:hidden;
-  margin-top:-2px;            /* cola na linha de cima */
-  transition:opacity .2s, max-height .2s, margin-top .2s;
-}
-    /* Mostra a data no hover (ou use .is-open se quiser por click) */
+      grid-column:2; grid-row:2;
+      display:block; text-align:left;
+      color:#fff !important;
+      line-height:1;
+      opacity:0; max-height:0; overflow:hidden;
+      margin-top:0;                             /* rente ao de cima */
+      transition:opacity .18s ease, max-height .18s ease;
+    }
     #easince:hover .novai-since-date,
-#easince.is-open .novai-since-date{
-  opacity:.98; max-height:18px;
-  margin-top:-2px;            /* mantém juntinho no hover */
-}
+    #easince.is-open .novai-since-date{
+      opacity:.98; max-height:18px;             /* expande só o necessário */
+    }
   </style>
 
   <div id="easince"
-     class="nv-since"
-     style="display:inline-flex;align-items:center;gap:8px;
-            background:#1f1f1f;color:#fff;border-radius:999px;
-            padding:3px 10px;            /* era 4px 10px */
-            font-weight:800;font-size:.82rem;
-            box-shadow:0 6px 12px rgba(0,0,0,.12);cursor:default;">
+       class="nv-since"
+       style="
+         background:#1f1f1f;color:#fff;
+         border-radius:12px;                     /* quina mais “card” e limpa */
+         padding:4px 12px;                       /* encostado no conteúdo */
+         font-weight:800;font-size:.92rem;       /* letras maiores */
+         box-shadow:0 6px 12px rgba(0,0,0,.12);
+         cursor:default;
+       ">
     <span class="since-dot" aria-hidden="true"></span>
 
     <span class="since-line">
-      <span style="opacity:.95;">Criado há</span>
-      <span ${NOVAI_CREATED_DAYS_ATTR} style="font-weight:900;">?</span>
-      <span style="opacity:.95;">dias</span>
+      <span class="since-text">Criado há</span>
+      <span ${NOVAI_CREATED_DAYS_ATTR} class="since-days">?</span>
+      <span class="since-text">dias</span>
     </span>
 
     <span ${NOVAI_CREATED_DATE_ATTR} class="novai-since-date">(--/--/----)</span>
@@ -414,18 +420,15 @@ function ensureSinceAndMediaContainer(anchorElement) {
   }
 
   const sinceNode = sinceWrapper ? sinceWrapper.querySelector("#easince") : null;
-  if (sinceNode && !sinceNode.dataset.novaiHoverBound) {
-    sinceNode.dataset.novaiHoverBound = "1";
-    const dateSpan = sinceNode.querySelector(`[${NOVAI_CREATED_DATE_ATTR}]`);
-    sinceNode.addEventListener("mouseover", (function () {
-      sinceNode.style.padding = "0.35em 1em 1.35em 1em";
-      dateSpan && (dateSpan.style.opacity = "100%");
-    }));
-    sinceNode.addEventListener("mouseout", (function () {
-      sinceNode.style.padding = "0.35em 1em 0.35em 1em";
-      dateSpan && (dateSpan.style.opacity = "0%");
-    }));
-  }
+if (sinceNode && !sinceNode.dataset.novaiHoverBound) {
+  sinceNode.dataset.novaiHoverBound = "1";
+  sinceNode.addEventListener("mouseenter", () => {
+    sinceNode.classList.add("is-open");     // só classe, nada de padding
+  }, { passive: true });
+  sinceNode.addEventListener("mouseleave", () => {
+    sinceNode.classList.remove("is-open");
+  }, { passive: true });
+}
 
   const mediaInfoWrapper = mediaWrapper ? mediaWrapper.querySelector(`[${NOVAI_MEDIA_INFO_ATTR}]`) : null;
   const tooltip = mediaWrapper ? mediaWrapper.querySelector(`#${NOVAI_MEDIA_TOOLTIP_ID}`) : null;
@@ -1951,7 +1954,8 @@ function buildMainComponentSkeleton() {
       .mfy-left .mfy-title { font-size:15px; }
       .mfy-left .mfy-conv { font-size:14px; padding:4px 12px; margin-top:4px; }
 
-      .mfy-right{ text-align:right; }
+  .mfy-right{ text-align:right; }
+  .mfy-right .mfy-subline{ display:flex; align-items:baseline; gap:6px; justify-content:flex-end; }
       .mfy-right .mfy-label{ font-size:16px; font-weight:bold}
       .mfy-right .mfy-value{ font-size:16px; font-weight:bold; color: var(--mfy-main); }
 
@@ -1987,7 +1991,10 @@ function buildMainComponentSkeleton() {
 
       <div class="mfy-right">
         <div class="mfy-label">Vende a cada:</div>
-        <div class="mfy-value"><span class="skeleton"></span> Visitas</div>
+        <div class="mfy-subline">
+          <div class="mfy-value"><span class="skeleton"></span></div>
+          <div class="mfy-visitas">visitas</div>
+        </div>
       </div>
     </div>
 
@@ -2012,7 +2019,6 @@ function buildMainComponentSkeleton() {
     </div>
   </div>
 `;
-
 }
 
 function buildVisitsComponentSkeleton() {
@@ -2039,7 +2045,7 @@ function buildVisitsComponentSkeleton() {
       .novai-kpi-icon{ width:26px; height:26px; border-radius:999px; background:rgba(255,230,0,.25); display:inline-flex; align-items:center; justify-content:center; font-size:14px; }
       .novai-kpi-title{ text-transform:uppercase; letter-spacing:.04em; font-weight:700; font-size:12px; }
 
-      /* VISITAS */
+      /* VISITAS (card esquerdo) */
       #visits-left .novai-kpi-head #eabtn-chart{
         margin-left:auto;
         border-radius:2rem; width:2.1em; height:2.1em; padding:.14em .5em;
@@ -2050,18 +2056,28 @@ function buildVisitsComponentSkeleton() {
       #visits-left #eabtn-chart:hover{ background:var(--novai-ml-yellow); border-color:var(--novai-ml-yellow); }
       #visits-left #eabtn-chart:hover img{ filter:invert(1) brightness(0.2); }
 
-      /* número + rótulo na mesma linha, menores */
       #visits-left .novai-kpi-value{
         display:flex; align-items:baseline; gap:8px; margin:4px 0 10px;
       }
       #visits-left [data-visits-total]{ font-size:18px; font-weight:800; color:#fff; }
       #visits-left .visits-total-label{ font-size:12px; font-weight:700; opacity:.9; }
 
-      /* CONVERSÃO */
-      #visits-right .venda-row{ display:flex; align-items:baseline; gap:8px; margin-top:2px; }
-      #visits-right .venda-label{ font-size:14px; font-weight:700; color:#fff; opacity:.95; }
-      #visits-right .venda-valor{ font-size:15px; font-weight:900; color:#fff; line-height:1; }
-      #visits-right .visitas-label{ font-size:10px; font-weight:100; color:#fff;}
+      /* CONVERSÃO (card direito) */
+      /* >>> força duas linhas: label em cima, valor embaixo */
+      #visits-right #vendaporvisitas.venda-row{
+        display:block;                 /* vira bloco para empilhar */
+        margin-top:2px;
+      }
+      #visits-right .venda-label{
+        display:block;                 /* 1ª linha */
+        font-size:14px; font-weight:700; color:#fff; opacity:.95; line-height:1;
+        margin-bottom:2px;
+      }
+      #visits-right .venda-valor{
+        display:block;                 /* 2ª linha */
+        font-size:15px; font-weight:900; color:#fff; line-height:1.1;
+        word-break:break-word;
+      }
 
       /* pílula da conversão: ligeiramente maior */
       #visits-right .conv-pill{
@@ -2107,17 +2123,20 @@ function buildVisitsComponentSkeleton() {
           <div class="novai-kpi-title">CONVERSÃO</div>
         </div>
 
-        <!-- Vende a cada: mesma linha, menor -->
+        <!-- Vende a cada: 1ª linha (label) + 2ª linha (valor) -->
         <div id="vendaporvisitas" class="venda-row">
           <span class="venda-label">Vende a cada:</span>
-          <span class="venda-valor"><span data-visits-per-sale class="skeleton-text" style="width:80px;"></span></span>
-          <span class="visitas-label">visitas </span>
+          <span class="venda-valor">
+            <span data-visits-per-sale class="skeleton-text" style="width:80px;"></span> visitas
+          </span>
         </div>
 
         <!-- Conversão mais visível (pílula) -->
         <div class="conv-pill">
           <span>Conversão:</span>
-          <span data-conversion-value class="conv-value"><span class="skeleton-text" style="width:30px;"></span></span><span></span>
+          <span data-conversion-value class="conv-value">
+            <span class="skeleton-text" style="width:30px;"></span>
+          </span>
         </div>
       </div>
     </div>
@@ -2126,6 +2145,7 @@ function buildVisitsComponentSkeleton() {
   </div>
   `;
 }
+
 
 
 
