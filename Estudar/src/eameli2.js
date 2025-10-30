@@ -1905,7 +1905,7 @@ function buildMainComponentSkeleton() {
 function buildVisitsComponentSkeleton() {
   const shimmer = "background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite;";
   return `
-  <div id="visits-component">
+  <div id="visits-component" data-iscatalog="${iscatalog ? "true" : "false"}" data-loaded="false">
     <style>
       @keyframes loading {
         0%   { background-position: 200% 0; }
@@ -1925,150 +1925,142 @@ function buildVisitsComponentSkeleton() {
       }
     </style>
 
-    ${
-      iscatalog
-        ? `
-      <div style="display:flex">
-        <div
-          id="eabtn-chart"
-          class="andes-button--loud mfy-main-bg andes-button"
-          style="
-            border-radius: 2rem;
-            width: 2.35em;
-            height: 2.35em;
-            padding: 0.14em 0.5em;
-            display: inline-flex;
-            position: relative;
-            z-index: 10;
-            transition: 0.35s;
-            align-items: center;
-          "
-        >
-          <img
-            src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png"
-            style="width: 1.35em; margin: auto;"
-          >
-          <div
-            id="eabtn-chart-tooltip"
-            style="
-              width: fit-content;
-              display: none;
-              flex-direction: column;
-              text-align: start;
-              line-height: 1;
-              font-size: 1rem;
-              color: var(--mfy-main);
-              padding: 1rem;
-              opacity: 0;
-            "
-          >
-            Anúncio com menos de 30 dias,
-            <span style="opacity: .5;">gráfico sem dados suficientes.</span>
-          </div>
-        </div>
-
-        <span
-          style="
-            margin-left: 3.1em;
-            position: absolute;
-            top: 0.45em;
-            font-weight: 400;
-          "
-        >
-          <span class="skeleton-text" style="width: 80px;"></span>
-          Visitas totais
-        </span>
-
-        <div id="eadivider"></div>
-      </div>
-      `
-        : `
-      <div style="display:flex; margin: 0 0 1.25rem 0; gap: 1rem;">
-        <div
-          id="eabtn-chart"
-          class="andes-button--loud mfy-main-bg andes-button"
-          style="
-            border-radius: 2rem;
-            width: 2.35em;
-            height: 2.35em;
-            padding: 0.14em 0.5em;
-            display: inline-flex;
-            position: relative;
-            z-index: 10;
-            transition: 0.35s;
-            align-items: center;
-          "
-        >
-          <img
-            src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png"
-            style="width: 1.35em; margin: auto;"
-          >
-          <div
-            id="eabtn-chart-tooltip"
-            style="
-              width: fit-content;
-              display: none;
-              flex-direction: column;
-              text-align: start;
-              line-height: 1;
-              font-size: 1rem;
-              color: var(--mfy-main);
-              padding: 1rem;
-              opacity: 0;
-            "
-          >
-            Anúncio com menos de 30 dias,
-            <span style="opacity: .5;">gráfico sem dados suficientes.</span>
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 1rem; min-width: fit-content; justify-content: space-between;">
-          <div style="display: flex; flex-direction: column;">
-            <div style="display: flex; gap: 0.5rem;">
-              <span class="skeleton-text" style="width: 25px;"></span>
-              <span>Visitas totais</span>
-            </div>
-
-            <div
-              class="mfy-main-bg"
-              style="
-                position: relative;
-                font-size: 14px !important;
-                min-width: fit-content;
-                padding: 0.2rem 1em;
-                display: flex;
-                gap: .25rem;
-                color: #fff;
-                border-radius: 1rem;
-              "
-            >
-              <span style="min-width: fit-content;">Conversão:</span>
-              <span style="opacity: 0.25; font-weight: 700;">
-                <span class="skeleton-text" style="width: 30px;"></span>%
-              </span>
-            </div>
-          </div>
-
-          <div id="vendaporvisitas" style="position: relative; text-align: end;">
-            Vende a cada:<br>
-            <span class="skeleton-text" style="width: 80px;"></span>
-          </div>
-        </div>
-      </div>
-
+    <div style="display:flex; ${iscatalog ? "margin: 0 0 5rem 0;" : "margin: 0 0 1.25rem 0;"} gap: 1rem;">
       <div
-        id="eadivider"
+        id="eabtn-chart"
+        class="andes-button--loud mfy-main-bg andes-button"
         style="
-          background-color: #00000014;
-          height: 1px;
-          width: 22.7em;
-          margin: 0 0 1rem 0;
+          border-radius: 2rem;
+          width: 2.35em;
+          height: 2.35em;
+          padding: 0.14em 0.5em;
+          display: inline-flex;
+          position: relative;
+          z-index: 10;
+          transition: 0.35s;
+          align-items: center;
         "
-      ></div>
-      `
-    }
+      >
+        <img
+          src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png"
+          style="width: 1.35em; margin: auto;"
+        >
+        <div
+          id="eabtn-chart-tooltip"
+          style="
+            width: fit-content;
+            display: none;
+            flex-direction: column;
+            text-align: start;
+            line-height: 1;
+            font-size: 1rem;
+            color: var(--mfy-main);
+            padding: 1rem;
+            opacity: 0;
+          "
+        >
+          Anúncio com menos de 30 dias,
+          <span style="opacity: .5;">gráfico sem dados suficientes.</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 1rem; min-width: fit-content; justify-content: space-between; ${iscatalog ? "align-items: center;" : ""}">
+        <div style="display: flex; flex-direction: column; min-width: fit-content;">
+          <div style="display: flex; gap: ${iscatalog ? "0.35rem" : "0.5rem"}; ${iscatalog ? "align-items: center;" : ""}">
+            <span data-visits-total class="skeleton-text" style="width: ${iscatalog ? "80px" : "60px"};"></span>
+            <span>Visitas totais</span>
+          </div>
+
+          <div
+            class="mfy-main-bg"
+            style="
+              position: relative;
+              font-size: 14px !important;
+              min-width: fit-content;
+              padding: 0.2rem 1em;
+              display: flex;
+              gap: .25rem;
+              color: #fff;
+              border-radius: 1rem;
+              ${iscatalog ? "margin-top: 0.35rem;" : ""}
+            "
+          >
+            <span style="min-width: fit-content;">Conversão:</span>
+            <span data-conversion-value class="skeleton-text" style="width: 30px;"></span>
+          </div>
+        </div>
+
+        <div
+          id="vendaporvisitas"
+          data-default-display=""
+          style="
+            position: relative;
+            text-align: end;
+            ${iscatalog ? "display: block;" : ""}
+          "
+        >
+          Vende a cada:<br>
+          <span data-visits-per-sale class="skeleton-text" style="width: 80px;"></span> <span class="visits-per-sale-unit">Visitas</span>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="eadivider"
+      style="
+        background-color: #00000014;
+        height: 1px;
+        width: 22.7em;
+        margin: 0 0 1rem 0;
+      "
+    ></div>
   </div>
 `;
+}
+
+function updateVisitsComponentContent({
+  totalVisits,
+  conversion,
+  visitsPerSale,
+  hasSales,
+  isCatalog
+}) {
+  const container = document.getElementById("visits-component");
+  if (!container) return;
+
+  if (typeof isCatalog === "boolean") {
+    container.setAttribute("data-iscatalog", isCatalog ? "true" : "false");
+  }
+
+  container.setAttribute("data-loaded", "true");
+
+  const totalNode = container.querySelector("[data-visits-total]");
+  if (totalNode) {
+    totalNode.textContent = totalVisits ?? "-";
+    totalNode.classList.remove("skeleton-text");
+    totalNode.style.removeProperty("width");
+  }
+
+  const conversionNode = container.querySelector("[data-conversion-value]");
+  if (conversionNode) {
+    conversionNode.textContent = conversion ?? "-";
+    conversionNode.classList.remove("skeleton-text");
+    conversionNode.style.removeProperty("width");
+  }
+
+  const perSaleContainer = container.querySelector("#vendaporvisitas");
+  if (perSaleContainer) {
+    if (!perSaleContainer.dataset.defaultDisplay) {
+      perSaleContainer.dataset.defaultDisplay = perSaleContainer.style.display || "";
+    }
+    const perSaleNode = container.querySelector("[data-visits-per-sale]");
+    if (perSaleNode) {
+      perSaleNode.textContent = visitsPerSale ?? "-";
+      perSaleNode.classList.remove("skeleton-text");
+      perSaleNode.style.removeProperty("width");
+    }
+    perSaleContainer.style.display = hasSales ? perSaleContainer.dataset.defaultDisplay : "none";
+  }
 }
 async function altInfo(e) {
   function t() {
@@ -3221,36 +3213,26 @@ function s() {
           console.groupEnd();
           const a = typeof n == "number" && Number.isFinite(n) ? n: NaN;
           visitastotais = a;
-          conversaototal = Number.isFinite(a) && a > 0 ? vendas / a: 0;
-          visitaporvenda = Number.isFinite(a) ? a / (vendas > 0 ? vendas: 1): NaN;
+          const hasVisits = Number.isFinite(a) && a > 0;
+          conversaototal = hasVisits ? vendas / a: NaN;
+          visitaporvenda = hasVisits ? a / (vendas > 0 ? vendas: 1): NaN;
           visitaporvenda_fix = Number.isFinite(visitaporvenda) ? parseFloat(visitaporvenda).toFixed(0): "?";
           visitasparavender = Number.isFinite(visitaporvenda) ? parseFloat(visitaporvenda_fix): NaN;
-          const t = function ({
-            isCatalog: e,
-            totalVisits: t,
-            conversion: n,
-            visitsPerSale: a,
-            hasSales: i
-          }
-          ) {
-            return e ? `\n                <div style="display:flex;margin: 0rem 0 5rem 0;gap: 1rem;">\n                <div id="eabtn-chart" style="border-radius: 2rem; width: 2.35em; padding: 0.14em 0.5em; height: 2.35em; display: inline-flex; position: relative; z-index: 10; transition: 0.35s; align-items: center;" class="andes-button--loud mfy-main-bg andes-button">\n                  <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width: 1.35em; margin: auto;">\n                </div>\n                <div style="display: flex;gap: 1rem;min-width: fit-content;justify-content: space-between;align-items: anchor-center;">\n                  <div style="display: flex;flex-direction: column;min-width: fit-content;">\n                    ${isNaN(t)?"-":t} Visitas totais\n                    <div class="mfy-main-bg" style="position:relative;font-size:14px!important;min-width: fit-content;padding: 0.2rem 1em;display: flex;gap: .25rem;color: #fff;border-radius: 1rem;">\n                  <span style="min-width: fit-content;">Conversão:</span> <span style="font-weight: 700;">${isNaN(n)?"-":n}%</span>\n                </div>\n                  </div>\n                   <div id="vendaporvisitas" style="position: relative;text-align: end;font-size: 1.1rem;margin-left: 1rem;${i?"display: block;":"display: none;"}">\n                   Vende a cada:<br>\n                   <span style="font-weight: 800;color: var(--mfy-main);">${isNaN(a)?"-":a} Visitas</span>\n                 </div>\n                </div>\n              </div>\n\n                <div id="eadivider" style="background-color: transparent;height: 1px;width: 22.7em;position: relative;top: -0.75em;margin-bottom: -3em;"></div>`: `\n            <div style="display:flex;margin: 0rem 0 1.25rem 0;gap: 1rem;">\n              <div id="eabtn-chart" style="border-radius: 2rem; width: 2.35em; padding: 0.14em 0.5em; height: 2.35em; display: inline-flex; position: relative; z-index: 10; transition: 0.35s; align-items: center;" class="andes-button--loud mfy-main-bg andes-button">\n                <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width: 1.35em; margin: auto;">\n                <div id="eabtn-chart-tooltip" style="min-width: 18rem; position:absolute; display: none; flex-direction: column; text-align: start; line-height: 1; font-size: 1rem; color:var(--mfy-main); padding: 1rem 0rem 1rem 2rem; opacity: 0;background-color: rgb(235, 235, 235); border-radius: 2rem;">\n                        Anúncio com menos de 30 dias,<span style="opacity: .5;">gráfico sem dados suficientes.</span>\n                      </div>\n              </div>\n              <div style="display: flex;gap: 1rem;min-width: fit-content;justify-content: space-between;">\n              <div style="display: flex; flex-direction: column;">\n                ${t} Visitas totais \n                <div class="mfy-main-bg" style="position:relative;font-size:14px!important;min-width: fit-content;padding: 0.2rem 1em;display: flex;gap: .25rem;color: #fff;border-radius: 1rem;">\n                  <span style="min-width: fit-content;">Conversão:</span> <span style="font-weight: 700;">${n}%</span>\n                </div>\n              </div>\n              <div id="vendaporvisitas" style="position: relative;text-align: end;${i?"display: block;":"display: none;"}">\n                   Vende a cada:<br>\n                   <span style="font-size: 1.21em;font-weight: 800;color: var(--mfy-main);">${i?a:"-"} Visitas</span>\n                 </div></div>\n              </div>\n              \n              <div id="eadivider" style="background-color: #00000014;height: 1px;width: 22.7em;margin: 0rem 0rem 1rem 0rem;/* position: relative; */top: -2.75em;/* margin-bottom: -3em; */"></div>\n              `
-          }
-          ({
-            isCatalog: iscatalog,
-            totalVisits: Number.isFinite(visitastotais) ? visitastotais: NaN,
-            conversion: parseFloat(100 * conversaototal).toFixed(1) ?? "-",
-            visitsPerSale: visitasparavender,
-            hasSales: vendas > 0
-          }
-          );
+          const formattedTotalVisits = Number.isFinite(visitastotais) ? visitastotais.toLocaleString("pt-br") : "-";
+          const conversionPercentage = Number.isFinite(conversaototal) ? `${(100 * conversaototal).toFixed(1)}%` : "-";
+          const formattedVisitsPerSale = Number.isFinite(visitasparavender) ? visitasparavender.toLocaleString("pt-br") : "-";
+          const hasSales = vendas > 0 && Number.isFinite(visitasparavender);
           const elapsed = Date.now() - L;
           const delay = Math.max(0, 800 - elapsed);
           setTimeout((() => {
-            const holder = document.getElementById("visits-component");
-            if (holder) {
-              holder.innerHTML = t;
-              setTimeout(l, 250);
-            }
+            updateVisitsComponentContent({
+              totalVisits: formattedTotalVisits,
+              conversion: conversionPercentage,
+              visitsPerSale: formattedVisitsPerSale,
+              hasSales,
+              isCatalog: !!iscatalog
+            });
+            setTimeout(l, 250);
           }
           ), delay);
         }
@@ -3270,7 +3252,7 @@ function s() {
             const authReady = await ensureAuthHeaderForRequests("métricas de visitas");
             if (!authReady) {
               const holder = document.getElementById("visits-component");
-              holder && (holder.innerHTML = '<div style="opacity: 0.5;"><span>-</span></div>');
+              holder && updateVisitsComponentContent({ totalVisits: "-", conversion: "-", visitsPerSale: "-", hasSales: !1, isCatalog: !!iscatalog });
               return;
             }
 
@@ -3288,7 +3270,7 @@ function s() {
           catch (t) {
             console.error("[Novai] Visits API error", t);
             const n = document.getElementById("visits-component");
-            n && (n.innerHTML = '<div style="opacity: 0.5;"><span>-</span></div>');
+            n && updateVisitsComponentContent({ totalVisits: "-", conversion: "-", visitsPerSale: "-", hasSales: !1, isCatalog: !!iscatalog });
           }
           finally {
             document.removeEventListener("VisitsDataResponse", handleVisitsResponse);
