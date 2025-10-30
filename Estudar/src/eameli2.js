@@ -202,6 +202,7 @@ function ensureVisitsComponentSkeleton(container) {
 }
 
 const NOVAI_SINCE_WRAPPER_ID = "novai-since-wrapper";
+const NOVAI_MEDIA_WRAPPER_ID = "novai-media-wrapper";
 const NOVAI_MEDIA_ALERT_ID = "novai-media-alert";
 const NOVAI_MEDIA_TOOLTIP_ID = "novai-media-tooltip";
 const NOVAI_MEDIA_INFO_ATTR = "data-novai-media-info";
@@ -273,13 +274,20 @@ function retrySinceOnly() {
   }
 }
 
-function buildSinceAndMediaMarkup() {
+function buildSinceMarkup() {
   return `
-    <div id="${NOVAI_SINCE_WRAPPER_ID}" style="display: flex;align-items: center;justify-content: start;gap: .5rem;">
+    <div id="${NOVAI_SINCE_WRAPPER_ID}" style="display: flex;align-items: center;justify-content: start;gap: .5rem;margin-bottom: .35rem;">
       <div id="easince" style="font-size: 0.95rem;font-weight: 700;display: inline-flex;border-radius: 1em;color: rgb(90, 90, 90);box-shadow: rgb(0, 0, 0) 0px 2px 11px -7px;padding: 0.35em 1em;position: relative;transition: 0.35s;min-width: fit-content;cursor:default">
         <span style=" margin-top: 0.2em;">Criado há: <span ${NOVAI_CREATED_DAYS_ATTR}>?</span> dia(s)</span>
         <span ${NOVAI_CREATED_DATE_ATTR} style="position: absolute;top: 1.75em;font-size: 0.92em;font-weight: 200;opacity: 0;transition: all 0.35s;">(--/--/----)</span>
       </div>
+    </div>
+  `;
+}
+
+function buildMediaMarkup() {
+  return `
+    <div id="${NOVAI_MEDIA_WRAPPER_ID}" style="display: flex;align-items: center;justify-content: start;gap: .5rem;">
       <div id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;align-items: center;padding: 0.75em 1em;position: relative;z-index: 10;border-radius:2rem;gap: 0.35rem;cursor:default">
         <span style="font-size: .9rem;">Média:</span>
         <div style="min-width: fit-content;font-size: 1.2rem;" ${NOVAI_MEDIA_VALUE_ATTR}>-</div>
@@ -308,16 +316,29 @@ function buildSinceAndMediaMarkup() {
 
 function ensureSinceAndMediaContainer(anchorElement) {
   if (!anchorElement) return null;
-  let wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
-  if (!wrapper) {
-    anchorElement.insertAdjacentHTML("afterbegin", buildSinceAndMediaMarkup());
-    wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+
+  let sinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+  if (!sinceWrapper) {
+    const subtitleNode = document.querySelector(".ui-pdp-header__subtitle");
+    if (subtitleNode && subtitleNode.parentElement) {
+      subtitleNode.insertAdjacentHTML("beforebegin", buildSinceMarkup());
+    } else {
+      anchorElement.insertAdjacentHTML("beforebegin", buildSinceMarkup());
+    }
+    sinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
   }
-  if (!wrapper) return null;
+
+  let mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
+  if (!mediaWrapper) {
+    anchorElement.insertAdjacentHTML("afterbegin", buildMediaMarkup());
+    mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
+  }
+
+  if (!sinceWrapper && !mediaWrapper) return null;
 
   cancelSinceAndMediaRetry();
 
-  const sinceNode = wrapper.querySelector("#easince");
+  const sinceNode = sinceWrapper ? sinceWrapper.querySelector("#easince") : null;
   if (sinceNode && !sinceNode.dataset.novaiHoverBound) {
     sinceNode.dataset.novaiHoverBound = "1";
     const dateSpan = sinceNode.querySelector(`[${NOVAI_CREATED_DATE_ATTR}]`);
@@ -331,8 +352,8 @@ function ensureSinceAndMediaContainer(anchorElement) {
     }));
   }
 
-  const mediaInfoWrapper = wrapper.querySelector(`[${NOVAI_MEDIA_INFO_ATTR}]`);
-  const tooltip = wrapper.querySelector(`#${NOVAI_MEDIA_TOOLTIP_ID}`);
+  const mediaInfoWrapper = mediaWrapper ? mediaWrapper.querySelector(`[${NOVAI_MEDIA_INFO_ATTR}]`) : null;
+  const tooltip = mediaWrapper ? mediaWrapper.querySelector(`#${NOVAI_MEDIA_TOOLTIP_ID}`) : null;
   if (mediaInfoWrapper && tooltip && !mediaInfoWrapper.dataset.novaiHoverBound) {
     mediaInfoWrapper.dataset.novaiHoverBound = "1";
     const show = () => {
@@ -347,7 +368,7 @@ function ensureSinceAndMediaContainer(anchorElement) {
     mediaInfoWrapper.addEventListener("mouseout", hide);
   }
 
-  const mediaAlert = wrapper.querySelector(`#${NOVAI_MEDIA_ALERT_ID}`);
+  const mediaAlert = mediaWrapper ? mediaWrapper.querySelector(`#${NOVAI_MEDIA_ALERT_ID}`) : null;
   if (mediaAlert && !mediaAlert.dataset.novaiHoverBound) {
     mediaAlert.dataset.novaiHoverBound = "1";
     mediaAlert.addEventListener("mouseover", (function () {
@@ -364,57 +385,66 @@ function ensureSinceAndMediaContainer(anchorElement) {
     }));
   }
 
-  return wrapper;
+  return sinceWrapper || mediaWrapper;
 }
 
 function updateSinceAndMediaUI(options = {}) {
-  const wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
-  if (!wrapper) return;
+  const sinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+  const mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
+  if (!sinceWrapper && !mediaWrapper) return;
 
   const daysRaw = options.days;
   const daysNumber = Number(daysRaw);
   const normalizedDays = Number.isFinite(daysNumber) ? Math.max(0, Math.round(daysNumber)) : null;
-  const daysSpan = wrapper.querySelector(`[${NOVAI_CREATED_DAYS_ATTR}]`);
-  if (daysSpan) {
-    daysSpan.textContent = null !== normalizedDays ? normalizedDays : "?";
-  }
-
-  const dateSpan = wrapper.querySelector(`[${NOVAI_CREATED_DATE_ATTR}]`);
-  if (dateSpan) {
-    const formatted = options.dateBR && "string" == typeof options.dateBR && options.dateBR.trim().length > 0 ? options.dateBR : "--/--/----";
-    dateSpan.textContent = `(${formatted})`;
-  }
-
-  const mediaSpan = wrapper.querySelector(`[${NOVAI_MEDIA_VALUE_ATTR}]`);
-  if (mediaSpan) {
-    let value = options.mediaValue;
-    if (typeof value === "number" && !isNaN(value)) {
-      value = value;
-    } else if (typeof value === "string") {
-      value = value.trim();
-      if (!value) value = "-";
-    } else {
-      value = "-";
+  if (sinceWrapper) {
+    const daysSpan = sinceWrapper.querySelector(`[${NOVAI_CREATED_DAYS_ATTR}]`);
+    if (daysSpan) {
+      daysSpan.textContent = null !== normalizedDays ? normalizedDays : "?";
     }
-    mediaSpan.textContent = value;
+
+    const dateSpan = sinceWrapper.querySelector(`[${NOVAI_CREATED_DATE_ATTR}]`);
+    if (dateSpan) {
+      const formatted = options.dateBR && "string" == typeof options.dateBR && options.dateBR.trim().length > 0 ? options.dateBR : "--/--/----";
+      dateSpan.textContent = `(${formatted})`;
+    }
   }
 
-  const mediaInfoWrapper = wrapper.querySelector(`[${NOVAI_MEDIA_INFO_ATTR}]`);
-  if (mediaInfoWrapper) {
-    mediaInfoWrapper.style.display = options.showCatalogInfo ? "inline-flex" : "none";
-  }
+  if (mediaWrapper) {
+    const mediaSpan = mediaWrapper.querySelector(`[${NOVAI_MEDIA_VALUE_ATTR}]`);
+    if (mediaSpan) {
+      let value = options.mediaValue;
+      if (typeof value === "number" && !isNaN(value)) {
+        value = value;
+      } else if (typeof value === "string") {
+        value = value.trim();
+        if (!value) value = "-";
+      } else {
+        value = "-";
+      }
+      mediaSpan.textContent = value;
+    }
 
-  const mediaAlert = wrapper.querySelector(`#${NOVAI_MEDIA_ALERT_ID}`);
-  if (mediaAlert) {
-    mediaAlert.style.display = options.showMediaAlert ? "inline-flex" : "none";
+    const mediaInfoWrapper = mediaWrapper.querySelector(`[${NOVAI_MEDIA_INFO_ATTR}]`);
+    if (mediaInfoWrapper) {
+      mediaInfoWrapper.style.display = options.showCatalogInfo ? "inline-flex" : "none";
+    }
+
+    const mediaAlert = mediaWrapper.querySelector(`#${NOVAI_MEDIA_ALERT_ID}`);
+    if (mediaAlert) {
+      mediaAlert.style.display = options.showMediaAlert ? "inline-flex" : "none";
+    }
   }
 }
 
 function removeSinceAndMediaContainer() {
   cancelSinceAndMediaRetry();
-  const wrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
-  if (wrapper && wrapper.parentNode) {
-    wrapper.parentNode.removeChild(wrapper);
+  const sinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+  if (sinceWrapper && sinceWrapper.parentNode) {
+    sinceWrapper.parentNode.removeChild(sinceWrapper);
+  }
+  const mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
+  if (mediaWrapper && mediaWrapper.parentNode) {
+    mediaWrapper.parentNode.removeChild(mediaWrapper);
   }
   const popup = document.getElementById(NOVAI_MEDIA_POPUP_ID);
   popup && popup.remove();
@@ -575,6 +605,8 @@ function _mfyKeepAliveTick() {
       if (!hasSwitch) return _mfyScheduleReinit('missing eaoffSwitch');
       const hasSinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
       if (!hasSinceWrapper) scheduleSinceAndMediaRetry('keep-alive-missing-wrapper');
+      const hasMediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
+      if (!hasMediaWrapper) scheduleSinceAndMediaRetry('keep-alive-missing-media');
     } else if (paginaAtual === 'lista') {
       const hasCTA = document.getElementById('ealistrequest') || document.getElementById('mfy-catalog-filter-container');
       if (!hasCTA) return _mfyScheduleReinit('missing list widgets');
@@ -596,7 +628,7 @@ function startKeepAlive() {
           m.removedNodes && m.removedNodes.forEach(n => {
             if (n && n.nodeType === 1) {
               const el = n;
-              if (el.id === NOVAI_SINCE_WRAPPER_ID) {
+              if (el.id === NOVAI_SINCE_WRAPPER_ID || el.id === NOVAI_MEDIA_WRAPPER_ID) {
                 scheduleSinceAndMediaRetry('observer-missing-wrapper');
               }
               if (el.id === 'eaoffSwitch' || el.id === 'ealistrequest' || el.id === 'price-tool' || el.classList?.contains('eamaindropdownmenu')) {
