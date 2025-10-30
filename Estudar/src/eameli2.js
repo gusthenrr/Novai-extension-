@@ -202,6 +202,7 @@ function ensureVisitsComponentSkeleton(container) {
 }
 
 const NOVAI_SINCE_WRAPPER_ID = "novai-since-wrapper";
+const NOVAI_MEDIA_ANCHOR_ID = "novai-media-anchor";
 const NOVAI_MEDIA_WRAPPER_ID = "novai-media-wrapper";
 const NOVAI_MEDIA_ALERT_ID = "novai-media-alert";
 const NOVAI_MEDIA_TOOLTIP_ID = "novai-media-tooltip";
@@ -341,29 +342,29 @@ function buildSinceMarkup() {
 
 function buildMediaMarkup() {
   return `
-    <div id="${NOVAI_MEDIA_WRAPPER_ID}" style="display: flex;align-items: center;justify-content: start;gap: .5rem;">
-      <div id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;align-items: center;padding: 0.75em 1em;position: relative;z-index: 10;border-radius:2rem;gap: 0.35rem;cursor:default">
-        <span style="font-size: .9rem;">Média:</span>
-        <div style="min-width: fit-content;font-size: 1.2rem;" ${NOVAI_MEDIA_VALUE_ATTR}>-</div>
-        <span style="font-size: .9rem;">vendas/mês</span>
-        <span ${NOVAI_MEDIA_INFO_ATTR} style="display:none;align-items:center;position:relative;">
-          <span class="mfy-info-icon_catalog-sales" style="margin: 0 -0.25rem 0 0.5rem;cursor:pointer;display:inline-flex;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info-icon lucide-info">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M12 16v-4"></path>
-              <path d="M12 8h.01"></path>
-            </svg>
-          </span>
-          <div id="${NOVAI_MEDIA_TOOLTIP_ID}" class="mfy-catalog-info-tooltip" style="pointer-events: none; display: flex; align-items:center; justify-content:center; position: absolute; bottom: 35px; left: -15rem; background-color: var(--mfy-main); padding: 0 1rem; z-index: 1000; color: white; border-radius: 0.5rem 0.5rem 0 0.5rem; box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.51); width: fit-content; transition: opacity 0.4s ease-in-out; opacity: 0;">
-            <div style="font-size: 0.85em;margin-right:.5rem;display:flex;align-items:center;justify-content:center;gap:0.85rem;">
-              <span style="line-height: 1.1rem;text-align: start;padding: 0 0 0 1rem;">Média de vendas apenas do anúncio vencedor atual deste catálogo.</span>
-            </div>
-          </div>
-        </span>
-      </div>
-      <div id="${NOVAI_MEDIA_ALERT_ID}" class="easalesavg-alert" style="display:none;background: var(--mfy-main);position: relative;z-index: 11;height: 1.75em;border-radius: 100%;padding: 5px;margin-left: -0.5rem;">
-        <img src="https://img.icons8.com/material-outlined/24/ffffff/clock-alert.png">
-      </div>
+    <div id="${NOVAI_MEDIA_WRAPPER_ID}" class="novai-media-card">
+      <span class="novai-media-label">Média:</span>
+      <span class="novai-media-value" ${NOVAI_MEDIA_VALUE_ATTR}>-</span>
+      <span class="novai-media-suffix">vendas/mês</span>
+      <span ${NOVAI_MEDIA_INFO_ATTR} class="novai-media-info" style="display:none;">
+        <button type="button" class="novai-media-info-btn" aria-label="Informações sobre a média de vendas">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 16v-4"></path>
+            <path d="M12 8h.01"></path>
+          </svg>
+        </button>
+        <div id="${NOVAI_MEDIA_TOOLTIP_ID}" class="novai-media-tooltip" role="tooltip">
+          <span>Média de vendas apenas do anúncio vencedor atual deste catálogo.</span>
+        </div>
+      </span>
+      <span id="${NOVAI_MEDIA_ALERT_ID}" class="novai-media-alert" style="display:none;" role="button" tabindex="0" aria-label="Média estimada com base no primeiro mês">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 6v6"></path>
+          <path d="M12 18h.01"></path>
+        </svg>
+      </span>
     </div>
   `;
 }
@@ -384,13 +385,20 @@ function ensureSinceAndMediaContainer(anchorElement) {
 
   let mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
   if (!mediaWrapper) {
-    anchorElement.insertAdjacentHTML("afterbegin", buildMediaMarkup());
-    mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
+    const mediaAnchor = document.getElementById(NOVAI_MEDIA_ANCHOR_ID);
+    if (mediaAnchor) {
+      mediaAnchor.innerHTML = buildMediaMarkup();
+      mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
+    }
   }
 
   if (!sinceWrapper && !mediaWrapper) return null;
 
-  cancelSinceAndMediaRetry();
+  if (sinceWrapper && mediaWrapper) {
+    cancelSinceAndMediaRetry();
+  } else if (!mediaWrapper) {
+    scheduleSinceAndMediaRetry("media-anchor-missing");
+  }
 
   const sinceNode = sinceWrapper ? sinceWrapper.querySelector("#easince") : null;
   if (sinceNode && !sinceNode.dataset.novaiHoverBound) {
@@ -413,30 +421,48 @@ function ensureSinceAndMediaContainer(anchorElement) {
     const show = () => {
       if ("none" !== mediaInfoWrapper.style.display) {
         tooltip.style.opacity = "1";
+        tooltip.style.transform = "translate(-50%, -4px)";
       }
     };
     const hide = () => {
       tooltip.style.opacity = "0";
+      tooltip.style.transform = "translate(-50%, 6px)";
     };
     mediaInfoWrapper.addEventListener("mouseover", show);
     mediaInfoWrapper.addEventListener("mouseout", hide);
+    mediaInfoWrapper.addEventListener("focusin", show);
+    mediaInfoWrapper.addEventListener("focusout", hide);
   }
 
   const mediaAlert = mediaWrapper ? mediaWrapper.querySelector(`#${NOVAI_MEDIA_ALERT_ID}`) : null;
   if (mediaAlert && !mediaAlert.dataset.novaiHoverBound) {
     mediaAlert.dataset.novaiHoverBound = "1";
-    mediaAlert.addEventListener("mouseover", (function () {
+    const showAlert = () => {
+      if ("none" === mediaAlert.style.display) return;
       let popup = document.getElementById(NOVAI_MEDIA_POPUP_ID);
       if (!popup) {
-        mediaAlert.insertAdjacentHTML("afterend", '<div id="' + NOVAI_MEDIA_POPUP_ID + '" class="ui-pdp-buybox" style="pointer-events: none;box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.35) 1px 10px 4px -7px;position: absolute;top: 12rem;padding: 1em;font-size: 14px;font-weight: 400;color: rgb(255, 255, 255);background-color: var(--mfy-main);z-index: 11;display: block;"><b>Anúncio com menos de 30 dias.</b> (Média mensal foi estimada apenas a partir das vendas do primeiro mês).</div>');
+        mediaAlert.insertAdjacentHTML("beforeend", `<div id="${NOVAI_MEDIA_POPUP_ID}" class="novai-media-alert-tooltip" role="alert">
+            <strong>Anúncio com menos de 30 dias.</strong>
+            <span>Média mensal foi estimada apenas a partir das vendas do primeiro mês.</span>
+          </div>`);
         popup = document.getElementById(NOVAI_MEDIA_POPUP_ID);
       }
-      popup && (popup.style.display = "block");
-    }));
-    mediaAlert.addEventListener("mouseout", (function () {
+      if (popup) {
+        popup.style.opacity = "1";
+        popup.style.transform = "translateY(0)";
+      }
+    };
+    const hideAlert = () => {
       const popup = document.getElementById(NOVAI_MEDIA_POPUP_ID);
-      popup && (popup.style.display = "none");
-    }));
+      if (popup) {
+        popup.style.opacity = "0";
+        popup.style.transform = "translateY(6px)";
+      }
+    };
+    mediaAlert.addEventListener("mouseover", showAlert);
+    mediaAlert.addEventListener("mouseout", hideAlert);
+    mediaAlert.addEventListener("focusin", showAlert);
+    mediaAlert.addEventListener("focusout", hideAlert);
   }
 
   return sinceWrapper || mediaWrapper;
@@ -2036,6 +2062,106 @@ function buildVisitsComponentSkeleton() {
       #visits-left [data-visits-total]{ font-size:18px; font-weight:800; color:#fff; }
       #visits-left .visits-total-label{ font-size:12px; font-weight:700; opacity:.9; }
 
+      #novai-media-anchor{ margin-top:6px; }
+      #novai-media-anchor .novai-media-placeholder{
+        ${shimmer}
+        border-radius:999px;
+        height:1.3em;
+        width:140px;
+        display:block;
+      }
+
+      #visits-left #novai-media-wrapper{
+        display:inline-flex;
+        align-items:center;
+        gap:.45rem;
+        background:var(--novai-ml-yellow);
+        color:#111;
+        border-radius:999px;
+        padding:.35rem .9rem;
+        font-weight:800;
+        font-size:12px;
+        box-shadow:0 10px 18px rgba(0,0,0,.18);
+        position:relative;
+        width:max-content;
+      }
+      #visits-left #novai-media-wrapper .novai-media-value{ font-size:14px; font-weight:900; }
+      #visits-left #novai-media-wrapper .novai-media-info{ display:inline-flex; align-items:center; position:relative; }
+      #visits-left #novai-media-wrapper .novai-media-info-btn{
+        width:22px;
+        height:22px;
+        border-radius:50%;
+        border:none;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        background:rgba(0,0,0,.08);
+        color:inherit;
+        cursor:pointer;
+        padding:0;
+      }
+      #visits-left #novai-media-wrapper .novai-media-info-btn svg{ width:14px; height:14px; }
+      #visits-left #novai-media-wrapper .novai-media-tooltip{
+        pointer-events:none;
+        position:absolute;
+        bottom:calc(100% + 8px);
+        left:50%;
+        transform:translate(-50%, 6px);
+        background:var(--novai-ml-yellow);
+        color:#111;
+        padding:.6rem .85rem;
+        border-radius:12px;
+        box-shadow:0 10px 18px rgba(0,0,0,.18);
+        width:220px;
+        max-width:70vw;
+        font-size:12px;
+        line-height:1.3;
+        opacity:0;
+        transition:opacity .2s ease, transform .2s ease;
+        text-align:left;
+      }
+      #visits-left #novai-media-wrapper .novai-media-tooltip::after{
+        content:"";
+        position:absolute;
+        top:100%;
+        left:50%;
+        transform:translateX(-50%);
+        border:6px solid transparent;
+        border-top-color:var(--novai-ml-yellow);
+      }
+      #visits-left #novai-media-wrapper .novai-media-alert{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        width:24px;
+        height:24px;
+        border-radius:50%;
+        background:rgba(0,0,0,.16);
+        color:#111;
+        position:relative;
+      }
+      #visits-left #novai-media-wrapper .novai-media-alert svg{ width:16px; height:16px; }
+      #visits-left #novai-media-wrapper .novai-media-alert-tooltip{
+        pointer-events:none;
+        position:absolute;
+        bottom:calc(100% + 8px);
+        right:0;
+        transform:translateY(6px);
+        background:var(--novai-ml-yellow);
+        color:#111;
+        padding:.6rem .85rem;
+        border-radius:12px;
+        box-shadow:0 10px 18px rgba(0,0,0,.18);
+        width:240px;
+        max-width:80vw;
+        font-size:12px;
+        line-height:1.35;
+        opacity:0;
+        transition:opacity .2s ease, transform .2s ease;
+        text-align:left;
+      }
+      #visits-left #novai-media-wrapper .novai-media-alert-tooltip strong{ display:block; margin-bottom:4px; }
+
       /* CONVERSÃO */
       #visits-right .venda-row{ display:flex; align-items:baseline; gap:8px; margin-top:2px; }
       #visits-right .venda-label{ font-size:14px; font-weight:700; color:#fff; opacity:.95; }
@@ -2076,6 +2202,10 @@ function buildVisitsComponentSkeleton() {
         <div class="novai-kpi-value">
           <span class="visits-total-label">Visitas totais:</span>
           <span data-visits-total class="skeleton-text" style="width:80px;"></span>
+        </div>
+
+        <div id="novai-media-anchor">
+          <span class="novai-media-placeholder"></span>
         </div>
       </div>
 
