@@ -30,8 +30,8 @@ var localePTBR = [{
 if (typeof localePTBR === 'undefined' || !Array.isArray(localePTBR)) {
   var localePTBR = [];
 }
-var mfyProxy = "https://nvai-proxy-production.up.railway.app/"
-var mfyProxyLessRestricted = "https://mfy.herokuapp.com/";
+var novaiContorn = "https://nvai-proxy-production.up.railway.app/"
+var novaiContorn2 = "https://mfy.herokuapp.com/";
 // Derive the extension base URL from the current script tag (reliable in page context)
 var extensionBaseUrl = (function(){
   try {
@@ -645,13 +645,8 @@ class NvaiLoaderTotal {
 // ===== Instância padrão (recomendado) =====
 const nvaiLoaderTotal = new NvaiLoaderTotal();
 
-// String pronta (como antes você tinha "SpinLoader")
+// String pronta (como antes você tinha "NvaiLoader")
 const NvaiLoader = nvaiLoaderTotal.getHTML();
-
-// ===== (Opcional) SHIM de compatibilidade =====
-// Se você não quer refatorar tudo agora, mantém os nomes antigos apontando pro novo:
-const spinLoaderManager = nvaiLoaderTotal;
-var SpinLoader = NvaiLoader;
 
 // ---- Resilient UI keep-alive (re-inject after React wipes nodes) ----
 let _mfyKeepAliveInterval = null;
@@ -1005,7 +1000,7 @@ installNovaiFetchInterceptor();
 var uid = typeof uid === "undefined" ? null : uid;
 // Ensure theme color variables exist for CSS and icon URLs
 var mfyMainColor = typeof mfyMainColor === "undefined" ? "#7933ff" : mfyMainColor;
-var mfyMainColorNumbers = typeof mfyMainColorNumbers === "undefined" ? (typeof mfyMainColor === "string" ? mfyMainColor.replace('#','') : "7933ff") : mfyMainColorNumbers;
+var NovaiColorMain = typeof NovaiColorMain === "undefined" ? (typeof mfyMainColor === "string" ? mfyMainColor.replace('#','') : "7933ff") : NovaiColorMain;
 isList();
 var getHTML = async function (e, t) {
   try {
@@ -1914,7 +1909,7 @@ let n = `
           t()
         }
       }
-      ), !1, mfyProxy)
+      ), !1, novaiContorn)
     }
     catch (e) {}
   }
@@ -2354,8 +2349,8 @@ function getMLinfo() {
   }
 }
 async function findDocID(e, t, n) {
-  console.log("Buscando documento de identidade...", mfyProxy);
-  t = t || 0, await fetch(`${mfyProxy}https://api.mercadolibre.com/users/me`, eaInit).then((e => e.json())).then((e => rawID = e.identification.number ?? void 0)).catch ((function (e) {})), generateEAN13(e, t, !!n)
+  console.log("Buscando documento de identidade...", novaiContorn);
+  t = t || 0, await fetch(`${novaiContorn}https://api.mercadolibre.com/users/me`, eaInit).then((e => e.json())).then((e => rawID = e.identification.number ?? void 0)).catch ((function (e) {})), generateEAN13(e, t, !!n)
 }
 function generateEAN13(e, t, n) {
   let a = e.nextSibling, i = "";
@@ -2406,7 +2401,7 @@ function fetchCategoryWithCache(e, t) {
       categoryId: i, categoryData: s
     }
     = a.detail;
-    i === e && (s ? t(s): fetch(`${mfyProxy}https://api.mercadolibre.com/categories/${e}`, eaInit).then((e => e.json())).then((n => {
+    i === e && (s ? t(s): fetch(`${novaiContorn}https://api.mercadolibre.com/categories/${e}`, eaInit).then((e => e.json())).then((n => {
       n.error || document.dispatchEvent(new CustomEvent("StoreCategoryData", {
         detail: {
           categoryId: e,
@@ -2456,7 +2451,7 @@ function contentScpt() {
               }
             }
             let s = [...e.map((e => e?.map((e => e.id))))];
-            -1 !== s.join().split(",").indexOf(item_ID) && (s.join().split(","), n = !0), 0 == n ? (await fetch(`${mfyProxy}https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(t)}&offset=${50*i}`, eaInit).then((e => e.json())).then((t => e.push(t.results))).catch ((function (e) {})), i >= 19 && a(s.join().split(",").indexOf(item_ID))): a(s.join().split(",").indexOf(item_ID))
+            -1 !== s.join().split(",").indexOf(item_ID) && (s.join().split(","), n = !0), 0 == n ? (await fetch(`${novaiContorn}https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(t)}&offset=${50*i}`, eaInit).then((e => e.json())).then((t => e.push(t.results))).catch ((function (e) {})), i >= 19 && a(s.join().split(",").indexOf(item_ID))): a(s.join().split(",").indexOf(item_ID))
           }
         }
         (earanksearchValue.value)
@@ -2652,7 +2647,7 @@ function contentScpt() {
           "" != t && null != t?.firstChild && t?.firstChild.insertAdjacentHTML("beforebegin", a);
           let i = document.getElementById("easellerbtn"), s = document.getElementById("sellerinfobox");
           i?.addEventListener("click", (function () {
-            "true" == this.getAttribute("open") ? (s.style.opacity = "0", s.style.height = "0px", s.style.margin = "-3em 0em 0em 0em", this.setAttribute("open", "false")): "false" == this.getAttribute("open") && (s.style.opacity = "1", s.style.height = "auto", s.style.margin = "-3em 0em 2em 0em", this.setAttribute("open", "true")), "none" == this.getAttribute("sellerdata") && fetch(`${mfyProxy}https://api.mercadolibre.com/users/${vendedor}`, eaInit).then((t => e(t))).catch ((function (e) {}))
+            "true" == this.getAttribute("open") ? (s.style.opacity = "0", s.style.height = "0px", s.style.margin = "-3em 0em 0em 0em", this.setAttribute("open", "false")): "false" == this.getAttribute("open") && (s.style.opacity = "1", s.style.height = "auto", s.style.margin = "-3em 0em 2em 0em", this.setAttribute("open", "true")), "none" == this.getAttribute("sellerdata") && fetch(`${novaiContorn}https://api.mercadolibre.com/users/${vendedor}`, eaInit).then((t => e(t))).catch ((function (e) {}))
           }
           ))
         }
@@ -2711,7 +2706,7 @@ function contentScpt() {
               for (let e = 0;
               e < u.length;
               e++) y += `<span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;" class="andes-button--loud mfy-main-bg ">${u[e]}</span>`;
-              let h = t.seller.seller_reputation.transactions.canceled, b = h / m * 100, v = `<span style="font-weight: 900;font-size: 0.92em;display: block;margin: 4px;">${r} Anúncios <span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;border: 2px solid #ebebeb;">até R$79</span></span>\n\n                        <span style="font-weight: 400;font-size: 0.92em;display: block;margin: 4px;">${l} Anúncios <span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;border: 2px solid #ebebeb;">R$80 até R$150</span></span>\n\n                        <span style="font-weight: 400;font-size: 0.92em;display: block;margin: 4px;">${d} Anúncios <span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;border: 2px solid #ebebeb;">Acima de R$150</span></span>`, x = `<div class="ealine" style="display: flex;flex-wrap: wrap;"><img src="https://img.icons8.com/fluency-systems-regular/96/${mfyMainColorNumbers}/shop-location.png" style="width: 2.7em;margin: 0px 7px 7px 7px;"> <div style="display: grid;"><span style="font-size: 1.1em;font-weight: 700;">${t.seller.nickname}</span><span style="font-size: 11px;margin-top: -0.75em;">Conta criada: ${i}<span class="andes-button--loud mfy-main-bg " style="margin-left: 0.5em;padding: 1px 5px;border-radius: 11px;font-weight: 900;font-size: 10px;">${s}</span></span></div></div>\n\n                        <div style="width: 100%;background: #ebebeb;height: 1px;"></div>\n                        \n                        <div class="ealine" style="display: flex;flex-wrap: wrap;margin-top: 0.5em;"> <div style="padding-left: 1em;"><span style="font-size: 1em;font-weight: 900;">Vendas totais: </span>${m} <span style="padding: 1px 7px;border-radius: 11px;font-weight: 400;font-size: 10px;background-color: #a3a3a3;" class="andes-button--loud mfy-main-bg ">${h} canceladas (${b.toFixed(1)}%)</span></div></div>\n                        \n                        <div class="ealine" style="display: flex;flex-wrap: wrap;"> <div style="padding-left: 1em;margin: 4px 0px;"><span style="font-size: 1em;font-weight: 900;">Anúncios:</span> ${t.paging.total} <span style="padding: 1px 7px;border-radius: 11px;font-weight: 400;font-size: 10px;background-color: #39b54a;margin: 0px 4px;" class="andes-button--loud mfy-main-bg ">${o} <svg xmlns="http://www.w3.org/2000/svg" class="logo-full" width="151" height="39" viewBox="0 0 151 39" data-reactroot="" style="width: 3.75em;height: auto;position: relative;top: 0.2em;padding: 0em 0em 0em 0.35em;"><g fill="#ffffff" fill-rule="evenodd"><path d="M9.577 0L0 22.286h15.962L9.577 39l25.54-25.071H19.153L28.732 0zM56.094 27.925h-6.931l5.924-24.38h19.706l-1.33 5.483H60.688l-.886 3.801h12.452l-1.33 5.483H58.433l-2.338 9.613zm33.718.439c-8.262 0-12.332-3.582-12.332-8.7 0-.402.12-1.242.202-1.608l3.546-14.51h7.052L84.774 17.91c-.04.183-.12.585-.12 1.023.04 2.01 1.732 3.948 5.158 3.948 3.707 0 5.601-2.12 6.286-4.971l3.507-14.365h7.012L103.11 18.02c-1.451 5.921-4.998 10.344-13.3 10.344zm36.014-.439h-17.732l5.924-24.38h6.932l-4.554 18.897h10.76l-1.33 5.483zm23.844 0h-17.732l5.924-24.38h6.932l-4.554 18.897H151l-1.33 5.483z"></path></g></svg></span><span style="padding: 1px 7px;border-radius: 11px;font-weight: 400;font-size: 10px;background-color: #39b54a;" class="andes-button--loud mfy-main-bg ">${a} Frete Grátis</span></div></div>\n\n                        <div class="ealine" style="display: flex;flex-wrap: wrap;"> <div style="padding-left: 1em;margin: 4px 0px;"><span style="font-size: 1em;font-weight: 900;">Anúncios por Ticket:</span><div style="border-left: 2px solid var(--mfy-main);">${v}</div></div></div>\n                        \n                        <div class="ealine" style="display: flex;flex-wrap: wrap;"> <div style="padding-left: 1em;display: flex;flex-wrap: wrap;"><span style="font-size: 1em;font-weight: 900;">Categorias principais do vendedor: </span>${y}</div></div>`;
+              let h = t.seller.seller_reputation.transactions.canceled, b = h / m * 100, v = `<span style="font-weight: 900;font-size: 0.92em;display: block;margin: 4px;">${r} Anúncios <span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;border: 2px solid #ebebeb;">até R$79</span></span>\n\n                        <span style="font-weight: 400;font-size: 0.92em;display: block;margin: 4px;">${l} Anúncios <span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;border: 2px solid #ebebeb;">R$80 até R$150</span></span>\n\n                        <span style="font-weight: 400;font-size: 0.92em;display: block;margin: 4px;">${d} Anúncios <span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;border: 2px solid #ebebeb;">Acima de R$150</span></span>`, x = `<div class="ealine" style="display: flex;flex-wrap: wrap;"><img src="https://img.icons8.com/fluency-systems-regular/96/${NovaiColorMain}/shop-location.png" style="width: 2.7em;margin: 0px 7px 7px 7px;"> <div style="display: grid;"><span style="font-size: 1.1em;font-weight: 700;">${t.seller.nickname}</span><span style="font-size: 11px;margin-top: -0.75em;">Conta criada: ${i}<span class="andes-button--loud mfy-main-bg " style="margin-left: 0.5em;padding: 1px 5px;border-radius: 11px;font-weight: 900;font-size: 10px;">${s}</span></span></div></div>\n\n                        <div style="width: 100%;background: #ebebeb;height: 1px;"></div>\n                        \n                        <div class="ealine" style="display: flex;flex-wrap: wrap;margin-top: 0.5em;"> <div style="padding-left: 1em;"><span style="font-size: 1em;font-weight: 900;">Vendas totais: </span>${m} <span style="padding: 1px 7px;border-radius: 11px;font-weight: 400;font-size: 10px;background-color: #a3a3a3;" class="andes-button--loud mfy-main-bg ">${h} canceladas (${b.toFixed(1)}%)</span></div></div>\n                        \n                        <div class="ealine" style="display: flex;flex-wrap: wrap;"> <div style="padding-left: 1em;margin: 4px 0px;"><span style="font-size: 1em;font-weight: 900;">Anúncios:</span> ${t.paging.total} <span style="padding: 1px 7px;border-radius: 11px;font-weight: 400;font-size: 10px;background-color: #39b54a;margin: 0px 4px;" class="andes-button--loud mfy-main-bg ">${o} <svg xmlns="http://www.w3.org/2000/svg" class="logo-full" width="151" height="39" viewBox="0 0 151 39" data-reactroot="" style="width: 3.75em;height: auto;position: relative;top: 0.2em;padding: 0em 0em 0em 0.35em;"><g fill="#ffffff" fill-rule="evenodd"><path d="M9.577 0L0 22.286h15.962L9.577 39l25.54-25.071H19.153L28.732 0zM56.094 27.925h-6.931l5.924-24.38h19.706l-1.33 5.483H60.688l-.886 3.801h12.452l-1.33 5.483H58.433l-2.338 9.613zm33.718.439c-8.262 0-12.332-3.582-12.332-8.7 0-.402.12-1.242.202-1.608l3.546-14.51h7.052L84.774 17.91c-.04.183-.12.585-.12 1.023.04 2.01 1.732 3.948 5.158 3.948 3.707 0 5.601-2.12 6.286-4.971l3.507-14.365h7.012L103.11 18.02c-1.451 5.921-4.998 10.344-13.3 10.344zm36.014-.439h-17.732l5.924-24.38h6.932l-4.554 18.897h10.76l-1.33 5.483zm23.844 0h-17.732l5.924-24.38h6.932l-4.554 18.897H151l-1.33 5.483z"></path></g></svg></span><span style="padding: 1px 7px;border-radius: 11px;font-weight: 400;font-size: 10px;background-color: #39b54a;" class="andes-button--loud mfy-main-bg ">${a} Frete Grátis</span></div></div>\n\n                        <div class="ealine" style="display: flex;flex-wrap: wrap;"> <div style="padding-left: 1em;margin: 4px 0px;"><span style="font-size: 1em;font-weight: 900;">Anúncios por Ticket:</span><div style="border-left: 2px solid var(--mfy-main);">${v}</div></div></div>\n                        \n                        <div class="ealine" style="display: flex;flex-wrap: wrap;"> <div style="padding-left: 1em;display: flex;flex-wrap: wrap;"><span style="font-size: 1em;font-weight: 900;">Categorias principais do vendedor: </span>${y}</div></div>`;
               e.insertAdjacentHTML("afterbegin", x);
               let w = document.getElementsByClassName("ealine");
               if (iscatalog) for (let e = 1;
@@ -2731,7 +2726,7 @@ function contentScpt() {
             let e = [];
             for (let t = 0;
             t < c;
-            t++) e.push(fetch(`${mfyProxy}https://api.mercadolibre.com/sites/MLB/search?seller_id=${vendedor}&offset=${50*t}`, eaInit));
+            t++) e.push(fetch(`${novaiContorn}https://api.mercadolibre.com/sites/MLB/search?seller_id=${vendedor}&offset=${50*t}`, eaInit));
             return Promise.all(e)
           }
           )().then(p).then((e => n(e))).then(d = !0).catch ((function (e) {}))
@@ -2740,10 +2735,95 @@ function contentScpt() {
       t()
     }
     function i() {
-      document.getElementsByClassName("ui-pdp-breadcrumb")[0].insertAdjacentHTML("beforeend", '<div id="eacattrends" style="width:62em"><span id="eacattrendsbtn" style="font-weight:700;background-color:var(--mfy-main);color:#fff;padding:0.35em 0.75em;border-radius:7px;margin: 0em 0.5em;cursor: pointer;position: relative;top: -4px;z-index: 3;"><img src="https://img.icons8.com/ios-glyphs/60/ffffff/hot-sales-hours.png" style="width: 1.21em;position: relative;top: 3px;">\n            <span>Termos mais buscados! </span> <span style="font-size: 0.7em;position: relative;top: -2px;right: -3px;padding: 0px 5px 1px 5px;margin: 0px 0px 0px 5px;border: 1px solid #fff;border-radius: 1em;">categoria</span></span></div>');
+      document.getElementsByClassName("ui-pdp-breadcrumb")[0].insertAdjacentHTML("beforeend", `<div id="eacattrends" class="novai-trends-wrap" style="width:62em;">
+  <style>
+    :root{
+      --novai-ml-yellow:#ffe600;
+      --novai-shadow:0 8px 24px rgba(0,0,0,.18);
+    }
+    @media (prefers-color-scheme: light){
+      :root{ --ntb-bg:#1f1f1f; --ntb-fg:#fff; --ntb-border:rgba(255,255,255,.12); }
+    }
+    @media (prefers-color-scheme: dark){
+      :root{ --ntb-bg:#1b1b1b; --ntb-fg:#fff; --ntb-border:rgba(255,255,255,.10); }
+    }
+
+    .novai-trends-wrap{ display:flex; align-items:center; }
+
+    /* Botão estilo NOVAI (SEM faixa amarela no topo) */
+    #eacattrendsbtn.novai-trends-btn{
+      position:relative;
+      display:inline-flex; align-items:center; gap:.6rem;
+      background: var(--ntb-bg, #1f1f1f);
+      color: var(--ntb-fg, #fff);
+      border:1px solid var(--ntb-border, rgba(255,255,255,.12));
+      border-radius:999px;
+      padding:.5rem .9rem;
+      font-weight:900; font-size:.95rem; letter-spacing:.01em;
+      box-shadow: var(--novai-shadow);
+      cursor:pointer; user-select:none;
+      transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease;
+    }
+    #eacattrendsbtn.novai-trends-btn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,.2);
+      background:#242424;
+    }
+    #eacattrendsbtn.novai-trends-btn:focus-visible{
+      outline:2px solid var(--novai-ml-yellow);
+      outline-offset:2px;
+    }
+
+    /* Ícone: fundo suave + traços brancos */
+    #eacattrendsbtn .ntb-icon{
+      width:28px; height:28px; border-radius:999px;
+      background: rgba(255,255,255,.08);
+      display:inline-flex; align-items:center; justify-content:center;
+      flex: 0 0 28px;
+    }
+    #eacattrendsbtn .ntb-icon svg{
+      width:16px; height:16px; display:block;
+      stroke:#fff;                      /* ÍCONE BRANCO */
+    }
+
+    /* Texto principal */
+    #eacattrendsbtn .ntb-label{
+      line-height:1; white-space:nowrap;
+    }
+
+    /* Pill de categoria (SEM bolinha preta) */
+    #eacattrendsbtn .ntb-pill{
+      display:inline-flex; align-items:center;
+      background: var(--novai-ml-yellow); color:#111;
+      border-radius:999px; padding:.15rem .55rem;
+      font-size:.78rem; font-weight:900;
+      margin-left:.15rem;
+    }
+  </style>
+
+  <button id="eacattrendsbtn" class="novai-trends-btn" type="button" aria-label="Ver termos mais buscados desta categoria">
+    <span class="ntb-icon" aria-hidden="true">
+      <!-- ÍCONE: lupa + seta de tendência (traços brancos) -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <!-- lupa -->
+        <circle cx="11" cy="11" r="5"></circle>
+        <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+        <!-- tendência -->
+        <polyline points="7,13 10,10 12,12 16,8"></polyline>
+        <polyline points="16,8 16,11"></polyline>
+      </svg>
+    </span>
+
+    <span class="ntb-label">Termos mais Procurados</span>
+
+    <span class="ntb-pill" title="Categoria atual">Buscar</span>
+  </button>
+</div>
+`);
       let e = document.getElementById("eacattrends");
       function t() {
-        n.getElementsByTagName("span")[0].innerText = "Carregando...", fetch(`${mfyProxy}https://api.mercadolibre.com/trends/MLB/${categoria_Local}`, eaInit).then((e => e.json())).then((e => function (e) {
+        n.getElementsByTagName("span")[0].innerText = "Carregando...", fetch(`${novaiContorn}https://api.mercadolibre.com/trends/MLB/${categoria_Local}`, eaInit).then((e => e.json())).then((e => function (e) {
           let n = e, a = [];
           for (let e = 0;
           e < n.length;
@@ -3178,7 +3258,7 @@ function s() {
           let n = c(t.locale("pt-br").format("MMM"));
           n = n.replace(".", ""), y.push(n), h.push(t.format("YYYY-MM-01"))
         }
-        const b = h.map((e => dayjs(e).endOf("month").format("YYYY-MM-DD"))), v = [...h.map(((e, t) => `${mfyProxyLessRestricted}https://api.mercadolibre.com/items/visits?ids=${item_ID}&date_from=${e}&date_to=${b[t]}`))], x = [];
+        const b = h.map((e => dayjs(e).endOf("month").format("YYYY-MM-DD"))), v = [...h.map(((e, t) => `${novaiContorn2}https://api.mercadolibre.com/items/visits?ids=${item_ID}&date_from=${e}&date_to=${b[t]}`))], x = [];
         function o(e, t) {
           let n = document.getElementById("eagraph"), a = document.getElementById("salesestimatebtn");
           if (n) {
@@ -3270,7 +3350,7 @@ function s() {
                 if (w) r();
                 else if (w = !0, _) {
                   document.querySelector("#eachart") || async function (e) {
-                    k = e.innerHTML, spinLoaderManager.replaceContent(e), e.style.backgroundColor = "#ebebeb", x.length = v.length, await Promise.all(v.map(((e, t) => fetch(e, eaInit).then((e => e.json())).then((e => {
+                    k = e.innerHTML, nvaiLoaderTotal.replaceContent(e), e.style.backgroundColor = "#ebebeb", x.length = v.length, await Promise.all(v.map(((e, t) => fetch(e, eaInit).then((e => e.json())).then((e => {
                       x[t] = parseFloat(e[0].total_visits)
                     }
                     )).catch ((function (e) {
@@ -3391,7 +3471,7 @@ function s() {
               return;
             }
 
-            const response = await fetch(`${mfyProxyLessRestricted}https://api.mercadolibre.com/visits/items?ids=${item_ID}`, eaInit);
+            const response = await fetch(`${novaiContorn2}https://api.mercadolibre.com/visits/items?ids=${item_ID}`, eaInit);
             const body = await response.json();
             console.debug("[Novai] Visits API response", body);
             d(body);
@@ -3533,7 +3613,7 @@ function s() {
               categoryId: n, categoryData: a
             }
             = t.detail;
-            n === categoria_Local && a && a.listing ? m(a.listing): fetch(`${mfyProxyLessRestricted}https://api.mercadolibre.com/sites/MLB/listing_prices?price=${preco_Local}&category_id=${categoria_Local}&listing_type_id=${tipo_anuncio}`, eaInit).then((e => e.json())).then((e => {
+            n === categoria_Local && a && a.listing ? m(a.listing): fetch(`${novaiContorn2}https://api.mercadolibre.com/sites/MLB/listing_prices?price=${preco_Local}&category_id=${categoria_Local}&listing_type_id=${tipo_anuncio}`, eaInit).then((e => e.json())).then((e => {
               if (a) {
                 const t = {
                   ...a,
@@ -3818,7 +3898,7 @@ function runOnList() {
     letter-spacing: 0.02rem;
     border: 1px solid #ebebeb;
     box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;
-" class="reviews"><img width="18" height="18" src="https://img.icons8.com/sf-ultralight-filled/${mfyMainColorNumbers}/25/star.png" alt="star">4.5</div>
+" class="reviews"><img width="18" height="18" src="https://img.icons8.com/sf-ultralight-filled/${NovaiColorMain}/25/star.png" alt="star">4.5</div>
 <div style="
     background-color: #fff;
     color: var(--mfy-main);
@@ -3833,7 +3913,7 @@ function runOnList() {
     letter-spacing: 0.02rem;
     border: 1px solid #ebebeb;
     box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;
-" class="local"><img width="16" height="16" src="https://img.icons8.com/material-outlined/${mfyMainColorNumbers}/24/visit.png" alt="box--v1">0un</div>
+" class="local"><img width="16" height="16" src="https://img.icons8.com/material-outlined/${NovaiColorMain}/24/visit.png" alt="box--v1">0un</div>
 </div>
 <div style="
       background-color: #ffe600;          /* NOVAI amarelo */
@@ -3962,7 +4042,7 @@ function runOnList() {
 let y = document.getElementById("ealistrequest");
 function n(e) {
   let t = e.target, a = document.getElementById("ealistrequest");
-  t.removeEventListener("click", n), a.style.margin = "0rem 0rem 1rem 0rem", a.outerHTML = `<div id="ealistrequest" style=" margin: 0.35rem 0.35rem 1rem 0.35rem; font-weight: 500;font-size: 1em;letter-spacing: 0.01em;font-family: Montserrat;transition: all 0.25s;display: flex;align-items: center;justify-content: center;background: #222222;/* background: linear-gradient(25deg, rgb(121 51 255) 92%, rgb(77 18 190) 100%); */padding: 0.75em 2em;border-radius: 0.5em;width: fit-content;color: #fff;font-size: 0.77em;cursor: pointer;box-shadow: rgb(0 0 0 / 10%) 0px 11px 6px -7px, rgb(0 0 0 / 13%) 0px 4px 3px -3px;">Carregando ${SpinLoader} </div>`;
+  t.removeEventListener("click", n), a.style.margin = "0rem 0rem 1rem 0rem", a.outerHTML = `<div id="ealistrequest" style=" margin: 0.35rem 0.35rem 1rem 0.35rem; font-weight: 500;font-size: 1em;letter-spacing: 0.01em;font-family: Montserrat;transition: all 0.25s;display: flex;align-items: center;justify-content: center;background: #222222;/* background: linear-gradient(25deg, rgb(121 51 255) 92%, rgb(77 18 190) 100%); */padding: 0.75em 2em;border-radius: 0.5em;width: fit-content;color: #fff;font-size: 0.77em;cursor: pointer;box-shadow: rgb(0 0 0 / 10%) 0px 11px 6px -7px, rgb(0 0 0 / 13%) 0px 4px 3px -3px;">Carregando ${NvaiLoader} </div>`;
   let i = document.getElementsByClassName("mfy-ad-listinfo_widget");
   for (let e = 0;
   e < i.length;
@@ -4122,7 +4202,7 @@ var a = document.getElementsByClassName("fulfillment ui-pb-label-builder fulfill
 function o(e) {
   let t = document.getElementById("eacatextrainfo");
   function n() {
-    a.getElementsByTagName("span")[0].innerText = "Carregando...", fetch(`${mfyProxy}https://api.mercadolibre.com/trends/MLB/${e}`, eaInit).then((e => e.json())).then((t => function (t) {
+    a.getElementsByTagName("span")[0].innerText = "Carregando...", fetch(`${novaiContorn}https://api.mercadolibre.com/trends/MLB/${e}`, eaInit).then((e => e.json())).then((t => function (t) {
       let a = t, i = [];
       for (let e = 0;
       e < a.length;
@@ -4315,7 +4395,7 @@ async function l(n, a) {
         const d = e => dayjs(e).format("YYYY-MM-DD"), m = dayjs().subtract(6, "month"), c = Array.from({
           length: 6
         }
-        , ((e, t) => m.add(t, "month"))), g = c.map((e => d(e.startOf("month")))), f = c.map((e => d(e.endOf("month")))), u = f.map(((e, t) => `${mfyProxyLessRestricted}https://api.mercadolibre.com/items/visits?ids=${n.itemID}&date_from=${g[t]}&date_to=${e}`));
+        , ((e, t) => m.add(t, "month"))), g = c.map((e => d(e.startOf("month")))), f = c.map((e => d(e.endOf("month")))), u = f.map(((e, t) => `${novaiContorn2}https://api.mercadolibre.com/items/visits?ids=${n.itemID}&date_from=${g[t]}&date_to=${e}`));
         let y = "position: absolute; bottom: -21px; z-index: 99;";
         "gallery" == listView && (y = "position: relative; z-index: 99;");
         let h = `<div class="${n.itemID}" style="${y}font-family: 'Montserrat', sans-serif;margin: -2.5em 0em 1em 0em;display: flex;padding: 0.5em;background: #222222;align-items: center;justify-content: space-around;width: 19rem;height: 3.5rem;border-radius: 0.7em;border-top: 5px solid ${s};box-shadow: rgba(0, 0, 0, 0.4) 0px 8px 13px -3px, rgba(0, 0, 0, 0.2) 0px 4px 6px -2px;box-sizing: border-box;">
@@ -4323,13 +4403,13 @@ async function l(n, a) {
   <!-- Seção: Criado há -->
   <div style="font-size: 0.61em;font-weight: 400;color: #f0f0f0;line-height: 1.31em;flex: 1.35;text-align: center;">Criado há: <br>
     <span style="font-size: 0.86rem;font-weight: 700;">
-      <span class="created-at" style="font-size: 1.1rem;font-weight: 700;">${r&&!l?SpinLoader:a}</span> ${r?"":"dia(s)"}
+      <span class="created-at" style="font-size: 1.1rem;font-weight: 700;">${r&&!l?NvaiLoader:a}</span> ${r?"":"dia(s)"}
     </span>
   </div>
 
   <!-- Seção: Vendas -->
   <div style="font-size: 0.61em;font-weight: 400;color: #f0f0f0;line-height: 1.31em;flex: 1;padding-left: 1em;border-left: 1px solid #444444;text-align: center;">Vendas: <br>
-    <span id="${n.itemID}" style="font-size: 1.21rem;font-weight: 700;">${SpinLoader}</span>
+    <span id="${n.itemID}" style="font-size: 1.21rem;font-weight: 700;">${NvaiLoader}</span>
   </div>
 
   <!-- Seção: Visitas -->
@@ -4359,8 +4439,8 @@ async function l(n, a) {
           salesEl && (salesEl.innerHTML = v);
         }
         i.setAttribute("product-days", a), o && null == i.getAttribute("sales") && i.setAttribute("sales", o), document.getElementById(`loader-${n.itemID}`)?.addEventListener("mouseover", function () {
-          if (spinLoaderManager.hasSpinner(this) || this.getAttribute("visit-data") === "true") return;
-          spinLoaderManager.replaceContent(this);
+          if (nvaiLoaderTotal.hasSpinner(this) || this.getAttribute("visit-data") === "true") return;
+          nvaiLoaderTotal.replaceContent(this);
           (async (holder) => {
             const points = [];
             for (let idx = 0; idx < u.length; idx++) {
@@ -4477,7 +4557,7 @@ async function l(n, a) {
           itemSales = 0
         }
       }
-      ), !1, n.catalogListed ? mfyProxy: null);
+      ), !1, n.catalogListed ? novaiContorn: null);
       else {
         let e = itemsLocalData[n.itemID]?.startTime ?? 0, t = itemsLocalData[n.itemID]?.itemSales ?? 0, a = dayjs().diff(e, "day") ? dayjs().diff(e, "day"): 0;
         a++, o(a, t, !1)
@@ -4708,7 +4788,7 @@ function runLogged() {
         let r = '<div class="eatiertag" style="position: relative;display: block;text-align: center;background-color: #ebebeb;margin: 0.7em 1.6em -0.8em 1.6em;padding: 0.2em 1em;border-radius: 3.5em;cursor: pointer;z-index: 11;">...</div>';
         n.lastChild.insertAdjacentHTML("beforebegin", r);
         let l = document.getElementsByClassName("eatiertag")[0];
-        l.innerHTML = "lite" == verif ? "Ativar Licença": `Conta ${verif.charAt(0).toUpperCase()}${verif.slice(1)}<img style="width:1rem" src="https://img.icons8.com/${mfyMainColorNumbers}/ios-glyphs/30/guarantee--v1.png">`, l.addEventListener("mouseover", (function () {
+        l.innerHTML = "lite" == verif ? "Ativar Licença": `Conta ${verif.charAt(0).toUpperCase()}${verif.slice(1)}<img style="width:1rem" src="https://img.icons8.com/${NovaiColorMain}/ios-glyphs/30/guarantee--v1.png">`, l.addEventListener("mouseover", (function () {
           this.style.backgroundColor = "var(--mfy-main)", this.style.color = "#fff", this.style.fontWeight = "bold", this.innerHTML = "pro" == verif ? "Verificar": "Ativar"
         }
         )), l.addEventListener("mouseout", (function () {
