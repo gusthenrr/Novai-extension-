@@ -213,6 +213,7 @@ const NOVAI_MEDIA_POPUP_ID = "eamediapop";
 
 let novaiSinceRetryHandle = null;
 const NOVAI_SINCE_RETRY_DELAY_MS = 500;
+let lastSinceAndMediaOptions = null;
 
 function cancelSinceAndMediaRetry() {
   if (novaiSinceRetryHandle) {
@@ -276,7 +277,7 @@ function retrySinceOnly() {
 
 function buildSinceMarkup() {
   return `
-<div id="${NOVAI_SINCE_WRAPPER_ID}" style="display:flex;align-items:center;">
+<div id="${NOVAI_SINCE_WRAPPER_ID}" style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
   <style>
     /* Grid compacto: 2 colunas (● | texto), 2 linhas (linha 1 = "Criado há", linha 2 = data) */
     #easince.nv-since{
@@ -417,6 +418,17 @@ function ensureSinceAndMediaContainer(anchorElement) {
 
   if (!missingSince && !missingMedia) {
     cancelSinceAndMediaRetry();
+    if (lastSinceAndMediaOptions) {
+      requestAnimationFrame(() => {
+        try {
+          updateSinceAndMediaUI(lastSinceAndMediaOptions);
+        } catch (err) {
+          try {
+            console.warn("[NOVAI] Falha ao atualizar UI de média após injeção:", err);
+          } catch (_) {}
+        }
+      });
+    }
   }
 
   const sinceNode = sinceWrapper ? sinceWrapper.querySelector("#easince") : null;
@@ -467,6 +479,7 @@ if (sinceNode && !sinceNode.dataset.novaiHoverBound) {
 }
 
 function updateSinceAndMediaUI(options = {}) {
+  lastSinceAndMediaOptions = { ...options };
   const sinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
   const mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
   if (!sinceWrapper && !mediaWrapper) return;
@@ -1714,7 +1727,7 @@ function upsertCatalogBadge(vendas) {
   '<span style="display:inline-block;padding:.18rem .55rem;border-radius:8px;font-size:0.9em;'+
   'background: #fff172ff;color:#111;font-weight:700;'+
   'letter-spacing:.02em;line-height:1;">no catálogo</span><br>'+
-  '<strong class="mfy-catalog-badge-sales" '+
+  '<strong class="NovaiCatalogoAnuncioSales" '+
   'style="border-radius:8px;'+
   'background: #fff172ff;display:inline-block;padding:.18rem .55rem;line-height:1;font-weight:700;color: #111111;font-size:0.9em;"></strong>'+
   '<span style="font-size:.9em;margin-left:.1rem;color:#111;font-weight:700;'+
@@ -1722,8 +1735,8 @@ function upsertCatalogBadge(vendas) {
     subtitle.appendChild(badge);
   }
 
-  const salesNode = badge.querySelector('.mfy-catalog-badge-sales');
-  if (salesNode) salesNode.textContent = `${vendas} vendas`;
+  const salesNode = badge.querySelector('.NovaiCatalogoAnuncioSales');
+  if (salesNode) salesNode.textContent = `${vendas} vendidos`;
 
   subtitle.setAttribute('data-mfy-sales', String(vendas));
 }
@@ -2574,8 +2587,10 @@ function contentScpt() {
           setActiveButton(m);
         }
         )), c.addEventListener("click", (function () {
-          let t = isNaN(e / 2) ? 0: e / 2;
-          let n = isNaN(catalogMonthlyRevenue / 2) ? 0 : catalogMonthlyRevenue / 2;
+          const listingDailyRevenue = isNaN(e / 30) ? 0 : e / 30;
+          const catalogDailyRevenue = isNaN(catalogMonthlyRevenue / 30) ? 0 : catalogMonthlyRevenue / 30;
+          let t = isNaN(listingDailyRevenue * 7) ? 0 : listingDailyRevenue * 7;
+          let n = isNaN(catalogDailyRevenue * 7) ? 0 : catalogDailyRevenue * 7;
           applyRevenueValues(t, n, t);
           y[0].innerHTML = " /semana";
           for (let e = 0;
@@ -2995,8 +3010,31 @@ function contentScpt() {
 default : e = ""
 }
 const t = `\n      <div id="mfy-admarker" style="font-size: 0.95rem;display: inline-flex;border-radius: 1em;color: #5a5a5a;box-shadow: 0px 2px 11px -7px #000;padding: 0.2em 1.2em 0.2em 0.2em;align-items: center;width: fit-content;height: 1.5rem;" class="ui-pdp-review__amount">\n        <svg class="ui-pdp-icon ui-pdp-icon--protected ui-pdp-color--GRAY" style="width: 1rem; margin: -2px 7px;" xmlns="http://www.w3.org/2000/svg" width="12" height="14" viewBox="0 0 12 14">\n          <use href="#warranty"></use>\n        </svg>\n        ${e}\n      </div>`;
-let n = document.getElementsByClassName("ui-pdp-subtitle")[0], a = n?.parentElement;
-a.firstElementChild == n ? (a.insertAdjacentHTML("afterbegin", t), a.setAttribute("style", "padding-top: 1rem;align-items: center;display: flex;gap: .5rem;")): n && n[0].insertAdjacentHTML("beforebegin", t)
+const subtitleEl = document.getElementsByClassName("ui-pdp-subtitle")[0];
+const subtitleWrapper = subtitleEl?.parentElement ?? null;
+const sinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
+const existingMarker = document.getElementById("mfy-admarker");
+existingMarker?.remove();
+if (sinceWrapper) {
+  sinceWrapper.insertAdjacentHTML("beforeend", t);
+  const sinceWrapperStyle = sinceWrapper.style;
+  sinceWrapperStyle.display = sinceWrapperStyle.display || "flex";
+  sinceWrapperStyle.alignItems = sinceWrapperStyle.alignItems || "center";
+  sinceWrapperStyle.gap = sinceWrapperStyle.gap || ".5rem";
+} else if (subtitleWrapper) {
+  subtitleWrapper.insertAdjacentHTML("afterbegin", t);
+}
+if (subtitleWrapper) {
+  const parent = subtitleWrapper.parentElement;
+  if (sinceWrapper && parent) {
+    parent.insertBefore(subtitleWrapper, sinceWrapper.nextSibling);
+  }
+  subtitleWrapper.style.display = "flex";
+  subtitleWrapper.style.flexDirection = "column";
+  subtitleWrapper.style.alignItems = "flex-start";
+  subtitleWrapper.style.gap = ".35rem";
+  subtitleWrapper.style.paddingTop = "1rem";
+}
 }
 ();
 var e = document.getElementById("price-tool");
