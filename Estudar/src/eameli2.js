@@ -2555,110 +2555,71 @@ function contentScpt() {
           const numeric = Number(value);
           return Number.isFinite(numeric) ? numeric : 0;
         };
-        const catalogBody = typeof ensureCatalogBody === "function" ? ensureCatalogBody() : {};
-        const catalogSoldQuantity = ensureFinite(catalogBody?.sold_quantity);
-        const catalogCreatedAt = catalogBody?.date_created;
-        let catalogAgeDays = 0;
-        if (catalogCreatedAt) {
-          const createdTime = Date.parse(catalogCreatedAt);
-          if (!Number.isNaN(createdTime)) {
-            catalogAgeDays = Math.max((Date.now() - createdTime) / 864e5, 0);
-          }
-        }
-        const listingMonthlyRevenue = ensureFinite(e);
-        const listingTotalRevenue = ensureFinite(vendas * preco_Local);
-        const catalogTotalRevenue = catalogSoldQuantity > 0 ? ensureFinite(catalogSoldQuantity * preco_Local) : ensureFinite(n);
-        const catalogMonthlyRevenue = (() => {
-          if (catalogSoldQuantity > 0 && catalogAgeDays > 0) {
-            const monthlyQuantity = catalogSoldQuantity / Math.max(catalogAgeDays, 1) * 30;
-            return ensureFinite(monthlyQuantity * preco_Local);
-          }
-          return ensureFinite(n);
-        })();
         const formatCurrency = (value) => {
           const numeric = ensureFinite(value);
           return parseFloat(numeric.toFixed(2)).toLocaleString("pt-br", { style: "currency", currency: "BRL" });
         };
-        const applyRevenueValues = (anuncioValue, catalogValue, fallbackValue) => {
-          const primary = ensureFinite(anuncioValue);
-          const fallback = ensureFinite(fallbackValue ?? anuncioValue);
-          if (s?.length > 0) {
-            s[0].innerHTML = formatCurrency(primary);
-            if (s.length > 1) {
-              s[1].innerHTML = formatCurrency(catalogValue);
-            }
-          }
-          else {
-            a.innerHTML = formatCurrency(fallback);
-          }
+        const setAnuncioValue = (value) => {
+          if (s?.length > 0) s[0].innerHTML = formatCurrency(value);
+          else a.innerHTML = formatCurrency(value);
         };
-        applyRevenueValues(listingMonthlyRevenue, catalogMonthlyRevenue, listingMonthlyRevenue);
+        const catalogBody = typeof ensureCatalogBody === "function" ? ensureCatalogBody() : {};
+        const catalogSoldQuantity = ensureFinite(catalogBody?.sold_quantity);
+        const catalogRevenue = catalogSoldQuantity > 0 ? ensureFinite(catalogSoldQuantity * preco_Local) : ensureFinite(n);
+        if (s?.length > 1) {
+          s[1].innerHTML = formatCurrency(catalogRevenue);
+        }
+        if (h?.length > 1) {
+          h[1].innerHTML = " Total";
+          h[1].classList.remove("revperiod");
+        }
+        setAnuncioValue(e);
         const setActiveButton = (button) => {
           buttons.forEach((btn) => btn.classList.remove("novai-active"));
           button?.classList.add("novai-active");
         };
-        m.addEventListener("click", (function (t) {
-          let n = isNaN(e / 30) ? 0: e / 30;
-          let l = isNaN(catalogMonthlyRevenue / 30) ? 0 : catalogMonthlyRevenue / 30;
-          applyRevenueValues(n, l, n);
-          y[0].innerHTML = " /dia";
-          for (let e = 0;
-          e < h?.length;
-          e++) h[e].innerHTML = " /dia";
+        const updatePeriodLabels = (label) => {
+          if (y?.length > 0) y[0].innerHTML = label;
+          for (let i = 0;
+          i < h?.length;
+          i++) h[i].innerHTML = label;
+        };
+        m?.addEventListener("click", (() => {
+          const dailyRevenue = isNaN(e / 30) ? 0 : e / 30;
+          setAnuncioValue(dailyRevenue);
+          updatePeriodLabels(" /dia");
           setActiveButton(m);
-        }
-        )), c.addEventListener("click", (function () {
-          const listingDailyRevenue = isNaN(e / 30) ? 0 : e / 30;
-          const catalogDailyRevenue = isNaN(catalogMonthlyRevenue / 30) ? 0 : catalogMonthlyRevenue / 30;
-          let t = isNaN(listingDailyRevenue * 7) ? 0 : listingDailyRevenue * 7;
-          let n = isNaN(catalogDailyRevenue * 7) ? 0 : catalogDailyRevenue * 7;
-          applyRevenueValues(t, n, t);
-          y[0].innerHTML = " /semana";
-          for (let e = 0;
-          e < h?.length;
-          e++) h[e].innerHTML = " /semana";
+        }));
+        c?.addEventListener("click", (() => {
+          const weeklyRevenue = isNaN(e / 30 * 7) ? 0 : e / 30 * 7;
+          setAnuncioValue(weeklyRevenue);
+          updatePeriodLabels(" /semana");
           setActiveButton(c);
-        }
-        )), p.addEventListener("click", (function (t) {
-          let n = isNaN(e) ? 0: e;
-          applyRevenueValues(n, catalogMonthlyRevenue, n);
-          y[0].innerHTML = " /mês";
-          for (let e = 0;
-          e < h?.length;
-          e++) h[e].innerHTML = " /mês";
+        }));
+        p?.addEventListener("click", (() => {
+          const monthlyRevenue = isNaN(e) ? 0 : e;
+          setAnuncioValue(monthlyRevenue);
+          updatePeriodLabels(" /mês");
           setActiveButton(p);
-        }
-        )), g.addEventListener("click", (function () {
-          let t = isNaN(2 * e) ? 0: 2 * e;
-          let n = isNaN(2 * catalogMonthlyRevenue) ? 0 : 2 * catalogMonthlyRevenue;
-          applyRevenueValues(t, n, t);
-          y[0].innerHTML = " /60 dias";
-          for (let e = 0;
-          e < h?.length;
-          e++) h[e].innerHTML = " /60 dias";
+        }));
+        g?.addEventListener("click", (() => {
+          const revenue60 = isNaN(2 * e) ? 0 : 2 * e;
+          setAnuncioValue(revenue60);
+          updatePeriodLabels(" /60 dias");
           setActiveButton(g);
-        }
-        )), f.addEventListener("click", (function () {
-          let t = isNaN(3 * e) ? 0: 3 * e;
-          let n = isNaN(3 * catalogMonthlyRevenue) ? 0 : 3 * catalogMonthlyRevenue;
-          applyRevenueValues(t, n, t);
-          y[0].innerHTML = " /90 dias";
-          for (let e = 0;
-          e < h?.length;
-          e++) h[e].innerHTML = " /90 dias";
+        }));
+        f?.addEventListener("click", (() => {
+          const revenue90 = isNaN(3 * e) ? 0 : 3 * e;
+          setAnuncioValue(revenue90);
+          updatePeriodLabels(" /90 dias");
           setActiveButton(f);
-        }
-        )), u.addEventListener("click", (function () {
-          let e = listingTotalRevenue;
-          let t = catalogTotalRevenue;
-          applyRevenueValues(e, t, e);
-          y[0].innerHTML = " /Total";
-          for (let e = 0;
-          e < h?.length;
-          e++) h[e].innerHTML = " /Total";
+        }));
+        u?.addEventListener("click", (() => {
+          const totalRevenue = ensureFinite(vendas * preco_Local);
+          setAnuncioValue(totalRevenue);
+          updatePeriodLabels(" /Total");
           setActiveButton(u);
-        }
-        ));
+        }));
         const defaultButton = [p, c, m, g, f, u].find((btn) => btn && btn.style.display !== "none");
         defaultButton && setActiveButton(defaultButton);
         let b = document.getElementById("mfy_rev_estimate");
