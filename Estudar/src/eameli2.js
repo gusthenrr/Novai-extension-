@@ -108,6 +108,8 @@ const cssEscape = (typeof CSS !== 'undefined' && typeof CSS.escape === 'function
   ? CSS.escape
   : (value) => String(value).replace(/[^a-zA-Z0-9_\-]/g, match => `\\${match}`);
 
+const NOVAI_SKELETON_GRADIENT = "linear-gradient(90deg, rgba(255,245,177,0.7) 25%, rgba(255,224,102,0.95) 50%, rgba(255,245,177,0.7) 75%)";
+
 const NOVAI_INJECTED_ELEMENT_IDS = [
   "eaadvsearchBtn",
   "eaadvsearchForm",
@@ -1255,7 +1257,7 @@ var eawarning_mlenvios = `
 var btn = `
 Criado em: ${data_br}  |  Há cerca de: ${dias} dias
 <br />
-<span id="mediabtn" class="andes-button--loud mfy-main-bg andes-button" style="margin-top: 0.35em;font-size: 12px!important;display:inline!important;padding-top: 1em;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;">
+<span id="mediabtn" class="andes-button--loud background_novai andes-button" style="margin-top: 0.35em;font-size: 12px!important;display:inline!important;padding-top: 1em;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;">
   Média: ${media_vendas} vendas/mês
 </span>
 <div id="plusf_wrap" class="hdn smooth transp" style=";font-size:14px;padding: 1.35em;margin: 0.7em 0em -2.35em 0em;width: 110%;">
@@ -1407,12 +1409,12 @@ var eagrossrev = `
     <div class="novai-rev-controls">
       <span class="ui-pdp-review__amount novai-muted" id="mfy_rev_estimate">Estimativa por períodos.</span>
       <div class="novai-rev-buttons">
-        <button class="andes-button--loud mfy-main-bg novai-rev-button revbtn1">1 Dia</button>
-        <button class="andes-button--loud mfy-main-bg novai-rev-button revbtn7">7 Dias</button>
-        <button class="andes-button--loud mfy-main-bg novai-rev-button revbtn30">30 dias</button>
-        <button class="andes-button--loud mfy-main-bg novai-rev-button revbtn60">60 dias</button>
-        <button class="andes-button--loud mfy-main-bg novai-rev-button revbtn90">90 dias</button>
-        <button class="andes-button--loud mfy-main-bg novai-rev-button revbtntotal">Total</button>
+        <button class="andes-button--loud background_novai novai-rev-button revbtn1">1 Dia</button>
+        <button class="andes-button--loud background_novai novai-rev-button revbtn7">7 Dias</button>
+        <button class="andes-button--loud background_novai novai-rev-button revbtn30">30 dias</button>
+        <button class="andes-button--loud background_novai novai-rev-button revbtn60">60 dias</button>
+        <button class="andes-button--loud background_novai novai-rev-button revbtn90">90 dias</button>
+        <button class="andes-button--loud background_novai novai-rev-button revbtntotal">Total</button>
       </div>
     </div>
     <div class="eagrossrev-breakdown">
@@ -1479,7 +1481,7 @@ const PRICE_TOOL_Z_INDEX = 2147483646;
 const PRICE_BUTTON_Z_INDEX = 2147483647;
 
 var btn_preco = `
-<div id="preco-btn" class="andes-button andes-button--loud mfy-main-bg pricebtn"
+<div id="preco-btn" class="andes-button andes-button--loud background_novai pricebtn"
      style="width: ${PRICE_BUTTON_SIZE};
             height: ${PRICE_BUTTON_SIZE};
             padding: 0;
@@ -1944,109 +1946,154 @@ let n = `
   }
 }
 function buildMainComponentSkeleton() {
- return `
-  <div id="main-component-skeleton" class="mfy-skel-root">
+  return `
+  <div id="main-component-skeleton" class="novai-skel-root" aria-hidden="true">
     <style>
-      .mfy-skel-root{
-        font-family: Proxima Nova, -apple-system, Roboto, Arial, sans-serif;
-        color:#333;
-      }
+      :root{ --novai-ml-yellow:#ffe600; }
 
-      /* shimmer */
-      @keyframes mfy-loading {
+      @keyframes novai-skeleton-loading {
         0% { background-position: 200% 0; }
         100% { background-position: -200% 0; }
       }
-      .skeleton,
-      .skeleton-pill{
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: mfy-loading 1.5s infinite;
-        color: transparent;
-        display: inline-block;
-      }
-      .skeleton{ border-radius: 4px; }
-      .skeleton-pill{ border-radius: 16px; }
 
-      /* layout */
-      .mfy-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; padding:0 2rem 0 0; }
-      .mfy-left{ display:flex; align-items:center; }
-      .mfy-avatar{
-        width:40px; height:40px; background-color: var(--mfy-main);
-        border-radius:50%; display:flex; align-items:center; justify-content:center; margin-right:12px;
-      }
-      .mfy-left .mfy-title { font-size:15px; }
-      .mfy-left .mfy-conv { font-size:14px; padding:4px 12px; margin-top:4px; }
-
-  .mfy-right{ text-align:right; }
-  .mfy-right .mfy-subline{ display:flex; align-items:baseline; gap:6px; justify-content:flex-end; }
-      .mfy-right .mfy-label{ font-size:16px; font-weight:bold}
-      .mfy-right .mfy-value{ font-size:16px; font-weight:bold; color: var(--mfy-main); }
-
-      .mfy-rev-card{
-        display:flex; align-items:center; justify-content:space-around; margin-bottom:1.5rem;
-        box-shadow: rgb(0 0 0 / 11%) 0 3px 6px, rgb(0 0 0 / 10%) 0 3px 6px;
-        color: rgb(90,90,90); font-weight:400; font-size:.91em; border-radius:16px; padding:8px 16px;
-      }
-      .mfy-rev-card .mfy-rev-text{ font-size:1.1em; font-weight:900; flex:1; }
-      .mfy-dropdown{
-        min-width:32px; height:32px; border-radius:50%; background:#f5f5f5;
-        display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,.1);
+      .novai-skel-root{
+        font-family: Proxima Nova, -apple-system, Roboto, Arial, sans-serif;
+        color:#fff;
+        margin-bottom:16px;
       }
 
-      .mfy-footer{ display:flex; align-items:center; justify-content:space-between; }
-      .mfy-footer .mfy-created{
-        font-size:.95rem; font-weight:700; display:inline-flex; border-radius:1em; color:rgb(90,90,90);
-        box-shadow: rgb(0 0 0) 0 2px 11px -7px; padding:.35em 1em; min-width:fit-content;
+      .novai-skel-grid{
+        display:grid;
+        gap:16px;
       }
-      .mfy-footer .mfy-avg{ background-color:#3483fa; color:transparent; padding:10px 20px; font-size:16px; font-weight:bold; }
+
+      @media(min-width:768px){
+        .novai-skel-grid{
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
+      }
+
+      .novai-skel-card{
+        position:relative;
+        background:#222;
+        border-radius:12px;
+        padding:16px 18px;
+        box-shadow:var(--novai-shadow, 0 6px 18px rgba(0,0,0,.12));
+        overflow:hidden;
+      }
+
+      .novai-skel-card::before{
+        content:"";
+        position:absolute;
+        top:0; left:0; right:0;
+        height:4px;
+        background:var(--novai-ml-yellow,#ffe600);
+        border-top-left-radius:inherit;
+        border-top-right-radius:inherit;
+      }
+
+      .novai-skel-head{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        margin-bottom:12px;
+      }
+
+      .novai-skel-icon{
+        width:26px; height:26px;
+        border-radius:999px;
+        background:rgba(255,224,102,.25);
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        font-size:14px;
+      }
+
+      .novai-skel-title{
+        text-transform:uppercase;
+        letter-spacing:.04em;
+        font-weight:700;
+        font-size:12px;
+      }
+
+      .novai-skeleton-line,
+      .novai-skel-pill,
+      .novai-skel-badge{
+        background:${NOVAI_SKELETON_GRADIENT};
+        background-size:200% 100%;
+        animation: novai-skeleton-loading 1.4s ease infinite;
+      }
+
+      .novai-skeleton-line{
+        display:block;
+        border-radius:999px;
+      }
+
+      .novai-skeleton-line--lg{ height:22px; width:60%; margin-bottom:10px; }
+      .novai-skeleton-line--md{ height:14px; width:45%; margin-bottom:6px; }
+      .novai-skeleton-line--sm{ height:12px; width:32%; }
+
+      .novai-skel-metric{ margin-bottom:6px; }
+
+      .novai-skel-sub{
+        display:flex;
+        flex-direction:column;
+        gap:6px;
+        margin-bottom:18px;
+        color:#d1d5db;
+      }
+
+      .novai-skel-footer{
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+        align-items:center;
+        justify-content:space-between;
+      }
+
+      .novai-skel-pill,
+      .novai-skel-badge{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        border-radius:999px;
+        color:rgba(34,27,3,0.7);
+        font-weight:700;
+        min-height:1.8em;
+      }
+
+      .novai-skel-pill{ padding:.35rem 1.1rem; min-width:150px; }
+      .novai-skel-badge{ padding:.25rem .9rem; min-width:120px; font-size:12px; }
     </style>
 
-    <div class="mfy-row">
-      <div class="mfy-left">
-        <div class="mfy-avatar">
-          <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width:1.35em; margin:auto;">
-        </div>
-        <div>
-          <div class="mfy-title"><span class="skeleton"></span> Visitas totais</div>
-          <div class="skeleton-pill mfy-conv">Conversão: 3.2%</div>
-        </div>
-      </div>
+    <div class="novai-skel-grid">
+      <section id="eagrossrev" class="novai-kpi-card novai-skel-card">
+        <header class="novai-skel-head">
+          <div class="novai-skel-icon">💰</div>
+          <span class="novai-skel-title">Faturamento</span>
+        </header>
 
-      <div class="mfy-right">
-        <div class="mfy-label">Vende a cada:</div>
-        <div class="mfy-subline">
-          <div class="mfy-value"><span class="skeleton"></span></div>
-          <div class="mfy-visitas">visitas</div>
+        <div class="novai-skel-metric">
+          <span class="novai-skeleton-line novai-skeleton-line--lg"></span>
         </div>
-      </div>
-    </div>
 
-    <div class="mfy-rev-card">
-      <img src="https://img.icons8.com/windows/32/c7c7c7/old-cash-register.png"
-           style="width:1.5em; height:1.5em; position:relative; top:.21em; margin-right:.5em;">
-      <div class="mfy-rev-text">
-        Faturando: <strong style="font-size:15px;"><span class="skeleton"></span>/mês</strong>
-      </div>
-      <div class="mfy-dropdown">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </div>
-    </div>
+        <div class="novai-skel-sub">
+          <span class="novai-skeleton-line novai-skeleton-line--md"></span>
+          <span class="novai-skeleton-line novai-skeleton-line--sm"></span>
+        </div>
 
-    <div class="mfy-footer">
-      <div class="mfy-created">Criado há: <span class="skeleton"></span> dia(s)</div>
-      <div class="skeleton-pill mfy-avg">Média: 58 vendas/mês</div>
+        <footer class="novai-skel-footer">
+          <span class="novai-skel-pill"></span>
+          <span class="novai-skel-badge"></span>
+        </footer>
+      </section>
     </div>
   </div>
 `;
 }
 
 function buildVisitsComponentSkeleton() {
-  const shimmer = "background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size:200% 100%; animation: loading 1.5s infinite;";
+  const shimmer = `background: ${NOVAI_SKELETON_GRADIENT}; background-size:200% 100%; animation: loading 1.4s ease infinite;`;
   return `
   <div id="visits-component">
     <style>
@@ -2128,7 +2175,7 @@ function buildVisitsComponentSkeleton() {
           <div class="novai-kpi-title">VISITAS</div>
 
           <!-- Botão do gráfico no cabeçalho (mantém ids/classes) -->
-          <div id="eabtn-chart" class="andes-button--loud mfy-main-bg andes-button">
+          <div id="eabtn-chart" class="andes-button--loud background_novai andes-button">
             <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width:1.2em; margin:auto;">
             <div id="eabtn-chart-tooltip"
                  style="width:fit-content; display:none; flex-direction:column; text-align:start; line-height:1; font-size:1rem; color:var(--mfy-main); padding:1rem; opacity:0;">
@@ -2640,7 +2687,7 @@ function contentScpt() {
           for (let e = 0;
           e < n.length;
           e++) "Informações sobre o vendedor" != n[e].innerText && "Informações da loja" != n[e].innerText && "Devolução grátis" != n[e].innerText || (t = n[e].parentElement.parentElement);
-          let a = `${'<span id="easellerbtn" sellerdata="none" open="false" class="andes-button--loud mfy-main-bg  andes-button" style="position:relative; z-index:1;margin-bottom: 28px;margin-top: -1em;width: 100%;"><img src="https://img.icons8.com/material-outlined/48/ffffff/individual-server.png" style="width: 1.35em;margin: 0.8em 0.2em -0.35em 0em;display: inline-block;">Informações Extras</span>'}${`<div class="smooth ui-pdp-component-list pr-16 pl-16 alinharvertical" id="sellerinfobox" style="margin: -3em 0em 0em 0em;padding: 2em 0em 1em 0em;height: 0px;overflow: hidden;opacity: 0;">${nvailoader}</div>`}`;
+          let a = `${'<span id="easellerbtn" sellerdata="none" open="false" class="andes-button--loud background_novai  andes-button" style="position:relative; z-index:1;margin-bottom: 28px;margin-top: -1em;width: 100%;"><img src="https://img.icons8.com/material-outlined/48/ffffff/individual-server.png" style="width: 1.35em;margin: 0.8em 0.2em -0.35em 0em;display: inline-block;">Informações Extras</span>'}${`<div class="smooth ui-pdp-component-list pr-16 pl-16 alinharvertical" id="sellerinfobox" style="margin: -3em 0em 0em 0em;padding: 2em 0em 1em 0em;height: 0px;overflow: hidden;opacity: 0;">${nvailoader}</div>`}`;
           "" != t && null != t?.firstChild && t?.firstChild.insertAdjacentHTML("beforebegin", a);
           let i = document.getElementById("easellerbtn"), s = document.getElementById("sellerinfobox");
           i?.addEventListener("click", (function () {
@@ -2702,8 +2749,8 @@ function contentScpt() {
               let y = "";
               for (let e = 0;
               e < u.length;
-              e++) y += `<span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;" class="andes-button--loud mfy-main-bg ">${u[e]}</span>`;
-              let h = t.seller.seller_reputation.transactions.canceled, b = h / m * 100, v = `<span style="font-weight: 900;font-size: 0.92em;display: block;margin: 4px;">${r} Anúncios <span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;border: 2px solid #ebebeb;">até R$79</span></span>\n\n                        <span style="font-weight: 400;font-size: 0.92em;display: block;margin: 4px;">${l} Anúncios <span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;border: 2px solid #ebebeb;">R$80 até R$150</span></span>\n\n                        <span style="font-weight: 400;font-size: 0.92em;display: block;margin: 4px;">${d} Anúncios <span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;border: 2px solid #ebebeb;">Acima de R$150</span></span>`, x = `<div class="ealine" style="display: flex;flex-wrap: wrap;"><img src="https://img.icons8.com/fluency-systems-regular/96/${NovaiColorMain}/shop-location.png" style="width: 2.7em;margin: 0px 7px 7px 7px;"> <div style="display: grid;"><span style="font-size: 1.1em;font-weight: 700;">${t.seller.nickname}</span><span style="font-size: 11px;margin-top: -0.75em;">Conta criada: ${i}<span class="andes-button--loud mfy-main-bg " style="margin-left: 0.5em;padding: 1px 5px;border-radius: 11px;font-weight: 900;font-size: 10px;">${s}</span></span></div></div>\n\n                        <div style="width: 100%;background: #ebebeb;height: 1px;"></div>\n                        \n                        <div class="ealine" style="display: flex;flex-wrap: wrap;margin-top: 0.5em;"> <div style="padding-left: 1em;"><span style="font-size: 1em;font-weight: 900;">Vendas totais: </span>${m} <span style="padding: 1px 7px;border-radius: 11px;font-weight: 400;font-size: 10px;background-color: #a3a3a3;" class="andes-button--loud mfy-main-bg ">${h} canceladas (${b.toFixed(1)}%)</span></div></div>\n                        \n                        <div class="ealine" style="display: flex;flex-wrap: wrap;"> <div style="padding-left: 1em;margin: 4px 0px;"><span style="font-size: 1em;font-weight: 900;">Anúncios:</span> ${t.paging.total} <span style="padding: 1px 7px;border-radius: 11px;font-weight: 400;font-size: 10px;background-color: #39b54a;margin: 0px 4px;" class="andes-button--loud mfy-main-bg ">${o} <svg xmlns="http://www.w3.org/2000/svg" class="logo-full" width="151" height="39" viewBox="0 0 151 39" data-reactroot="" style="width: 3.75em;height: auto;position: relative;top: 0.2em;padding: 0em 0em 0em 0.35em;"><g fill="#ffffff" fill-rule="evenodd"><path d="M9.577 0L0 22.286h15.962L9.577 39l25.54-25.071H19.153L28.732 0zM56.094 27.925h-6.931l5.924-24.38h19.706l-1.33 5.483H60.688l-.886 3.801h12.452l-1.33 5.483H58.433l-2.338 9.613zm33.718.439c-8.262 0-12.332-3.582-12.332-8.7 0-.402.12-1.242.202-1.608l3.546-14.51h7.052L84.774 17.91c-.04.183-.12.585-.12 1.023.04 2.01 1.732 3.948 5.158 3.948 3.707 0 5.601-2.12 6.286-4.971l3.507-14.365h7.012L103.11 18.02c-1.451 5.921-4.998 10.344-13.3 10.344zm36.014-.439h-17.732l5.924-24.38h6.932l-4.554 18.897h10.76l-1.33 5.483zm23.844 0h-17.732l5.924-24.38h6.932l-4.554 18.897H151l-1.33 5.483z"></path></g></svg></span><span style="padding: 1px 7px;border-radius: 11px;font-weight: 400;font-size: 10px;background-color: #39b54a;" class="andes-button--loud mfy-main-bg ">${a} Frete Grátis</span></div></div>\n\n                        <div class="ealine" style="display: flex;flex-wrap: wrap;"> <div style="padding-left: 1em;margin: 4px 0px;"><span style="font-size: 1em;font-weight: 900;">Anúncios por Ticket:</span><div style="border-left: 2px solid var(--mfy-main);">${v}</div></div></div>\n                        \n                        <div class="ealine" style="display: flex;flex-wrap: wrap;"> <div style="padding-left: 1em;display: flex;flex-wrap: wrap;"><span style="font-size: 1em;font-weight: 900;">Categorias principais do vendedor: </span>${y}</div></div>`;
+              e++) y += `<span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;" class="andes-button--loud background_novai ">${u[e]}</span>`;
+              let h = t.seller.seller_reputation.transactions.canceled, b = h / m * 100, v = `<span style="font-weight: 900;font-size: 0.92em;display: block;margin: 4px;">${r} Anúncios <span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;border: 2px solid #ebebeb;">até R$79</span></span>\n\n                        <span style="font-weight: 400;font-size: 0.92em;display: block;margin: 4px;">${l} Anúncios <span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;border: 2px solid #ebebeb;">R$80 até R$150</span></span>\n\n                        <span style="font-weight: 400;font-size: 0.92em;display: block;margin: 4px;">${d} Anúncios <span style="padding: 1px 7px;border-radius:11px;font-weight: 400;font-size:12px;margin: 2px 2px;border: 2px solid #ebebeb;">Acima de R$150</span></span>`, x = `<div class="ealine" style="display: flex;flex-wrap: wrap;"><img src="https://img.icons8.com/fluency-systems-regular/96/${NovaiColorMain}/shop-location.png" style="width: 2.7em;margin: 0px 7px 7px 7px;"> <div style="display: grid;"><span style="font-size: 1.1em;font-weight: 700;">${t.seller.nickname}</span><span style="font-size: 11px;margin-top: -0.75em;">Conta criada: ${i}<span class="andes-button--loud background_novai " style="margin-left: 0.5em;padding: 1px 5px;border-radius: 11px;font-weight: 900;font-size: 10px;">${s}</span></span></div></div>\n\n                        <div style="width: 100%;background: #ebebeb;height: 1px;"></div>\n                        \n                        <div class="ealine" style="display: flex;flex-wrap: wrap;margin-top: 0.5em;"> <div style="padding-left: 1em;"><span style="font-size: 1em;font-weight: 900;">Vendas totais: </span>${m} <span style="padding: 1px 7px;border-radius: 11px;font-weight: 400;font-size: 10px;background-color: #a3a3a3;" class="andes-button--loud background_novai ">${h} canceladas (${b.toFixed(1)}%)</span></div></div>\n                        \n                        <div class="ealine" style="display: flex;flex-wrap: wrap;"> <div style="padding-left: 1em;margin: 4px 0px;"><span style="font-size: 1em;font-weight: 900;">Anúncios:</span> ${t.paging.total} <span style="padding: 1px 7px;border-radius: 11px;font-weight: 400;font-size: 10px;background-color: #39b54a;margin: 0px 4px;" class="andes-button--loud background_novai ">${o} <svg xmlns="http://www.w3.org/2000/svg" class="logo-full" width="151" height="39" viewBox="0 0 151 39" data-reactroot="" style="width: 3.75em;height: auto;position: relative;top: 0.2em;padding: 0em 0em 0em 0.35em;"><g fill="#ffffff" fill-rule="evenodd"><path d="M9.577 0L0 22.286h15.962L9.577 39l25.54-25.071H19.153L28.732 0zM56.094 27.925h-6.931l5.924-24.38h19.706l-1.33 5.483H60.688l-.886 3.801h12.452l-1.33 5.483H58.433l-2.338 9.613zm33.718.439c-8.262 0-12.332-3.582-12.332-8.7 0-.402.12-1.242.202-1.608l3.546-14.51h7.052L84.774 17.91c-.04.183-.12.585-.12 1.023.04 2.01 1.732 3.948 5.158 3.948 3.707 0 5.601-2.12 6.286-4.971l3.507-14.365h7.012L103.11 18.02c-1.451 5.921-4.998 10.344-13.3 10.344zm36.014-.439h-17.732l5.924-24.38h6.932l-4.554 18.897h10.76l-1.33 5.483zm23.844 0h-17.732l5.924-24.38h6.932l-4.554 18.897H151l-1.33 5.483z"></path></g></svg></span><span style="padding: 1px 7px;border-radius: 11px;font-weight: 400;font-size: 10px;background-color: #39b54a;" class="andes-button--loud background_novai ">${a} Frete Grátis</span></div></div>\n\n                        <div class="ealine" style="display: flex;flex-wrap: wrap;"> <div style="padding-left: 1em;margin: 4px 0px;"><span style="font-size: 1em;font-weight: 900;">Anúncios por Ticket:</span><div style="border-left: 2px solid var(--mfy-main);">${v}</div></div></div>\n                        \n                        <div class="ealine" style="display: flex;flex-wrap: wrap;"> <div style="padding-left: 1em;display: flex;flex-wrap: wrap;"><span style="font-size: 1em;font-weight: 900;">Categorias principais do vendedor: </span>${y}</div></div>`;
               e.insertAdjacentHTML("afterbegin", x);
               let w = document.getElementsByClassName("ealine");
               if (iscatalog) for (let e = 1;
@@ -3253,7 +3300,7 @@ function s() {
     if (price_tool_fix =
     '<div id="price-tool" style="position: fixed;bottom: calc(1.5rem + 3.5rem + 1.5rem);right: calc(1.5rem + 3.5rem + 1.5rem);background-color: #fff;box-shadow: rgba(0, 0, 0, 0.1) 0px 7px 11px -7px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px;border: 0px !important;z-index: 2147483646;max-width: min(90vw, 28rem);width: auto;" class="ui-pdp-buybox smooth ui-pdp-container__row ui-pdp-component-list pr-16 pl-16 alinharvertical"><div id="etapa2" class="smooth hdn transp" style="width: inherit;float: left;transform: translate(-10px, 0px);"><div style="text-align: right;padding-left: 1.85em;width: 45%;">O valor <b>sugerido</b> para publicar seu anúncio é de:</div><h1 class="price-tag price-tag-fraction" style="width: 53%;overflow: hidden;float: right;margin-top: -1.5em;"><span style="margin-right: 0.15em;"><img src="https://ci3.googleusercontent.com/proxy/kgbUUHgOg_Wtd56AXKaaRk0M4A-EQe-kjbq9Cr4as2SUCOfQIjNrN6zcNl1wWyUslua9x1khV2gtnzRhC4xLj6fKrzNwgEblwySpi5Jn0YwOcJnJausP9aoTC0Sc81rJQMLdJEWgJO0kfywjk97OD9sFrum7D_GDtT4OxdcKLplxbn643Xo=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/payments/payment.png" height="16" width="20" style="margin-top: 0.2em;opacity: 35%;">R$</span><span id="valor_sugerido_reais">00</span><span id="valor_sugerido_centavos" style="font-size: 0.5em;font-weight: 100;">,00</span></h1><p style="float: right;margin: -1.35em 3.75em 0em 0em;font-size: 11px;" class="ui-pdp-review__amount"> *Sugestão com alíquota..</p><div class="detalhamento" id="detalhamento"><ul class="ui-pdp-review__amount"><li>Seu custo: <img alt="icon" src="https://ci3.googleusercontent.com/proxy/kgbUUHgOg_Wtd56AXKaaRk0M4A-EQe-kjbq9Cr4as2SUCOfQIjNrN6zcNl1wWyUslua9x1khV2gtnzRhC4xLj6fKrzNwgEblwySpi5Jn0YwOcJnJausP9aoTC0Sc81rJQMLdJEWgJO0kfywjk97OD9sFrum7D_GDtT4OxdcKLplxbn643Xo=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/payments/payment.png" height="11" style="padding: 0em 0.5em 0em 0em;"><span class="ui-pdp-price" id="detalhe-custo">R$&nbsp; 0,00</span></li><li>Impostos:<img alt="icon" src="https://ci3.googleusercontent.com/proxy/kgbUUHgOg_Wtd56AXKaaRk0M4A-EQe-kjbq9Cr4as2SUCOfQIjNrN6zcNl1wWyUslua9x1khV2gtnzRhC4xLj6fKrzNwgEblwySpi5Jn0YwOcJnJausP9aoTC0Sc81rJQMLdJEWgJO0kfywjk97OD9sFrum7D_GDtT4OxdcKLplxbn643Xo=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/payments/payment.png" height="11" style="padding: 0em 0.5em 0em 0.61em;"><span class="ui-pdp-price" id="detalhe-imposto">R$&nbsp;0</span></li><li style="transform: translate(4px, 0px);">Seu lucro: <img alt="icon" src="https://ci5.googleusercontent.com/proxy/t9hOuXHFrNPYlckwjpVbXLSlkxMtwzLYCTIi7PchhDo9m0lT7QD15EK5HN7R_R-xZrKcTgNktsim1qXR1LlKrEKQNa030zOY_S-rBf1-Eds9chp_rizwkWlvcacgOpH-Hj7BTbJJ-tG97e7u8JhDtjRMp8DP9Bwv9jtS-VYIrGWn=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/common/back.png" height="11" style="padding: 0em 0.2em;padding-right: 0.45em;"><span class="ui-pdp-price" id="detalhe-lucro">R$&nbsp; 0,00</span></li><li style="transform: translate(-7px, 0px);">Taxa do ML:<img alt="icon" src="https://ci3.googleusercontent.com/proxy/ZG5FLXGDXbk602QJeqgzhTwuKjwnGLhuBMgUeetEB1qxNi8LEnUTmvci9Se0YjumB0a2DrA-uf1Xeb52hj41rmg9hKW-Sh2tH4xqoGR5cn6k-r_deVRoI31lrjw84JyS22rnTXvilfhHu7q_Lj6l-ZeR_MT9MvmskNkjUaKqu-bI9f9CypObTG-9JnJyZA=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-office.png" height="11" style="padding-right: 0.2em;padding-left: 0.15em;"> <span class="ui-pdp-price" id="detalhe-taxa">R$&nbsp; 0,00</span></li><li style="transform: translate(9px, 0px);">Taxa Fixa:<img alt="icon" src="https://ci3.googleusercontent.com/proxy/ZG5FLXGDXbk602QJeqgzhTwuKjwnGLhuBMgUeetEB1qxNi8LEnUTmvci9Se0YjumB0a2DrA-uf1Xeb52hj41rmg9hKW-Sh2tH4xqoGR5cn6k-r_deVRoI31lrjw84JyS22rnTXvilfhHu7q_Lj6l-ZeR_MT9MvmskNkjUaKqu-bI9f9CypObTG-9JnJyZA=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-office.png" height="11" style="padding-right: 0.2em;/* padding-left: 0.15em; */"> <span class="ui-pdp-price" id="detalhe-taxafixa">R$&nbsp; 0,00</span></li><li style="transform: translate(30px, 0px);">Envio: <img alt="icon" src="https://ci3.googleusercontent.com/proxy/4AHE0GSzeLFc0tuceXt2Hib-rWVbcK8yqriCrBnrQFdt3LpCrH-NA3nyDKu-IO-65xO2yjlS7rsjGiJWV6QunadzFZlJPWqeb2Shj_fYgwagdLoTOAljMen83VI1111111eloEUOdeZcR4Su7DrJRWooeRNOF5nZ2fJv2BE06zEE2uKHkiVrr1vOvtY78kR28=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-mail.png" height="11" style="padding-right: 0.3em;transform: translate(-2px, 0px);"><span class="ui-pdp-price" id="detalhe-envio">R$&nbsp; 0,00</span></li></ul></div><a id="vermais" style="float: right;margin: 1em 7em 0em 0em;">Ver mais detalhes</a><p id="eareset" style="float: right;margin: 1em 8.35em 0em 0em;font-weight: 900;color: #aeaeae;font-size: 0.77em;text-align: center;">Problemas no cálculo?<br>Aperte Ctrl+Shift+R</p><br> <a id="refazer" style="padding: 1em;border-radius: 0.7em;float: right;margin: 1em 5.5em 0em 0em;" class="andes-button--quiet">↻ Refazer simulação</a></div><div style="float:left;padding: 0em 1em;" id="etapa1" class="smooth"> <img src="https://img.icons8.com/cotton/64/000000/profit-report.png" style="float: left;width: 2.5em;margin: 0em 0.53em 0em 0em;"><h3 class="ui-pdp-variations__selected-label" style="float: left;">Precificador Escalada Ecom</h3><br><h4 class="ui-pdp-color--GRAY ui-pdp-media__text" style="padding-left: 3.5em;margin-top: 0.5em;">Simule um preço de venda a partir deste anúncio com sua margem.</h4><br><div style="line-height: 1em;"> <span style="margin: 0.5em 0em 0em 0.5em;">Custo do seu produto: </span><div class="andes-form-control" style="padding: 0em 0em 0em 0.7em;font-weight: bold;"> R$:<input id="custo" type="number" class="" style="margin: 0.5em 0em 0.5em 0.35em;font-weight: bold;background-color: #80808000;border-radius: 0.35em;border: 1px solid #80808047;width: 7.7em;font-size: 1em;padding: 0.35em;width: 5.7em;font-family: Proxima Nova,-apple-system,Helvetica Neue,Helvetica,Roboto,Arial,sans-serif;"><div id="preco-ativar" class="andes-button andes-button--quiet" style="float: right;margin-top: 0.35em;"><img id="preco-img" style="width: 1.5em;position: relative;top: 0.4em;left: -0.1em;" src="https://img.icons8.com/ios-glyphs/30/ffffff/estimate.png"> Simular</div></div><div><span style="margin: 0.5em 0em 0em 0.5em;">Margem de lucro desejada: </span><div class="andes-form-control" style="padding: 0em 0em 0em 0em;font-weight: bold;"> <input id="margem" type="number" class="" style="margin: 0.5em 0em 0.5em 0.35em;font-weight: bold;background-color: #80808000;border-radius: 0.35em;border: 1px solid #80808047;width: 7.7em;font-size: 1em;padding: 0.35em;width: 3.5em;font-family: Proxima Nova,-apple-system,Helvetica Neue,Helvetica,Roboto,Arial,sans-serif;"> % ou R$ <input id="mrgbrl" type="number" class="" style="margin: 0.5em 0em 0.5em 0.35em;font-weight: bold;background-color: #80808000;border-radius: 0.35em;border: 1px solid #80808047;width: 7.7em;font-size: 1em;padding: 0.35em;width: 7em;font-family: Proxima Nova,-apple-system,Helvetica Neue,Helvetica,Roboto,Arial,sans-serif;"> <br> <span style=" font-size: 0.77em; position: relative; margin: 0em 0em 0em 0.5em; width: 6em; display: inline-block; text-align: right; top: 0.5em; ">Sua alíquota de imposto</span><input id="aliq" type="number" class="" style="margin: 0.5em 0em 0.5em 0.35em;font-weight: bold;background-color: #80808000;border-radius: 0.35em;border: 1px solid #80808047;width: 7.7em;font-size: 1em;padding: 0.35em;width: 3.1em;font-family: Proxima Nova,-apple-system,Helvetica Neue,Helvetica,Roboto,Arial,sans-serif;" value="0"> % <input type="checkbox" id="simular" style="margin-left: 0.5em;"><label for="simular" style="font-size: 0.7em;float: right;display: inline-block;max-width: 6em;position: relative;left: -0.7em;top: 1em;" value="false">Simular com minha conta</label><div id="alerta-form1" class="hdn"><img src="https://img.icons8.com/officexs/16/000000/spam.png" style="width: 0.77em;"><span style="color:red;font-size: 14px;vertical-align: top;"> Preencha os campos acima para simular.</span></div></div></div></div></div></div>',
     btn_preco_fix =
-    `<div id="preco-btn" class="andes-button andes-button--loud mfy-main-bg pricebtn"
+    `<div id="preco-btn" class="andes-button andes-button--loud background_novai_black pricebtn"
      style="width: ${PRICE_BUTTON_SIZE};
             height: ${PRICE_BUTTON_SIZE};
             padding: 0;
@@ -3295,7 +3342,7 @@ function s() {
     }
     function o() {
       if (null != verif && "pro" == verif) {
-        eaSince = '<div style="font-size: 0.95rem;font-weight: 700;display: inline-flex;border-radius: 1em;color: rgb(90, 90, 90);box-shadow: rgb(0, 0, 0) 0px 2px 11px -7px;padding: 0.35em 1em;position: relative;transition: 0.35s;min-width: fit-content;cursor:default" id="easince"><span style=" margin-top: 0.2em;">Criado há: ' + (isNaN(dias) ? "?": dias) + ' dia(s)</span><span style="position: absolute;top: 1.75em;font-size: 0.92em;font-weight: 200;opacity: 0;transition: all 0.35s;">(' + (data_br ?? "--/--/----") + ")</span></div>", btn = !alert_media_vendas && dias > 30 ? `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <span id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;cursor:default">\n                Média: ${iscatalog&&0==media_vendas?"-":media_vendas} vendas/mês\n              </span>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;"`: `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <div id="mediabtn" class="andes-button--loud mfy-main-bg  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;gap: 0.25rem;">\n                Média:  <div style="min-width: fit-content;font-size: 1.2rem;">${iscatalog&&0==media_vendas?"-":media_vendas}</div> <span style="font-size: .9rem;">vendas/mês</span>\n              </div>\n              <div class="easalesavg-alert" style="display: inline-flex;background: var(--mfy-main);position: relative;z-index: 11;height: 1.75em;border-radius: 100%;padding: 5px;margin-left: -0.5rem;">\n                <img src="https://img.icons8.com/material-outlined/24/ffffff/clock-alert.png">\n              </div>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;"`, visits = '<span>? Visitas totais <span class="andes-button--loud mfy-main-bg  andes-button" style="margin-left: 0.5em;margin-top: 0.35em;font-size:14px!important;display: inherit;padding: 0.1em 0.4em;"> Conversão de <strong>?%</strong></span></span><br><span class="ui-pdp-subtitle" id="vendaporvisitas" style="position: relative;top: -0.86em;">Vende a cada x Visitas</span>';
+        eaSince = '<div style="font-size: 0.95rem;font-weight: 700;display: inline-flex;border-radius: 1em;color: rgb(90, 90, 90);box-shadow: rgb(0, 0, 0) 0px 2px 11px -7px;padding: 0.35em 1em;position: relative;transition: 0.35s;min-width: fit-content;cursor:default" id="easince"><span style=" margin-top: 0.2em;">Criado há: ' + (isNaN(dias) ? "?": dias) + ' dia(s)</span><span style="position: absolute;top: 1.75em;font-size: 0.92em;font-weight: 200;opacity: 0;transition: all 0.35s;">(' + (data_br ?? "--/--/----") + ")</span></div>", btn = !alert_media_vendas && dias > 30 ? `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <span id="mediabtn" class="andes-button--loud background_novai  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;cursor:default">\n                Média: ${iscatalog&&0==media_vendas?"-":media_vendas} vendas/mês\n              </span>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;"`: `<div style="display: flex;align-items: center;justify-content: start;gap: .5rem;">\n            ${eaSince}\n              <div id="mediabtn" class="andes-button--loud background_novai  andes-button" style="font-size: 12px!important;display: flex;padding-bottom: 1em;position: relative;z-index: 10;border-radius:2rem;gap: 0.25rem;">\n                Média:  <div style="min-width: fit-content;font-size: 1.2rem;">${iscatalog&&0==media_vendas?"-":media_vendas}</div> <span style="font-size: .9rem;">vendas/mês</span>\n              </div>\n              <div class="easalesavg-alert" style="display: inline-flex;background: var(--mfy-main);position: relative;z-index: 11;height: 1.75em;border-radius: 100%;padding: 5px;margin-left: -0.5rem;">\n                <img src="https://img.icons8.com/material-outlined/24/ffffff/clock-alert.png">\n              </div>\n              </div>\n              <img style="float:left;margin-right:0.35em;width:28%;margin-top: 0.45em;"`, visits = '<span>? Visitas totais <span class="andes-button--loud background_novai  andes-button" style="margin-left: 0.5em;margin-top: 0.35em;font-size:14px!important;display: inherit;padding: 0.1em 0.4em;"> Conversão de <strong>?%</strong></span></span><br><span class="ui-pdp-subtitle" id="vendaporvisitas" style="position: relative;top: -0.86em;">Vende a cada x Visitas</span>';
         const c = e => e.charAt(0).toUpperCase() + e.slice(1), p = dayjs(), g = 6;
         let f = p.month() - g, u = p.year();
         f < 0 && (u -= 1, f += 12);
@@ -3311,11 +3358,11 @@ function s() {
         function o(e, t) {
           let n = document.getElementById("eagraph"), a = document.getElementById("salesestimatebtn");
           if (n) {
-            n.innerHTML = '<span style="font-size: 1.5em;margin-left: 0.35em;font-weight: 700;color: #333;">Análise de Interesse</span> <br> <span style="color: var(--mfy-main);font-size: 1.35em;position: relative;top: -0.31em;margin-left: 0.35em;">dos últimos 6 meses</span><br><div id="eachart" style="width:100%;position: relative;top: -1em;left: -0.7em;"></div><button id="salesestimatebtn" class="andes-button--loud mfy-main-bg " style="margin-top: -1em;font-size: 1.1rem;width: 100%;font-weight: 800;padding: 7px 11px;border-radius: 7px;">Estimativa de vendas</button>', n.style.top = "2rem", document.getElementById("salesestimatebtn").remove(), n.insertAdjacentElement("beforeend", a), document.getElementById("salesestimatebtn").style.display = "none", document.getElementById("eachart").style.marginBottom = "-1.5em";
+            n.innerHTML = '<span style="font-size: 1.5em;margin-left: 0.35em;font-weight: 700;color: #333;">Análise de Interesse</span> <br> <span style="color: var(--mfy-main);font-size: 1.35em;position: relative;top: -0.31em;margin-left: 0.35em;">dos últimos 6 meses</span><br><div id="eachart" style="width:100%;position: relative;top: -1em;left: -0.7em;"></div><button id="salesestimatebtn" class="andes-button--loud background_novai " style="margin-top: -1em;font-size: 1.1rem;width: 100%;font-weight: 800;padding: 7px 11px;border-radius: 7px;">Estimativa de vendas</button>', n.style.top = "2rem", document.getElementById("salesestimatebtn").remove(), n.insertAdjacentElement("beforeend", a), document.getElementById("salesestimatebtn").style.display = "none", document.getElementById("eachart").style.marginBottom = "-1.5em";
             const e = document.getElementById("eagraph");
             e.style.top = "1.5rem", e.style.padding = "2em 1em", iscatalog && (n.style.marginTop = "-1.65em", n.style.right = "0", n.style.marginBottom = "-5rem")
           }
-          else document.getElementById("eadivider").insertAdjacentHTML("beforebegin", '<div class="hdn2 transp smooth" id="eagraph"\n    style="z-index: 111;background-color:#fff;height: fit-content;position: relative;margin-top:-4.35em;font-weight: bolder;font-size: 0.7em;text-align: left;padding: 1em;border-top: 3px solid var(--mfy-main);border-radius: 6px;-webkit-box-shadow: 0 2px 5px 0 rgb(0 0 0 / 21%);">\n    <div style="display: flex; justify-content: space-between;">\n        <div>\n            <span style="font-size: 1.5em;margin-left: 0.35em;font-weight: 700;color: #333;">Análise de\n                Interesse</span>\n            <br>\n            <span\n                style="color: var(--mfy-main);font-size: 1.35em;position: relative;top: -0.31em;margin-left: 0.35em;">dos\n                últimos 6 meses</span>\n        </div>\n    </div>\n    <br>\n    <div id="eachart" style="width:308px!important;position: relative;top: -1em;left: -0.7em;"></div><button\n        id="salesestimatebtn" class="andes-button--loud mfy-main-bg "\n        style="margin-top: -1em;font-size: 1.1rem;width: 100%;font-weight: 800;padding: 7px 11px;border-radius: 7px;">Estimativa\n        de vendas</button>\n</div>');
+          else document.getElementById("eadivider").insertAdjacentHTML("beforebegin", '<div class="hdn2 transp smooth" id="eagraph"\n    style="z-index: 111;background-color:#fff;height: fit-content;position: relative;margin-top:-4.35em;font-weight: bolder;font-size: 0.7em;text-align: left;padding: 1em;border-top: 3px solid var(--mfy-main);border-radius: 6px;-webkit-box-shadow: 0 2px 5px 0 rgb(0 0 0 / 21%);">\n    <div style="display: flex; justify-content: space-between;">\n        <div>\n            <span style="font-size: 1.5em;margin-left: 0.35em;font-weight: 700;color: #333;">Análise de\n                Interesse</span>\n            <br>\n            <span\n                style="color: var(--mfy-main);font-size: 1.35em;position: relative;top: -0.31em;margin-left: 0.35em;">dos\n                últimos 6 meses</span>\n        </div>\n    </div>\n    <br>\n    <div id="eachart" style="width:308px!important;position: relative;top: -1em;left: -0.7em;"></div><button\n        id="salesestimatebtn" class="andes-button--loud background_novai "\n        style="margin-top: -1em;font-size: 1.1rem;width: 100%;font-weight: 800;padding: 7px 11px;border-radius: 7px;">Estimativa\n        de vendas</button>\n</div>');
           let i = {
             annotations: {
               points: []
@@ -5464,8 +5511,11 @@ function mfyStart() {
   --mfy-danger: #ff4545;
 }
 
-.mfy-main-bg {
-  background-color: var(--mfy-main);
+.background_novai {
+  background-color: var(--novai-ml-yellow,#ffe600);
+}
+.background_novai_black{
+background-color:rgba(0, 0, 0, 0.91);
 }
 
 .tippy-box[data-theme~="mfy"] {
