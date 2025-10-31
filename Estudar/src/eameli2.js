@@ -1401,7 +1401,6 @@ var eagrossrev = `
 
   <div class="novai-kpi-value">
     <span class="eagrossrev-title">R$0,00</span>
-    <span class="revtitle">/mês</span>
   </div>
 
   <div class="novai-kpi-sub earevstats">
@@ -2073,7 +2072,7 @@ function buildVisitsComponentSkeleton() {
       /* VISITAS (card esquerdo) */
       #visits-left .novai-kpi-head #eabtn-chart{
         margin-left:auto;
-        border-radius:2rem; width:2.1em; height:2.1em; padding:.14em .5em;
+        border-radius:2rem; width:26px; height:26px; padding:.14em .2em;
         display:inline-flex; align-items:center; justify-content:center;
         transition:.2s; border:1px solid rgba(255,255,255,.2);
         background:transparent;
@@ -2082,10 +2081,15 @@ function buildVisitsComponentSkeleton() {
       #visits-left #eabtn-chart:hover img{ filter:invert(1) brightness(0.2); }
 
       #visits-left .novai-kpi-value{
-        display:flex; align-items:baseline; gap:8px; margin:4px 0 10px;
+        display:block;
+        margin-top:2px;
       }
-      #visits-left [data-visits-total]{ font-size:18px; font-weight:800; color:#fff; }
-      #visits-left .visits-total-label{ font-size:12px; font-weight:700; opacity:.9; }
+      #visits-left [data-visits-total]{ display:block;                 /* 2ª linha */
+        font-size:15px; font-weight:900; color:#fff; line-height:1.1;
+        word-break:break-word;}
+      #visits-left .visits-total-label{ display:block;                 /* 1ª linha */
+        font-size:14px; font-weight:700; color:#fff; opacity:.95; line-height:1;
+        margin-bottom:2px; }
 
       /* CONVERSÃO (card direito) */
       /* >>> força duas linhas: label em cima, valor embaixo */
@@ -2505,7 +2509,7 @@ function contentScpt() {
           t.remove(), a.parentElement.insertAdjacentElement("afterbegin", t);
           }
           a.parentElement.parentElement.setAttribute("style", "display: flex;flex-direction: column;");
-          a.innerHTML = '<div style="padding: 0rem 1rem;margin: 0 .75rem;font-size: .85rem;width: fit-content;border-radius:1rem;border:1px solid #ebebeb;">Catálogo & Anúncio vencedor</div>';
+          a.innerHTML = '<div style="padding: .2rem 1rem;margin: .2rem .75rem;font-size: .88rem;width: fit-content;border-radius:1rem;border:1px solid #ebebeb;">Catálogo & Anúncio vencedor</div>';
           o?.classList.add("novai-rev-has-breakdown");
           s?.length > 0 && (s[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`);
           s?.length > 1 && (s[1].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`);
