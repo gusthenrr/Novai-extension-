@@ -108,6 +108,8 @@ const cssEscape = (typeof CSS !== 'undefined' && typeof CSS.escape === 'function
   ? CSS.escape
   : (value) => String(value).replace(/[^a-zA-Z0-9_\-]/g, match => `\\${match}`);
 
+const NOVAI_SKELETON_GRADIENT = "linear-gradient(90deg, rgba(255,245,177,0.7) 25%, rgba(255,224,102,0.95) 50%, rgba(255,245,177,0.7) 75%)";
+
 const NOVAI_INJECTED_ELEMENT_IDS = [
   "eaadvsearchBtn",
   "eaadvsearchForm",
@@ -1944,109 +1946,154 @@ let n = `
   }
 }
 function buildMainComponentSkeleton() {
- return `
-  <div id="main-component-skeleton" class="mfy-skel-root">
+  return `
+  <div id="main-component-skeleton" class="novai-skel-root" aria-hidden="true">
     <style>
-      .mfy-skel-root{
-        font-family: Proxima Nova, -apple-system, Roboto, Arial, sans-serif;
-        color:#333;
-      }
+      :root{ --novai-ml-yellow:#ffe600; }
 
-      /* shimmer */
-      @keyframes mfy-loading {
+      @keyframes novai-skeleton-loading {
         0% { background-position: 200% 0; }
         100% { background-position: -200% 0; }
       }
-      .skeleton,
-      .skeleton-pill{
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: mfy-loading 1.5s infinite;
-        color: transparent;
-        display: inline-block;
-      }
-      .skeleton{ border-radius: 4px; }
-      .skeleton-pill{ border-radius: 16px; }
 
-      /* layout */
-      .mfy-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; padding:0 2rem 0 0; }
-      .mfy-left{ display:flex; align-items:center; }
-      .mfy-avatar{
-        width:40px; height:40px; background-color: var(--mfy-main);
-        border-radius:50%; display:flex; align-items:center; justify-content:center; margin-right:12px;
-      }
-      .mfy-left .mfy-title { font-size:15px; }
-      .mfy-left .mfy-conv { font-size:14px; padding:4px 12px; margin-top:4px; }
-
-  .mfy-right{ text-align:right; }
-  .mfy-right .mfy-subline{ display:flex; align-items:baseline; gap:6px; justify-content:flex-end; }
-      .mfy-right .mfy-label{ font-size:16px; font-weight:bold}
-      .mfy-right .mfy-value{ font-size:16px; font-weight:bold; color: var(--mfy-main); }
-
-      .mfy-rev-card{
-        display:flex; align-items:center; justify-content:space-around; margin-bottom:1.5rem;
-        box-shadow: rgb(0 0 0 / 11%) 0 3px 6px, rgb(0 0 0 / 10%) 0 3px 6px;
-        color: rgb(90,90,90); font-weight:400; font-size:.91em; border-radius:16px; padding:8px 16px;
-      }
-      .mfy-rev-card .mfy-rev-text{ font-size:1.1em; font-weight:900; flex:1; }
-      .mfy-dropdown{
-        min-width:32px; height:32px; border-radius:50%; background:#f5f5f5;
-        display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,.1);
+      .novai-skel-root{
+        font-family: Proxima Nova, -apple-system, Roboto, Arial, sans-serif;
+        color:#fff;
+        margin-bottom:16px;
       }
 
-      .mfy-footer{ display:flex; align-items:center; justify-content:space-between; }
-      .mfy-footer .mfy-created{
-        font-size:.95rem; font-weight:700; display:inline-flex; border-radius:1em; color:rgb(90,90,90);
-        box-shadow: rgb(0 0 0) 0 2px 11px -7px; padding:.35em 1em; min-width:fit-content;
+      .novai-skel-grid{
+        display:grid;
+        gap:16px;
       }
-      .mfy-footer .mfy-avg{ background-color:#3483fa; color:transparent; padding:10px 20px; font-size:16px; font-weight:bold; }
+
+      @media(min-width:768px){
+        .novai-skel-grid{
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
+      }
+
+      .novai-skel-card{
+        position:relative;
+        background:#222;
+        border-radius:12px;
+        padding:16px 18px;
+        box-shadow:var(--novai-shadow, 0 6px 18px rgba(0,0,0,.12));
+        overflow:hidden;
+      }
+
+      .novai-skel-card::before{
+        content:"";
+        position:absolute;
+        top:0; left:0; right:0;
+        height:4px;
+        background:var(--novai-ml-yellow,#ffe600);
+        border-top-left-radius:inherit;
+        border-top-right-radius:inherit;
+      }
+
+      .novai-skel-head{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        margin-bottom:12px;
+      }
+
+      .novai-skel-icon{
+        width:26px; height:26px;
+        border-radius:999px;
+        background:rgba(255,224,102,.25);
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        font-size:14px;
+      }
+
+      .novai-skel-title{
+        text-transform:uppercase;
+        letter-spacing:.04em;
+        font-weight:700;
+        font-size:12px;
+      }
+
+      .novai-skeleton-line,
+      .novai-skel-pill,
+      .novai-skel-badge{
+        background:${NOVAI_SKELETON_GRADIENT};
+        background-size:200% 100%;
+        animation: novai-skeleton-loading 1.4s ease infinite;
+      }
+
+      .novai-skeleton-line{
+        display:block;
+        border-radius:999px;
+      }
+
+      .novai-skeleton-line--lg{ height:22px; width:60%; margin-bottom:10px; }
+      .novai-skeleton-line--md{ height:14px; width:45%; margin-bottom:6px; }
+      .novai-skeleton-line--sm{ height:12px; width:32%; }
+
+      .novai-skel-metric{ margin-bottom:6px; }
+
+      .novai-skel-sub{
+        display:flex;
+        flex-direction:column;
+        gap:6px;
+        margin-bottom:18px;
+        color:#d1d5db;
+      }
+
+      .novai-skel-footer{
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+        align-items:center;
+        justify-content:space-between;
+      }
+
+      .novai-skel-pill,
+      .novai-skel-badge{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        border-radius:999px;
+        color:rgba(34,27,3,0.7);
+        font-weight:700;
+        min-height:1.8em;
+      }
+
+      .novai-skel-pill{ padding:.35rem 1.1rem; min-width:150px; }
+      .novai-skel-badge{ padding:.25rem .9rem; min-width:120px; font-size:12px; }
     </style>
 
-    <div class="mfy-row">
-      <div class="mfy-left">
-        <div class="mfy-avatar">
-          <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width:1.35em; margin:auto;">
-        </div>
-        <div>
-          <div class="mfy-title"><span class="skeleton"></span> Visitas totais</div>
-          <div class="skeleton-pill mfy-conv">Conversão: 3.2%</div>
-        </div>
-      </div>
+    <div class="novai-skel-grid">
+      <section id="eagrossrev" class="novai-kpi-card novai-skel-card">
+        <header class="novai-skel-head">
+          <div class="novai-skel-icon">💰</div>
+          <span class="novai-skel-title">Faturamento</span>
+        </header>
 
-      <div class="mfy-right">
-        <div class="mfy-label">Vende a cada:</div>
-        <div class="mfy-subline">
-          <div class="mfy-value"><span class="skeleton"></span></div>
-          <div class="mfy-visitas">visitas</div>
+        <div class="novai-skel-metric">
+          <span class="novai-skeleton-line novai-skeleton-line--lg"></span>
         </div>
-      </div>
-    </div>
 
-    <div class="mfy-rev-card">
-      <img src="https://img.icons8.com/windows/32/c7c7c7/old-cash-register.png"
-           style="width:1.5em; height:1.5em; position:relative; top:.21em; margin-right:.5em;">
-      <div class="mfy-rev-text">
-        Faturando: <strong style="font-size:15px;"><span class="skeleton"></span>/mês</strong>
-      </div>
-      <div class="mfy-dropdown">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </div>
-    </div>
+        <div class="novai-skel-sub">
+          <span class="novai-skeleton-line novai-skeleton-line--md"></span>
+          <span class="novai-skeleton-line novai-skeleton-line--sm"></span>
+        </div>
 
-    <div class="mfy-footer">
-      <div class="mfy-created">Criado há: <span class="skeleton"></span> dia(s)</div>
-      <div class="skeleton-pill mfy-avg">Média: 58 vendas/mês</div>
+        <footer class="novai-skel-footer">
+          <span class="novai-skel-pill"></span>
+          <span class="novai-skel-badge"></span>
+        </footer>
+      </section>
     </div>
   </div>
 `;
 }
 
 function buildVisitsComponentSkeleton() {
-  const shimmer = "background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size:200% 100%; animation: loading 1.5s infinite;";
+  const shimmer = `background: ${NOVAI_SKELETON_GRADIENT}; background-size:200% 100%; animation: loading 1.4s ease infinite;`;
   return `
   <div id="visits-component">
     <style>
@@ -2112,7 +2159,7 @@ function buildVisitsComponentSkeleton() {
       #visits-right .conv-pill{
         display:inline-flex; align-items:center; gap:.4rem;
         margin-top:8px;
-        background:var(--novai-ml-yellow); color:#111; border-radius:999px;
+        background:${NOVAI_SKELETON_GRADIENT}; color:#3b2d00; border-radius:999px;
         padding:.3rem 1rem; font-weight:900; font-size:14px; width:max-content;
       }
 
