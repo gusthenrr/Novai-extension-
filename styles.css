@@ -181,6 +181,11 @@
     background: transparent;
   }
   .novai-kpi-block { width: 100%; flex: 1 1 100%; }
+
+  #novai-root {
+    width: 100%;
+    margin-top: 12px;
+  }
   
   .novai-badge { font-size: 11px; padding: 1px 6px; }
   .novai-badge.up { color: #0ea5e9; }       /* azul/crescendo */
