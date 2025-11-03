@@ -196,16 +196,88 @@ function coerceNonNegativeInteger(value, fallback = 0) {
   return Number.isFinite(bounded) ? bounded : Math.max(0, Math.floor(fallback));
 }
 
+function getListingSubtitleElement() {
+  try {
+    return document.querySelector('.ui-pdp-header__subtitle')
+      || document.querySelector('.ui-pdp-subtitle');
+  } catch (_) {
+    return null;
+  }
+}
+
+function parseSoldCountLabel(label) {
+  if ("string" !== typeof label) return null;
+  const normalized = label.trim().toLowerCase();
+  if (!normalized) return null;
+  const match = normalized.match(/([+]?[0-9.,]+)\s*(mil)?/i);
+  if (!match) return null;
+  const numericPart = match[1]?.replace(/\./g, "").replace(",", ".");
+  const numeric = parseFloat(numericPart);
+  if (!Number.isFinite(numeric)) return null;
+  const multiplier = match[2] ? 1e3 : 1;
+  const value = Math.round(numeric * multiplier);
+  return Number.isFinite(value) ? value : null;
+}
+
+function getSoldCountFromSubtitle() {
+  const subtitleEl = getListingSubtitleElement();
+  if (!subtitleEl) return null;
+
+  const possibleValues = [];
+  if (subtitleEl.dataset && typeof subtitleEl.dataset.mfySales !== "undefined") {
+    possibleValues.push(subtitleEl.dataset.mfySales);
+  }
+  if (typeof subtitleEl.getAttribute === "function") {
+    possibleValues.push(subtitleEl.getAttribute('data-mfy-sales'));
+    possibleValues.push(subtitleEl.getAttribute('sales'));
+  }
+
+  for (const raw of possibleValues) {
+    const numeric = Number(raw);
+    if (Number.isFinite(numeric) && numeric >= 0) {
+      return numeric;
+    }
+  }
+
+  const textContent = subtitleEl.textContent || subtitleEl.innerText || "";
+  const htmlContent = subtitleEl.innerHTML || "";
+  const segments = [];
+  if (textContent) {
+    segments.push(...textContent.split("|").map(part => part.trim()).filter(Boolean));
+  }
+  if (htmlContent) {
+    segments.push(...htmlContent.split("|").map(part => part.replace(/<[^>]*>/g, "").trim()).filter(Boolean));
+  }
+
+  let candidate = segments.find(seg => /vendid[oa]s/i.test(seg));
+  if (!candidate && segments.length > 0) {
+    candidate = segments[segments.length - 1];
+  }
+
+  if (candidate) {
+    const parsed = parseSoldCountLabel(candidate);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+
+  const fallbackParsed = parseSoldCountLabel(textContent) || parseSoldCountLabel(htmlContent);
+  return Number.isFinite(fallbackParsed) ? fallbackParsed : null;
+}
+
 function getNormalizedSoldQtyFromPDP() {
-  const subtitleEl = document.querySelector('.ui-pdp-subtitle') || document.querySelector('.ui-pdp-header__subtitle');
+  const subtitleEl = getListingSubtitleElement();
   let normalizedQty = 0;
+
+  const scrapedSales = getSoldCountFromSubtitle();
+  if (Number.isFinite(scrapedSales) && scrapedSales > normalizedQty) {
+    normalizedQty = scrapedSales;
+  }
 
   if (subtitleEl) {
     const subtitleText = subtitleEl.innerText || subtitleEl.textContent || '';
     if (subtitleText && typeof parseSalesText === 'function') {
       try {
         const parsed = parseSalesText(subtitleText);
-        if (parsed && Number.isFinite(parsed.thisItemSales)) {
+        if (parsed && Number.isFinite(parsed.thisItemSales) && parsed.thisItemSales > normalizedQty) {
           normalizedQty = parsed.thisItemSales;
         }
       } catch (_) {}
@@ -218,7 +290,12 @@ function getNormalizedSoldQtyFromPDP() {
     () => {
       try {
         const body = ensureCatalogBody?.();
-        return Number(body?.sold_quantity);
+        if (!body) return NaN;
+        const listingStored = Number(body.listing_sold_quantity);
+        if (Number.isFinite(listingStored)) return listingStored;
+        const stored = Number(body.sold_quantity);
+        if (Number.isFinite(stored)) return stored;
+        return Number(body.catalog_sold_quantity);
       } catch (_) {
         return NaN;
       }
@@ -1250,8 +1327,9 @@ function ensureCatalogBody() {
   return catalogData[0].body;
 }
 
-function updateCatalogBody(partial = {}) {
+function updateCatalogBody(partial = {}, options = {}) {
   const body = ensureCatalogBody();
+  const source = options && typeof options.source === "string" ? options.source.toLowerCase() : null;
   for (const [key, rawValue] of Object.entries(partial || {})) {
     if (null == rawValue) continue;
     if ("date_created" === key) {
@@ -1265,8 +1343,26 @@ function updateCatalogBody(partial = {}) {
     if ("sold_quantity" === key) {
       const numeric = Number(rawValue);
       if (!Number.isFinite(numeric)) continue;
-      const current = Number(body.sold_quantity);
-      if (!Number.isFinite(current) || numeric > current) {
+      if ("catalog" === source) {
+        body.catalog_sold_quantity = numeric;
+        if (!Number.isFinite(Number(body.listing_sold_quantity))) {
+          body.sold_quantity = numeric;
+        }
+      } else if ("listing" === source) {
+        body.listing_sold_quantity = numeric;
+        body.sold_quantity = numeric;
+      } else {
+        body.sold_quantity = numeric;
+      }
+      continue;
+    }
+    if ("catalog_sold_quantity" === key || "listing_sold_quantity" === key) {
+      const numeric = Number(rawValue);
+      if (!Number.isFinite(numeric)) continue;
+      body[key] = numeric;
+      if ("listing_sold_quantity" === key) {
+        body.sold_quantity = numeric;
+      } else if (!Number.isFinite(Number(body.listing_sold_quantity))) {
         body.sold_quantity = numeric;
       }
       continue;
@@ -1730,23 +1826,24 @@ function dlayerFallback() {
       break;
     }
   }
-  const vendasAlt = catalogBody.sold_quantity;
+  const storedListingSales = Number(catalogBody.listing_sold_quantity);
+  const storedCatalogSales = Number(catalogBody.catalog_sold_quantity);
+  const storedFallbackSales = Number(catalogBody.sold_quantity);
   const vendasIsEmpty = typeof vendas === "string" ? vendas.length === 0 : null == vendas;
-  if (vendasIsEmpty) {
-    const parsedSubtitleSales = (() => {
-      const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
-      if (!subtitleEl) return null;
-      let salesText = subtitleEl.innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
-      if (!salesText) return null;
-      if (salesText.endsWith("mil")) {
-        const numeric = parseFloat(salesText.replace("mil", ""));
-        return isNaN(numeric) ? null : numeric * 1e3;
-      }
-      const numeric = parseFloat(salesText.replace(/\./g, "").replace(",", "."));
-      return isNaN(numeric) ? null : numeric;
-    })();
-    if (typeof vendasAlt === "number" && !isNaN(vendasAlt)) vendas = vendasAlt;
-    else if (typeof parsedSubtitleSales === "number" && !isNaN(parsedSubtitleSales)) vendas = parsedSubtitleSales;
+  let vendasSource = null;
+  const scrapedListingSales = getSoldCountFromSubtitle();
+  if (Number.isFinite(scrapedListingSales)) {
+    vendas = scrapedListingSales;
+    vendasSource = "listing";
+  } else if (vendasIsEmpty && Number.isFinite(storedListingSales)) {
+    vendas = storedListingSales;
+    vendasSource = "listing";
+  } else if (vendasIsEmpty && Number.isFinite(storedCatalogSales)) {
+    vendas = storedCatalogSales;
+    vendasSource = "catalog";
+  } else if (vendasIsEmpty && Number.isFinite(storedFallbackSales)) {
+    vendas = storedFallbackSales;
+    vendasSource = "listing";
   }
   if (!startTimeRaw) {
     dLayerMainFallback();
@@ -1791,7 +1888,14 @@ function dlayerFallback() {
     }
     NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
   }
-  updateCatalogBody({ sold_quantity: vendas });
+  const numericVendas = ensureFiniteNumber(vendas, NaN);
+  if (Number.isFinite(numericVendas)) {
+    vendas = numericVendas;
+  }
+  const catalogUpdateSource = vendasSource || (Number.isFinite(scrapedListingSales) || Number.isFinite(storedListingSales)
+    ? "listing"
+    : (Number.isFinite(storedCatalogSales) ? "catalog" : null));
+  updateCatalogBody({ sold_quantity: vendas }, catalogUpdateSource ? { source: catalogUpdateSource } : undefined);
   const diasNumber = "number" == typeof dias ? dias : parseFloat(dias);
   if (!isNaN(diasNumber)) dias = diasNumber;
   if (0 == diasNumber) {
@@ -1910,14 +2014,26 @@ async function fetchProductDataFromPage(rawItemId, t) {
   )), await new Promise((e => setTimeout(e, 100)))), itemsLocalData[normalizedItemId] && itemsLocalData[normalizedItemId].startTime && void 0 !== itemsLocalData[normalizedItemId].itemSales) {
     const n = itemsLocalData[normalizedItemId];
     updateCatalogBody({
-      date_created: n.startTime,
-      sold_quantity: n.itemSales
+      date_created: n.startTime
     });
-    vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
-    let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
-    if (a && vendas > 0) {
-  upsertCatalogBadge(vendas);
-}
+    if (Number.isFinite(Number(n.itemSales))) {
+      updateCatalogBody({ sold_quantity: Number(n.itemSales) }, { source: "catalog" });
+      vendas = Number(n.itemSales);
+    } else {
+      vendas = n.itemSales;
+    }
+    n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
+    const scrapedFromSubtitle = getSoldCountFromSubtitle();
+    if (Number.isFinite(scrapedFromSubtitle)) {
+      vendas = scrapedFromSubtitle;
+      updateCatalogBody({ sold_quantity: vendas }, { source: "listing" });
+    }
+    const vendasNumeric = ensureFiniteNumber(vendas, NaN);
+    let a = getListingSubtitleElement();
+    if (a && Number.isFinite(vendasNumeric) && vendasNumeric >= 0) {
+      vendas = vendasNumeric;
+      upsertCatalogBadge(vendas);
+    }
 
     t()
   }
@@ -1969,9 +2085,11 @@ async function fetchProductDataFromPage(rawItemId, t) {
                     ?? r?.item?.sold_quantity
                     ?? r?.listing?.sold_quantity;
                   updateCatalogBody({
-                    date_created: catalogStartTime,
-                    sold_quantity: catalogSoldQuantity
+                    date_created: catalogStartTime
                   });
+                  if (Number.isFinite(Number(catalogSoldQuantity))) {
+                    updateCatalogBody({ sold_quantity: Number(catalogSoldQuantity) }, { source: "catalog" });
+                  }
                   let n = t?.split(" | ")[1]?.split(" "), s = "";
                   if (n) {
                     for (let e = 0;
@@ -2001,6 +2119,7 @@ async function fetchProductDataFromPage(rawItemId, t) {
               vendas = a;
               dias = o;
               data_br = dayjs(i).locale("pt-br").format("DD/MM/YYYY");
+              updateCatalogBody({ sold_quantity: vendas }, { source: "listing" });
               const monthlyAvg = Math.round(vendas / (dias / 30));
               if (Number.isFinite(monthlyAvg) && monthlyAvg >= 0) {
                 avgMonthlySalesCount = monthlyAvg;
@@ -2010,10 +2129,10 @@ async function fetchProductDataFromPage(rawItemId, t) {
                 media_vendas = "-";
               }
               NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
-              let e = document.getElementsByClassName("ui-pdp-subtitle")[0];
-              if (e) {
-  upsertCatalogBadge(vendas);
-}
+                let e = document.getElementsByClassName("ui-pdp-subtitle")[0];
+                if (e) {
+                  upsertCatalogBadge(vendas);
+                }
 
               let t = document.getElementById("mediabtn");
               if (t && dias > 0 && !t.querySelector(`[${NOVAI_MEDIA_VALUE_ATTR}]`)) {
