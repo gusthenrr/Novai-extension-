@@ -1140,7 +1140,7 @@ var eaInit = {
 , title = "", spot = "", spot2 = "", spot3 = "", reflow = "", maisFunc = "", spot_catalog = "", catalog_subt = "", iscatalog = !1, eatrial = "not", iFrame = "", stepOne = "", stepTwo = "", stepLoading = "", cota_minima_MLB = 79, taxa_cota = meliCurrentFee, cota_valid = 0, taxaML_verif = 0, taxa_percentual = 0, productCost = 0, PAV = 0, quotationData = localStorage.getItem("lastquote"), aliquota = 0, margem_raw = "", taxa_mlb = "", taxa_frete = "", frete_valid = 0, simular_btn = "", alerta_form = "", eapricefix = "", paginaAtual = "anuncio", vendas = "", dLayer = void 0, dLayerAlt = "", vendasAlt = "", catalogData = [{
   body: {}
 }
-], eaMLtaxdata = "", taxlitedata = "", data_br = "", dataMilisec = "", eanow = Date.now(), eadiff = "", dias = "", media_vendas = "", media_vendas_catalogo = "", eabar_category = "", MLenvios = !0, nomeProduto = "", categoryDomain = "", eaList = !1, alert_media_vendas = !1, visitasparavender = null;
+], eaMLtaxdata = "", taxlitedata = "", data_br = "", dataMilisec = "", eanow = Date.now(), eadiff = "", dias = "", media_vendas = "", media_vendas_catalogo = "", eabar_category = "", MLenvios = !0, nomeProduto = "", categoryDomain = "", eaList = !1, alert_media_vendas = !1, visitasparavender = null, listingSoldQuantityEstimate = null;
 null != document.getElementsByClassName("ui-pdp-title")[0] && (nomeProduto = document.getElementsByClassName("ui-pdp-title")[0].innerHTML);
 var checkeddimensions = "dimensions=15x30x5,150";
 
@@ -1638,22 +1638,28 @@ function dlayerFallback() {
     }
   }
   const vendasAlt = catalogBody.sold_quantity;
+  const parsedSubtitleSales = (() => {
+    const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
+    if (!subtitleEl) return null;
+    let salesText = subtitleEl.innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
+    if (!salesText) return null;
+    if (salesText.endsWith("mil")) {
+      const numeric = parseFloat(salesText.replace("mil", ""));
+      return isNaN(numeric) ? null : numeric * 1e3;
+    }
+    const numeric = parseFloat(salesText.replace(/\./g, "").replace(",", "."));
+    return isNaN(numeric) ? null : numeric;
+  })();
+  const normalizedSubtitleSales = typeof parsedSubtitleSales === "number" && !isNaN(parsedSubtitleSales)
+    ? parsedSubtitleSales
+    : null;
+  if (null !== normalizedSubtitleSales) {
+    listingSoldQuantityEstimate = normalizedSubtitleSales;
+  }
   const vendasIsEmpty = typeof vendas === "string" ? vendas.length === 0 : null == vendas;
   if (vendasIsEmpty) {
-    const parsedSubtitleSales = (() => {
-      const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
-      if (!subtitleEl) return null;
-      let salesText = subtitleEl.innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
-      if (!salesText) return null;
-      if (salesText.endsWith("mil")) {
-        const numeric = parseFloat(salesText.replace("mil", ""));
-        return isNaN(numeric) ? null : numeric * 1e3;
-      }
-      const numeric = parseFloat(salesText.replace(/\./g, "").replace(",", "."));
-      return isNaN(numeric) ? null : numeric;
-    })();
     if (typeof vendasAlt === "number" && !isNaN(vendasAlt)) vendas = vendasAlt;
-    else if (typeof parsedSubtitleSales === "number" && !isNaN(parsedSubtitleSales)) vendas = parsedSubtitleSales;
+    else if (null !== normalizedSubtitleSales) vendas = normalizedSubtitleSales;
   }
   if (!startTimeRaw) {
     dLayerMainFallback();
@@ -1683,8 +1689,20 @@ function dlayerFallback() {
     !isNaN(computedDays) && (dias = computedDays);
   }
   if ("" == media_vendas) {
-    if ("number" == typeof vendas && !isNaN(vendas) && dias > 0) {
-      const monthlyAvg = Math.round(vendas / (dias / 30));
+    const quantityForMonthlyAverage = (() => {
+      if (typeof listingSoldQuantityEstimate === "number" && !isNaN(listingSoldQuantityEstimate)) {
+        return listingSoldQuantityEstimate;
+      }
+      if (typeof vendas === "number" && !isNaN(vendas)) {
+        return vendas;
+      }
+      if (typeof vendasAlt === "number" && !isNaN(vendasAlt)) {
+        return vendasAlt;
+      }
+      return null;
+    })();
+    if (typeof quantityForMonthlyAverage === "number" && !isNaN(quantityForMonthlyAverage) && dias > 0) {
+      const monthlyAvg = Math.round(quantityForMonthlyAverage / (dias / 30));
       media_vendas = isNaN(monthlyAvg) ? "Indisponível" : monthlyAvg;
     } else media_vendas = "Indisponível";
   }
@@ -2612,7 +2630,20 @@ function contentScpt() {
         };
         const catalogBody = typeof ensureCatalogBody === "function" ? ensureCatalogBody() : {};
         const catalogSoldQuantity = ensureFinite(catalogBody?.sold_quantity);
-        const catalogRevenue = catalogSoldQuantity > 0 ? ensureFinite(catalogSoldQuantity * preco_Local) : ensureFinite(n);
+        const listingSoldQuantity = Number.isFinite(t)
+          ? t
+          : (typeof listingSoldQuantityEstimate === "number" && !isNaN(listingSoldQuantityEstimate)
+            ? listingSoldQuantityEstimate
+            : NaN);
+        if (Number.isFinite(listingSoldQuantity)) {
+          listingSoldQuantityEstimate = listingSoldQuantity;
+        }
+        const catalogRevenueQuantity = Number.isFinite(listingSoldQuantity)
+          ? listingSoldQuantity
+          : catalogSoldQuantity;
+        const catalogRevenue = Number.isFinite(catalogRevenueQuantity)
+          ? ensureFinite(catalogRevenueQuantity * preco_Local)
+          : ensureFinite(n);
         if (s?.length > 1) {
           s[1].innerHTML = formatCurrency(catalogRevenue);
         }
