@@ -196,6 +196,110 @@ function coerceNonNegativeInteger(value, fallback = 0) {
   return Number.isFinite(bounded) ? bounded : Math.max(0, Math.floor(fallback));
 }
 
+const LISTING_SALES_PRIORITY = {
+  'listing-scraped': 50,
+  'listing-datalayer': 40,
+  'catalog-body': 30,
+  'catalog-api': 30,
+  cache: 20,
+  unknown: 10
+};
+
+const LISTING_SALES_EQUAL_STRATEGY = {
+  'listing-scraped': 'replace',
+  'listing-datalayer': 'replace',
+  'catalog-body': 'max',
+  'catalog-api': 'max',
+  cache: 'max',
+  unknown: 'max'
+};
+
+const LISTING_SALES_KIND = {
+  'listing-scraped': 'listing',
+  'listing-datalayer': 'listing',
+  'catalog-body': 'catalog',
+  'catalog-api': 'catalog',
+  cache: 'catalog',
+  unknown: 'catalog'
+};
+
+let listingSalesState = {
+  value: null,
+  source: null,
+  kind: null,
+  priority: -Infinity
+};
+
+function getListingSalesPriority(source) {
+  return LISTING_SALES_PRIORITY[source] ?? LISTING_SALES_PRIORITY.unknown;
+}
+
+function shouldOverrideListingSales(currentValue, candidateValue, source, priority) {
+  const currentPriority = listingSalesState.priority ?? -Infinity;
+  if (priority > currentPriority) {
+    return true;
+  }
+  if (priority < currentPriority) {
+    return false;
+  }
+
+  const strategy = LISTING_SALES_EQUAL_STRATEGY[source] ?? 'max';
+  const numericCurrent = Number.isFinite(currentValue) ? currentValue : NaN;
+  if (strategy === 'replace') {
+    return !Number.isFinite(numericCurrent) || candidateValue !== numericCurrent;
+  }
+  if (strategy === 'min') {
+    return !Number.isFinite(numericCurrent) || candidateValue < numericCurrent;
+  }
+  // default strategy is "max"
+  return !Number.isFinite(numericCurrent) || candidateValue > numericCurrent;
+}
+
+function setListingSales(rawValue, source = 'unknown') {
+  const numeric = ensureFiniteNumber(rawValue, NaN);
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    return listingSalesState.value;
+  }
+
+  const priority = getListingSalesPriority(source);
+  const shouldUpdate = shouldOverrideListingSales(
+    listingSalesState.value,
+    numeric,
+    source,
+    priority
+  );
+
+  if (!shouldUpdate) {
+    return listingSalesState.value;
+  }
+
+  const kind = LISTING_SALES_KIND[source] ?? null;
+  listingSalesState = {
+    value: numeric,
+    source,
+    kind,
+    priority
+  };
+  vendas = numeric;
+  return listingSalesState.value;
+}
+
+function getListingSales(defaultValue = 0) {
+  const stored = ensureFiniteNumber(listingSalesState.value, NaN);
+  if (Number.isFinite(stored)) {
+    return stored;
+  }
+  const fallback = ensureFiniteNumber(vendas, NaN);
+  if (Number.isFinite(fallback)) {
+    return fallback;
+  }
+  return defaultValue;
+}
+
+function getListingSalesKind() {
+  return listingSalesState.kind ?? null;
+}
+
 function getNormalizedSoldQtyFromPDP() {
   const subtitleEl = document.querySelector('.ui-pdp-subtitle') || document.querySelector('.ui-pdp-header__subtitle');
   let normalizedQty = 0;
@@ -1250,8 +1354,9 @@ function ensureCatalogBody() {
   return catalogData[0].body;
 }
 
-function updateCatalogBody(partial = {}) {
+function updateCatalogBody(partial = {}, options = {}) {
   const body = ensureCatalogBody();
+  const soldQuantitySource = options.soldQuantitySource ?? options.source ?? null;
   for (const [key, rawValue] of Object.entries(partial || {})) {
     if (null == rawValue) continue;
     if ("date_created" === key) {
@@ -1265,9 +1370,21 @@ function updateCatalogBody(partial = {}) {
     if ("sold_quantity" === key) {
       const numeric = Number(rawValue);
       if (!Number.isFinite(numeric)) continue;
-      const current = Number(body.sold_quantity);
-      if (!Number.isFinite(current) || numeric > current) {
+      const sourceKind = soldQuantitySource === 'listing' ? 'listing' : 'catalog';
+      if (sourceKind === 'listing') {
+        body.listing_sold_quantity = numeric;
         body.sold_quantity = numeric;
+      } else {
+        body.catalog_sold_quantity = numeric;
+        const listingValue = Number(body.listing_sold_quantity);
+        if (Number.isFinite(listingValue)) {
+          body.sold_quantity = listingValue;
+        } else {
+          const current = Number(body.sold_quantity);
+          if (!Number.isFinite(current) || numeric > current) {
+            body.sold_quantity = numeric;
+          }
+        }
       }
       continue;
     }
@@ -1730,24 +1847,28 @@ function dlayerFallback() {
       break;
     }
   }
-  const vendasAlt = catalogBody.sold_quantity;
-  const vendasIsEmpty = typeof vendas === "string" ? vendas.length === 0 : null == vendas;
-  if (vendasIsEmpty) {
-    const parsedSubtitleSales = (() => {
-      const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
-      if (!subtitleEl) return null;
-      let salesText = subtitleEl.innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
-      if (!salesText) return null;
-      if (salesText.endsWith("mil")) {
-        const numeric = parseFloat(salesText.replace("mil", ""));
-        return isNaN(numeric) ? null : numeric * 1e3;
-      }
-      const numeric = parseFloat(salesText.replace(/\./g, "").replace(",", "."));
-      return isNaN(numeric) ? null : numeric;
-    })();
-    if (typeof vendasAlt === "number" && !isNaN(vendasAlt)) vendas = vendasAlt;
-    else if (typeof parsedSubtitleSales === "number" && !isNaN(parsedSubtitleSales)) vendas = parsedSubtitleSales;
+  const catalogSales = ensureFiniteNumber(catalogBody.sold_quantity, NaN);
+  const parsedSubtitleSales = (() => {
+    const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
+    if (!subtitleEl) return null;
+    let salesText = subtitleEl.innerHTML.split(" | ")[1]?.split(" vendidos")[0]?.trim();
+    if (!salesText) return null;
+    if (salesText.endsWith("mil")) {
+      const numeric = parseFloat(salesText.replace("mil", ""));
+      return isNaN(numeric) ? null : numeric * 1e3;
+    }
+    const numeric = parseFloat(salesText.replace(/\./g, "").replace(",", "."));
+    return isNaN(numeric) ? null : numeric;
+  })();
+
+  if (Number.isFinite(parsedSubtitleSales)) {
+    setListingSales(parsedSubtitleSales, 'listing-scraped');
+  } else if (Number.isFinite(catalogSales)) {
+    setListingSales(catalogSales, 'catalog-body');
   }
+
+  const currentSales = getListingSales(null);
+  const salesKind = getListingSalesKind();
   if (!startTimeRaw) {
     dLayerMainFallback();
     if (!dlayerFallback._retryTimeout) {
@@ -1776,8 +1897,8 @@ function dlayerFallback() {
     !isNaN(computedDays) && (dias = computedDays);
   }
   if ("" == media_vendas) {
-    if ("number" == typeof vendas && !isNaN(vendas) && dias > 0) {
-      const monthlyAvg = Math.round(vendas / (dias / 30));
+    if (Number.isFinite(currentSales) && dias > 0) {
+      const monthlyAvg = Math.round(currentSales / (dias / 30));
       if (Number.isFinite(monthlyAvg) && monthlyAvg >= 0) {
         avgMonthlySalesCount = monthlyAvg;
         media_vendas = monthlyAvg;
@@ -1791,7 +1912,9 @@ function dlayerFallback() {
     }
     NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
   }
-  updateCatalogBody({ sold_quantity: vendas });
+  if (Number.isFinite(currentSales)) {
+    updateCatalogBody({ sold_quantity: currentSales }, { soldQuantitySource: salesKind === 'listing' ? 'listing' : 'catalog' });
+  }
   const diasNumber = "number" == typeof dias ? dias : parseFloat(dias);
   if (!isNaN(diasNumber)) dias = diasNumber;
   if (0 == diasNumber) {
@@ -1836,7 +1959,7 @@ function parseSalesText(e) {
     thisItemSales: a
   }
 }
-function upsertCatalogBadge(vendas) {
+function upsertCatalogBadge(totalSales = getListingSales()) {
   const subtitle = document.querySelector('.ui-pdp-subtitle');
   if (!subtitle) return;
 
@@ -1863,9 +1986,10 @@ function upsertCatalogBadge(vendas) {
   }
 
   const salesNode = badge.querySelector('.NovaiCatalogoAnuncioSales');
-  if (salesNode) salesNode.textContent = `${vendas} vendidos`;
+  const normalizedSales = Number.isFinite(totalSales) ? totalSales : 0;
+  if (salesNode) salesNode.textContent = `${normalizedSales} vendidos`;
 
-  subtitle.setAttribute('data-mfy-sales', String(vendas));
+  subtitle.setAttribute('data-mfy-sales', String(normalizedSales));
 }
 
 async function fetchProductDataFromPage(rawItemId, t) {
@@ -1912,12 +2036,22 @@ async function fetchProductDataFromPage(rawItemId, t) {
     updateCatalogBody({
       date_created: n.startTime,
       sold_quantity: n.itemSales
-    });
-    vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
+    }, { soldQuantitySource: 'catalog' });
+    if (Number.isFinite(ensureFiniteNumber(n.itemSales, NaN))) {
+      setListingSales(n.itemSales, 'cache');
+    }
+    n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
+    const cachedSales = getListingSales(null);
     let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
-    if (a && vendas > 0) {
-  upsertCatalogBadge(vendas);
-}
+    if (a && Number.isFinite(cachedSales) && cachedSales > 0) {
+      upsertCatalogBadge(cachedSales);
+    }
+
+    setTimeout(() => {
+      try {
+        dlayerFallback();
+      } catch (_) {}
+    }, 0);
 
     t()
   }
@@ -1971,7 +2105,10 @@ async function fetchProductDataFromPage(rawItemId, t) {
                   updateCatalogBody({
                     date_created: catalogStartTime,
                     sold_quantity: catalogSoldQuantity
-                  });
+                  }, { soldQuantitySource: 'catalog' });
+                  if (Number.isFinite(ensureFiniteNumber(catalogSoldQuantity, NaN))) {
+                    setListingSales(catalogSoldQuantity, 'catalog-body');
+                  }
                   let n = t?.split(" | ")[1]?.split(" "), s = "";
                   if (n) {
                     for (let e = 0;
@@ -1998,10 +2135,13 @@ async function fetchProductDataFromPage(rawItemId, t) {
               }
             }
             if (o > 0 && null != a) {
-              vendas = a;
+              setListingSales(a, 'listing-scraped');
+              const listingSales = getListingSales(null);
               dias = o;
               data_br = dayjs(i).locale("pt-br").format("DD/MM/YYYY");
-              const monthlyAvg = Math.round(vendas / (dias / 30));
+              const monthlyAvg = Number.isFinite(listingSales) && dias > 0
+                ? Math.round(listingSales / (dias / 30))
+                : NaN;
               if (Number.isFinite(monthlyAvg) && monthlyAvg >= 0) {
                 avgMonthlySalesCount = monthlyAvg;
                 media_vendas = monthlyAvg;
@@ -2011,9 +2151,9 @@ async function fetchProductDataFromPage(rawItemId, t) {
               }
               NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
               let e = document.getElementsByClassName("ui-pdp-subtitle")[0];
-              if (e) {
-  upsertCatalogBadge(vendas);
-}
+              if (e && Number.isFinite(listingSales)) {
+                upsertCatalogBadge(listingSales);
+              }
 
               let t = document.getElementById("mediabtn");
               if (t && dias > 0 && !t.querySelector(`[${NOVAI_MEDIA_VALUE_ATTR}]`)) {
@@ -2042,7 +2182,10 @@ let n = `
 </div>
 `;
 
-                t.innerHTML = (isNaN(Math.round(vendas / (dias / 30))) ? "-": Math.round(vendas / (dias / 30))) + " vendas/mês" + e + n;
+                const monthlySalesDisplay = Number.isFinite(listingSales) && dias > 0
+                  ? Math.round(listingSales / (dias / 30))
+                  : NaN;
+                t.innerHTML = (isNaN(monthlySalesDisplay) ? "-" : monthlySalesDisplay) + " vendas/mês" + e + n;
                 let a = document.getElementsByClassName("mfy-catalog-info-tooltip")[0];
                 a && (t.addEventListener("mouseover", (function () {
                   a.style.opacity = 1
@@ -2626,7 +2769,9 @@ function contentScpt() {
     console.warn("[NOVAI] Cabeçalho da PDP não encontrado para injetar os componentes de métricas.");
   }
   function e() {
-    salesSpot = document.getElementsByClassName("ui-pdp-header__subtitle"), newSalesDiv = `<div id="salesfix" style="width: fit-content;display: flex;flex-direction: row;height: 14px;align-items: center;border-radius: 1rem;border: 1px solid rgba(0,0,0,0.14);padding: 1rem;position: relative;top: 8px;margin-left: 1rem;">\n    <img src="https://i.ibb.co/K7Lc6cr/metrify.png" style="width: 14px;height: 14px;position: relative;left: 1px;margin-right: -0.5rem">\n    ${vendas} vendidos\n    </div>`, iscatalog ? salesSpot[0].setAttribute("style", "display: flex;flex-direction: row;gap: 1rem; margin: 1rem 0;align-items: center;"): (salesSpot[0].firstChild.setAttribute("style", "display: flex;flex-direction: row;align-items: center;margin-bottom:1.35rem"), salesSpot[0].firstChild.style.width = "max-content")
+    const listingSales = getListingSales();
+    const displaySales = Number.isFinite(listingSales) ? listingSales : 0;
+    salesSpot = document.getElementsByClassName("ui-pdp-header__subtitle"), newSalesDiv = `<div id="salesfix" style="width: fit-content;display: flex;flex-direction: row;height: 14px;align-items: center;border-radius: 1rem;border: 1px solid rgba(0,0,0,0.14);padding: 1rem;position: relative;top: 8px;margin-left: 1rem;">\n    <img src="https://i.ibb.co/K7Lc6cr/metrify.png" style="width: 14px;height: 14px;position: relative;left: 1px;margin-right: -0.5rem">\n    ${displaySales} vendidos\n    </div>`, iscatalog ? salesSpot[0].setAttribute("style", "display: flex;flex-direction: row;gap: 1rem; margin: 1rem 0;align-items: center;"): (salesSpot[0].firstChild.setAttribute("style", "display: flex;flex-direction: row;align-items: center;margin-bottom:1.35rem"), salesSpot[0].firstChild.style.width = "max-content")
   }
   function t() {
     var e = [];
@@ -2674,7 +2819,8 @@ function contentScpt() {
 
         qtySold_normalized = getNormalizedSoldQtyFromPDP();
         qtySold_catalog = qtySold_normalized;
-        const totalSoldCount = coerceNonNegativeInteger(vendas, qtySold_catalog);
+        const listingSales = getListingSales();
+        const totalSoldCount = coerceNonNegativeInteger(listingSales, qtySold_catalog);
         const monthlyCount = ensureFiniteNumber(avgMonthlySalesCount, 0);
 
         qtySold_period = {
@@ -2764,7 +2910,8 @@ function contentScpt() {
         let m = document.getElementsByClassName("revbtn1")[0], c = document.getElementsByClassName("revbtn7")[0], p = document.getElementsByClassName("revbtn30")[0], g = document.getElementsByClassName("revbtn60")[0], f = document.getElementsByClassName("revbtn90")[0], u = document.getElementsByClassName("revbtntotal")[0], y = document.getElementsByClassName("revtitle");
         const hasMonthlyRevenue = ensureFiniteNumber(revenueByPeriod['30d'], 0) > 0;
         const hasTotalRevenue = ensureFiniteNumber(revenueByPeriod.total, 0) > 0;
-        dias / (vendas || 1) > 1 && m && (m.style.display = "none");
+        const listingSalesForDivision = Number.isFinite(listingSales) && listingSales > 0 ? listingSales : 1;
+        dias / listingSalesForDivision > 1 && m && (m.style.display = "none");
         dias <= 30 && (f && (f.style.display = "none"), g && (g.style.display = "none"), p && (p.style.display = "none"));
         !hasMonthlyRevenue && (m && (m.style.display = "none"), c && (c.style.display = "none"), p && (p.style.display = "none"), g && (g.style.display = "none"), f && (f.style.display = "none"));
         !hasTotalRevenue && u && (u.style.display = "none");
@@ -3679,14 +3826,17 @@ function s() {
           const a = typeof n == "number" && Number.isFinite(n) ? n: NaN;
           visitastotais = a;
           const hasVisits = Number.isFinite(a) && a > 0;
-          conversaototal = hasVisits ? vendas / a: NaN;
-          visitaporvenda = hasVisits ? a / (vendas > 0 ? vendas: 1): NaN;
+          const listingSales = getListingSales(null);
+          const safeSalesForConversion = Number.isFinite(listingSales) ? listingSales : 0;
+          const safeSalesForDivision = Number.isFinite(listingSales) && listingSales > 0 ? listingSales : 1;
+          conversaototal = hasVisits ? safeSalesForConversion / a : NaN;
+          visitaporvenda = hasVisits ? a / safeSalesForDivision : NaN;
           visitaporvenda_fix = Number.isFinite(visitaporvenda) ? parseFloat(visitaporvenda).toFixed(0): "?";
           visitasparavender = Number.isFinite(visitaporvenda) ? parseFloat(visitaporvenda_fix): NaN;
           const formattedTotalVisits = Number.isFinite(visitastotais) ? visitastotais.toLocaleString("pt-br") : "-";
           const conversionPercentage = Number.isFinite(conversaototal) ? `${(100 * conversaototal).toFixed(1)}%` : "-";
           const formattedVisitsPerSale = Number.isFinite(visitasparavender) ? visitasparavender.toLocaleString("pt-br") : "-";
-          const hasSales = vendas > 0 && Number.isFinite(visitasparavender);
+          const hasSales = Number.isFinite(listingSales) && listingSales > 0 && Number.isFinite(visitasparavender);
           const elapsed = Date.now() - L;
           const delay = Math.max(0, 800 - elapsed);
           setTimeout((() => {
@@ -3921,14 +4071,18 @@ function s() {
       const normalized = parseFloat(subtitleSales.replace(/\./g, "").replace(",", "."));
       subtitleSales = isNaN(normalized) ? subtitleSales: normalized;
     }
-    if (("string" == typeof vendas && 0 == vendas.length || null == vendas) && null != subtitleSales) vendas = subtitleSales;
+    const subtitleNumeric = ensureFiniteNumber(subtitleSales, NaN);
+    if (Number.isFinite(subtitleNumeric)) {
+      setListingSales(subtitleNumeric, 'listing-scraped');
+    }
     dLayer && "" == data_br ? (data_br = dayjs(dLayer).locale("pt-br").format("DD/MM/YYYY"), dataMilisec = Date.parse(dLayer), eadiff = eanow - dataMilisec, dias = Math.round(eadiff / (8.64 * Math.pow(10, 7))),
     (() => {
-      if (0 == dias || isNaN(vendas)) {
+      const listingSales = getListingSales(null);
+      if (0 == dias || !Number.isFinite(listingSales)) {
         avgMonthlySalesCount = 0;
         media_vendas = "Indisponível (0 dias)";
       } else {
-        const monthlyAvg = Math.round(vendas / (dias / 30));
+        const monthlyAvg = Math.round(listingSales / (dias / 30));
         if (Number.isFinite(monthlyAvg) && monthlyAvg >= 0) {
           avgMonthlySalesCount = monthlyAvg;
           media_vendas = monthlyAvg;
