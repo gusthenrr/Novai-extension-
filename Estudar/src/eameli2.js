@@ -31,7 +31,7 @@ if (typeof localePTBR === 'undefined' || !Array.isArray(localePTBR)) {
   var localePTBR = [];
 }
 var novaiContorn = "https://nvai-proxy-production.up.railway.app/"
-var novaiContorn2 = "https://mfy.herokuapp.com/";
+var novaiContorn2 = "https://novai-cors-production.up.railway.app/";
 // Derive the extension base URL from the current script tag (reliable in page context)
 var extensionBaseUrl = (function(){
   try {
