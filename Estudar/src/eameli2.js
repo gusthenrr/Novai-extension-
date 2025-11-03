@@ -164,6 +164,99 @@ const NOVAI_INJECTED_ELEMENT_IDS = [
   "visits-component"
 ];
 
+var qtySold_normalized = 0;
+var qtySold_catalog = 0;
+var qtySold_period = { '1d': 0, '7d': 0, '30d': 0, '60d': 0, '90d': 0, total: 0 };
+var avgMonthlySalesCount = 0;
+
+const NOVAI_SALES_STATE = {
+  qty: {
+    normalizedSoldTotal: qtySold_normalized,
+    catalogSoldTotal: qtySold_catalog,
+    period: { ...qtySold_period }
+  },
+  averages: {
+    monthlySalesCount: avgMonthlySalesCount
+  },
+  prices: {
+    listing: 0,
+    catalog: 0,
+    local: 0
+  }
+};
+
+function ensureFiniteNumber(value, fallback = 0) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function coerceNonNegativeInteger(value, fallback = 0) {
+  const numeric = ensureFiniteNumber(value, fallback);
+  const bounded = Math.max(0, Math.floor(numeric));
+  return Number.isFinite(bounded) ? bounded : Math.max(0, Math.floor(fallback));
+}
+
+function getNormalizedSoldQtyFromPDP() {
+  const subtitleEl = document.querySelector('.ui-pdp-subtitle') || document.querySelector('.ui-pdp-header__subtitle');
+  let normalizedQty = 0;
+
+  if (subtitleEl) {
+    const subtitleText = subtitleEl.innerText || subtitleEl.textContent || '';
+    if (subtitleText && typeof parseSalesText === 'function') {
+      try {
+        const parsed = parseSalesText(subtitleText);
+        if (parsed && Number.isFinite(parsed.thisItemSales)) {
+          normalizedQty = parsed.thisItemSales;
+        }
+      } catch (_) {}
+    }
+  }
+
+  const fallbacks = [
+    () => subtitleEl ? Number(subtitleEl.getAttribute('sales')) : NaN,
+    () => Number(vendas),
+    () => {
+      try {
+        const body = ensureCatalogBody?.();
+        return Number(body?.sold_quantity);
+      } catch (_) {
+        return NaN;
+      }
+    }
+  ];
+
+  for (const reader of fallbacks) {
+    const candidate = Number(reader());
+    if (Number.isFinite(candidate) && candidate > normalizedQty) {
+      normalizedQty = candidate;
+    }
+  }
+
+  return coerceNonNegativeInteger(normalizedQty, 0);
+}
+
+function computeCatalogRevenue(qtySoldCatalog, priceCatalog) {
+  const qty = coerceNonNegativeInteger(qtySoldCatalog, 0);
+  const price = ensureFiniteNumber(priceCatalog, 0);
+  const revenue = qty * price;
+  return Number.isFinite(revenue) ? revenue : 0;
+}
+
+function computeListingPeriodRevenue(periodMap, priceListing, windowKey) {
+  if (!periodMap || 'object' != typeof periodMap) return 0;
+  const qty = ensureFiniteNumber(windowKey ? periodMap[windowKey] : 0, 0);
+  const price = ensureFiniteNumber(priceListing, 0);
+  const revenue = qty * price;
+  return Number.isFinite(revenue) ? revenue : 0;
+}
+
+function computeAvgMonthlyRevenue(monthlySalesCount, price) {
+  const monthlyQty = ensureFiniteNumber(monthlySalesCount, 0);
+  const priceValue = ensureFiniteNumber(price, 0);
+  const revenue = monthlyQty * priceValue;
+  return Number.isFinite(revenue) ? revenue : 0;
+}
+
 function removeNovaiInjectedNodes(contextLabel = "manual-cleanup") {
   try {
     let removed = 0;
@@ -1685,13 +1778,29 @@ function dlayerFallback() {
   if ("" == media_vendas) {
     if ("number" == typeof vendas && !isNaN(vendas) && dias > 0) {
       const monthlyAvg = Math.round(vendas / (dias / 30));
-      media_vendas = isNaN(monthlyAvg) ? "Indisponível" : monthlyAvg;
-    } else media_vendas = "Indisponível";
+      if (Number.isFinite(monthlyAvg) && monthlyAvg >= 0) {
+        avgMonthlySalesCount = monthlyAvg;
+        media_vendas = monthlyAvg;
+      } else {
+        avgMonthlySalesCount = 0;
+        media_vendas = "Indisponível";
+      }
+    } else {
+      avgMonthlySalesCount = 0;
+      media_vendas = "Indisponível";
+    }
+    NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
   }
   updateCatalogBody({ sold_quantity: vendas });
   const diasNumber = "number" == typeof dias ? dias : parseFloat(dias);
   if (!isNaN(diasNumber)) dias = diasNumber;
-  0 == diasNumber ? media_vendas = "0": diasNumber < 30 && !isNaN(diasNumber) && (alert_media_vendas = !0);
+  if (0 == diasNumber) {
+    avgMonthlySalesCount = 0;
+    media_vendas = "0";
+    NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
+  } else if (diasNumber < 30 && !isNaN(diasNumber)) {
+    alert_media_vendas = !0;
+  }
   dLayerMainFallback();
 }
 function altContentScpt() {
@@ -1889,7 +1998,18 @@ async function fetchProductDataFromPage(rawItemId, t) {
               }
             }
             if (o > 0 && null != a) {
-              vendas = a, dias = o, data_br = dayjs(i).locale("pt-br").format("DD/MM/YYYY"), media_vendas = isNaN(Math.round(vendas / (dias / 30))) ? "-": Math.round(vendas / (dias / 30));
+              vendas = a;
+              dias = o;
+              data_br = dayjs(i).locale("pt-br").format("DD/MM/YYYY");
+              const monthlyAvg = Math.round(vendas / (dias / 30));
+              if (Number.isFinite(monthlyAvg) && monthlyAvg >= 0) {
+                avgMonthlySalesCount = monthlyAvg;
+                media_vendas = monthlyAvg;
+              } else {
+                avgMonthlySalesCount = 0;
+                media_vendas = "-";
+              }
+              NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
               let e = document.getElementsByClassName("ui-pdp-subtitle")[0];
               if (e) {
   upsertCatalogBadge(vendas);
@@ -2547,24 +2667,73 @@ function contentScpt() {
         anchorMoreToolsButton(0);
       }
       )), function () {
-        let e = isNaN(media_vendas * preco_Local) ? 0: media_vendas * preco_Local, t = parseSalesText(document.getElementsByClassName("ui-pdp-subtitle")[0].innerText).thisItemSales, n = isNaN(t * preco_Local) ? 0: t * preco_Local, a = document.getElementsByClassName("eagrossrev-title")[0], i = document.getElementsByClassName("earevstats")[0], s = i ? i.querySelectorAll(".eagrossrev-catalog-title") : null;
+        const priceListing = ensureFiniteNumber(preco_Local, 0);
+        NOVAI_SALES_STATE.prices.listing = priceListing;
+        NOVAI_SALES_STATE.prices.catalog = priceListing;
+        NOVAI_SALES_STATE.prices.local = priceListing;
+
+        qtySold_normalized = getNormalizedSoldQtyFromPDP();
+        qtySold_catalog = qtySold_normalized;
+        const totalSoldCount = coerceNonNegativeInteger(vendas, qtySold_catalog);
+        const monthlyCount = ensureFiniteNumber(avgMonthlySalesCount, 0);
+
+        qtySold_period = {
+          '1d': ensureFiniteNumber(monthlyCount / 30, 0),
+          '7d': ensureFiniteNumber(monthlyCount * (7 / 30), 0),
+          '30d': ensureFiniteNumber(monthlyCount, 0),
+          '60d': ensureFiniteNumber(monthlyCount * 2, 0),
+          '90d': ensureFiniteNumber(monthlyCount * 3, 0),
+          total: totalSoldCount
+        };
+
+        NOVAI_SALES_STATE.qty.normalizedSoldTotal = qtySold_normalized;
+        NOVAI_SALES_STATE.qty.catalogSoldTotal = qtySold_catalog;
+        NOVAI_SALES_STATE.qty.period = { ...qtySold_period };
+        NOVAI_SALES_STATE.averages.monthlySalesCount = monthlyCount;
+
+        const revenueByPeriod = {
+          '1d': computeListingPeriodRevenue(qtySold_period, priceListing, '1d'),
+          '7d': computeListingPeriodRevenue(qtySold_period, priceListing, '7d'),
+          '30d': computeAvgMonthlyRevenue(monthlyCount, priceListing),
+          '60d': computeListingPeriodRevenue(qtySold_period, priceListing, '60d'),
+          '90d': computeListingPeriodRevenue(qtySold_period, priceListing, '90d'),
+          total: computeListingPeriodRevenue(qtySold_period, priceListing, 'total')
+        };
+        const revenueCatalog = computeCatalogRevenue(qtySold_catalog, priceListing);
+        const a = document.getElementsByClassName("eagrossrev-title")[0];
+        const i = document.getElementsByClassName("earevstats")[0];
+        const s = i ? i.querySelectorAll(".eagrossrev-catalog-title") : null;
         const o = document.getElementById("eagrossrev");
+
+        const formatCurrency = (value) => {
+          const numeric = ensureFiniteNumber(value, 0);
+          return parseFloat(numeric.toFixed(2)).toLocaleString("pt-br", { style: "currency", currency: "BRL" });
+        };
+
+        const setAnuncioValue = (value) => {
+          if (s?.length > 0) s[0].innerHTML = formatCurrency(value);
+          else a.innerHTML = formatCurrency(value);
+        };
+
         if (iscatalog) {
-          a.setAttribute("class", ""), a.parentElement.lastChild.remove(), a.parentElement.setAttribute("style", "font-size: 0.92em;display: flex;font-weight: 900;");
+          a.setAttribute("class", "");
+          a.parentElement.lastChild.remove();
+          a.parentElement.setAttribute("style", "font-size: 0.92em;display: flex;font-weight: 900;");
           let t = a.parentElement.previousElementSibling || a.parentElement.previousSibling;
           if (t instanceof Element) {
-          t.remove(), a.parentElement.insertAdjacentElement("afterbegin", t);
+            t.remove();
+            a.parentElement.insertAdjacentElement("afterbegin", t);
           }
           a.parentElement.parentElement.setAttribute("style", "display: flex;flex-direction: column;");
           a.innerHTML = '<div style="padding: .2rem 1rem;margin: .2rem .75rem;font-size: .88rem;width: fit-content;border-radius:1rem;border:1px solid #ebebeb;">Catálogo & Anúncio vencedor</div>';
           o?.classList.add("novai-rev-has-breakdown");
-          s?.length > 0 && (s[0].innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`);
-          s?.length > 1 && (s[1].innerHTML = `${parseFloat(n.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`);
-        }
-        else {
-          a.innerHTML = `${parseFloat(e.toFixed(2)).toLocaleString("pt-br",{style:"currency",currency:"BRL"})}`;
+          s?.length > 0 && (s[0].innerHTML = formatCurrency(revenueByPeriod['30d']));
+          s?.length > 1 && (s[1].innerHTML = formatCurrency(revenueCatalog));
+        } else {
+          a.innerHTML = formatCurrency(revenueByPeriod['30d']);
           o?.classList.remove("novai-rev-has-breakdown");
         }
+
         i?.setAttribute("style", "transition:all 0.35s;padding: 0em 1em 0.35em 1.7em;color: #d1d5db;");
         let r = document.getElementsByClassName("ui-pdp__header-top-brand")[0], l = document.getElementsByClassName("ui-pdp-highlights")[0];
         if (r) {
@@ -2593,77 +2762,62 @@ function contentScpt() {
           o.dataset.novaiRevHover = "1";
         }
         let m = document.getElementsByClassName("revbtn1")[0], c = document.getElementsByClassName("revbtn7")[0], p = document.getElementsByClassName("revbtn30")[0], g = document.getElementsByClassName("revbtn60")[0], f = document.getElementsByClassName("revbtn90")[0], u = document.getElementsByClassName("revbtntotal")[0], y = document.getElementsByClassName("revtitle");
-        dias / vendas > 1 && m && (m.style.display = "none");
+        const hasMonthlyRevenue = ensureFiniteNumber(revenueByPeriod['30d'], 0) > 0;
+        const hasTotalRevenue = ensureFiniteNumber(revenueByPeriod.total, 0) > 0;
+        dias / (vendas || 1) > 1 && m && (m.style.display = "none");
         dias <= 30 && (f && (f.style.display = "none"), g && (g.style.display = "none"), p && (p.style.display = "none"));
-        e <= 0 && (m && (m.style.display = "none"), c && (c.style.display = "none"), p && (p.style.display = "none"), g && (g.style.display = "none"), f && (f.style.display = "none"));
+        !hasMonthlyRevenue && (m && (m.style.display = "none"), c && (c.style.display = "none"), p && (p.style.display = "none"), g && (g.style.display = "none"), f && (f.style.display = "none"));
+        !hasTotalRevenue && u && (u.style.display = "none");
         let h = document.getElementsByClassName("revperiod");
         const buttons = [m, c, p, g, f, u].filter(Boolean);
-        const ensureFinite = (value) => {
-          const numeric = Number(value);
-          return Number.isFinite(numeric) ? numeric : 0;
-        };
-        const formatCurrency = (value) => {
-          const numeric = ensureFinite(value);
-          return parseFloat(numeric.toFixed(2)).toLocaleString("pt-br", { style: "currency", currency: "BRL" });
-        };
-        const setAnuncioValue = (value) => {
-          if (s?.length > 0) s[0].innerHTML = formatCurrency(value);
-          else a.innerHTML = formatCurrency(value);
-        };
-        const catalogBody = typeof ensureCatalogBody === "function" ? ensureCatalogBody() : {};
-        const catalogSoldQuantity = ensureFinite(catalogBody?.sold_quantity);
-        const catalogRevenue = catalogSoldQuantity > 0 ? ensureFinite(catalogSoldQuantity * preco_Local) : ensureFinite(n);
         if (s?.length > 1) {
-          s[1].innerHTML = formatCurrency(catalogRevenue);
+          s[1].innerHTML = formatCurrency(revenueCatalog);
         }
         if (h?.length > 1) {
           h[1].innerHTML = " Total";
           h[1].classList.remove("revperiod");
         }
-        setAnuncioValue(e);
+        setAnuncioValue(revenueByPeriod['30d']);
         const setActiveButton = (button) => {
           buttons.forEach((btn) => btn.classList.remove("novai-active"));
           button?.classList.add("novai-active");
         };
         const updatePeriodLabels = (label) => {
-          if (y?.length > 0) y[0].innerHTML = label;
+          if (y?.length > 0) {
+            y[0].innerHTML = "Faturamento:";
+            if (y.length > 1) y[1].innerHTML = label;
+          }
           for (let i = 0;
           i < h?.length;
           i++) h[i].innerHTML = label;
         };
         m?.addEventListener("click", (() => {
-          const dailyRevenue = isNaN(e / 30) ? 0 : e / 30;
-          setAnuncioValue(dailyRevenue);
+          setAnuncioValue(revenueByPeriod['1d']);
           updatePeriodLabels(" /dia");
           setActiveButton(m);
         }));
         c?.addEventListener("click", (() => {
-          const weeklyRevenue = isNaN(e / 30 * 7) ? 0 : e / 30 * 7;
-          setAnuncioValue(weeklyRevenue);
+          setAnuncioValue(revenueByPeriod['7d']);
           updatePeriodLabels(" /semana");
           setActiveButton(c);
         }));
         p?.addEventListener("click", (() => {
-          const monthlyRevenue = isNaN(e) ? 0 : e;
-          setAnuncioValue(monthlyRevenue);
+          setAnuncioValue(revenueByPeriod['30d']);
           updatePeriodLabels(" /mês");
           setActiveButton(p);
         }));
         g?.addEventListener("click", (() => {
-          const revenue60 = isNaN(2 * e) ? 0 : 2 * e;
-          setAnuncioValue(revenue60);
+          setAnuncioValue(revenueByPeriod['60d']);
           updatePeriodLabels(" /60 dias");
           setActiveButton(g);
         }));
         f?.addEventListener("click", (() => {
-          const revenue90 = isNaN(3 * e) ? 0 : 3 * e;
-          setAnuncioValue(revenue90);
+          setAnuncioValue(revenueByPeriod['90d']);
           updatePeriodLabels(" /90 dias");
           setActiveButton(f);
         }));
         u?.addEventListener("click", (() => {
-          const totalRevenue = ensureFinite(vendas * preco_Local);
-          setAnuncioValue(totalRevenue);
+          setAnuncioValue(revenueByPeriod.total);
           updatePeriodLabels(" /Total");
           setActiveButton(u);
         }));
@@ -3768,7 +3922,23 @@ function s() {
       subtitleSales = isNaN(normalized) ? subtitleSales: normalized;
     }
     if (("string" == typeof vendas && 0 == vendas.length || null == vendas) && null != subtitleSales) vendas = subtitleSales;
-    dLayer && "" == data_br ? (data_br = dayjs(dLayer).locale("pt-br").format("DD/MM/YYYY"), dataMilisec = Date.parse(dLayer), eadiff = eanow - dataMilisec, dias = Math.round(eadiff / (8.64 * Math.pow(10, 7))), media_vendas = 0 == dias || isNaN(vendas) ? "Indisponível (0 dias)": Math.round(vendas / (dias / 30)), o()): o()
+    dLayer && "" == data_br ? (data_br = dayjs(dLayer).locale("pt-br").format("DD/MM/YYYY"), dataMilisec = Date.parse(dLayer), eadiff = eanow - dataMilisec, dias = Math.round(eadiff / (8.64 * Math.pow(10, 7))),
+    (() => {
+      if (0 == dias || isNaN(vendas)) {
+        avgMonthlySalesCount = 0;
+        media_vendas = "Indisponível (0 dias)";
+      } else {
+        const monthlyAvg = Math.round(vendas / (dias / 30));
+        if (Number.isFinite(monthlyAvg) && monthlyAvg >= 0) {
+          avgMonthlySalesCount = monthlyAvg;
+          media_vendas = monthlyAvg;
+        } else {
+          avgMonthlySalesCount = 0;
+          media_vendas = "Indisponível (0 dias)";
+        }
+      }
+      NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
+    })(), o()): o()
   }
 }
 ()
