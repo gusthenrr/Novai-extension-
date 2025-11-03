@@ -109,6 +109,8 @@ const cssEscape = (typeof CSS !== 'undefined' && typeof CSS.escape === 'function
   : (value) => String(value).replace(/[^a-zA-Z0-9_\-]/g, match => `\\${match}`);
 
 const NOVAI_SKELETON_GRADIENT = "linear-gradient(90deg, rgba(255,245,177,0.7) 25%, rgba(255,224,102,0.95) 50%, rgba(255,245,177,0.7) 75%)";
+const NOVAI_ANALYTICS_ROOT_ID = "novai-analytics-root";
+const NOVAI_ANALYTICS_PROTECTED_IDS = new Set([NOVAI_ANALYTICS_ROOT_ID, "visits-component"]);
 
 const NOVAI_INJECTED_ELEMENT_IDS = [
   "eaadvsearchBtn",
@@ -168,6 +170,9 @@ function removeNovaiInjectedNodes(contextLabel = "manual-cleanup") {
   try {
     let removed = 0;
     for (const id of NOVAI_INJECTED_ELEMENT_IDS) {
+      if (NOVAI_ANALYTICS_PROTECTED_IDS.has(id) && document.getElementById(NOVAI_ANALYTICS_ROOT_ID)) {
+        continue;
+      }
       const nodes = document.querySelectorAll(`#${cssEscape(id)}`);
       if (!nodes.length) continue;
       nodes.forEach(node => node.remove());
@@ -182,25 +187,17 @@ function removeNovaiInjectedNodes(contextLabel = "manual-cleanup") {
 }
 
 function ensureMainComponentSkeleton(container) {
-  if (!container) return;
-  removeDuplicateElementsById("main-component-skeleton");
-  if (!container.querySelector("#main-component-skeleton")) {
-    container.insertAdjacentHTML("afterbegin", buildMainComponentSkeleton());
+  const root = mountAnalyticsUI();
+  if (root) {
+    setLoadingState(true);
   }
 }
 
 function ensureVisitsComponentSkeleton(container) {
-  if (!container) return;
-  removeDuplicateElementsById("visits-component");
-  if (container.querySelector("#visits-component")) return;
-
-  const revenueCard = container.querySelector("#eagrossrev");
-  if (revenueCard && typeof revenueCard.insertAdjacentHTML === "function") {
-    revenueCard.insertAdjacentHTML("afterend", buildVisitsComponentSkeleton());
-    return;
+  const root = mountAnalyticsUI();
+  if (root) {
+    setLoadingState(true);
   }
-
-  container.insertAdjacentHTML("afterbegin", buildVisitsComponentSkeleton());
 }
 
 const NOVAI_SINCE_WRAPPER_ID = "novai-since-wrapper";
@@ -337,11 +334,11 @@ function buildSinceMarkup() {
 
     <span class="since-line">
       <span class="since-text">Criado há</span>
-      <span ${NOVAI_CREATED_DAYS_ATTR} class="since-days">?</span>
+      <span ${NOVAI_CREATED_DAYS_ATTR} class="since-days" data-novai-slot="created-days" data-novai-placeholder="--">--</span>
       <span class="since-text">dias</span>
     </span>
 
-    <span ${NOVAI_CREATED_DATE_ATTR} class="novai-since-date">(--/--/----)</span>
+    <span ${NOVAI_CREATED_DATE_ATTR} class="novai-since-date" data-novai-slot="created-date" data-novai-placeholder="(--/--/----)">(--/--/----)</span>
   </div>
 </div>`;
 }
@@ -361,7 +358,7 @@ function buildMediaMarkup() {
                   font-weight:900;font-size:.95rem;
                   box-shadow:var(--novai-shadow,0 10px 24px rgba(0,0,0,.22));">
         <span style="font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;opacity:.8;">Média:</span>
-        <span ${NOVAI_MEDIA_VALUE_ATTR} style="font-size:1rem;min-width:fit-content;">-</span>
+        <span ${NOVAI_MEDIA_VALUE_ATTR} data-novai-slot="media-value" data-novai-placeholder="--" style="font-size:1rem;min-width:fit-content;">--</span>
         <span style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">vendas/mês</span>
       </div>
 
@@ -479,49 +476,55 @@ if (sinceNode && !sinceNode.dataset.novaiHoverBound) {
 }
 
 function updateSinceAndMediaUI(options = {}) {
-  lastSinceAndMediaOptions = { ...options };
+  lastSinceAndMediaOptions = { ...lastSinceAndMediaOptions, ...options };
   const sinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
   const mediaWrapper = document.getElementById(NOVAI_MEDIA_WRAPPER_ID);
   if (!sinceWrapper && !mediaWrapper) return;
 
-  const daysRaw = options.days;
-  const daysNumber = Number(daysRaw);
-  const normalizedDays = Number.isFinite(daysNumber) ? Math.max(0, Math.round(daysNumber)) : null;
   if (sinceWrapper) {
-    const daysSpan = sinceWrapper.querySelector(`[${NOVAI_CREATED_DAYS_ATTR}]`);
-    if (daysSpan) {
-      daysSpan.textContent = null !== normalizedDays ? normalizedDays : "?";
+    if (Object.prototype.hasOwnProperty.call(options, "days")) {
+      const daysRaw = options.days;
+      const daysNumber = Number(daysRaw);
+      const normalizedDays = Number.isFinite(daysNumber) ? Math.max(0, Math.round(daysNumber)) : null;
+      const daysSpan = sinceWrapper.querySelector(`[${NOVAI_CREATED_DAYS_ATTR}]`);
+      if (daysSpan) {
+        daysSpan.textContent = null !== normalizedDays ? normalizedDays : "--";
+      }
     }
 
-    const dateSpan = sinceWrapper.querySelector(`[${NOVAI_CREATED_DATE_ATTR}]`);
-    if (dateSpan) {
-      const formatted = options.dateBR && "string" == typeof options.dateBR && options.dateBR.trim().length > 0 ? options.dateBR : "--/--/----";
-      dateSpan.textContent = `(${formatted})`;
+    if (Object.prototype.hasOwnProperty.call(options, "dateBR")) {
+      const dateSpan = sinceWrapper.querySelector(`[${NOVAI_CREATED_DATE_ATTR}]`);
+      if (dateSpan) {
+        const formatted = options.dateBR && "string" == typeof options.dateBR && options.dateBR.trim().length > 0 ? options.dateBR : "--/--/----";
+        dateSpan.textContent = `(${formatted})`;
+      }
     }
   }
 
   if (mediaWrapper) {
-    const mediaSpan = mediaWrapper.querySelector(`[${NOVAI_MEDIA_VALUE_ATTR}]`);
-    if (mediaSpan) {
-      let value = options.mediaValue;
-      if (typeof value === "number" && !isNaN(value)) {
-        value = value;
-      } else if (typeof value === "string") {
-        value = value.trim();
-        if (!value) value = "-";
-      } else {
-        value = "-";
+    if (Object.prototype.hasOwnProperty.call(options, "mediaValue")) {
+      const mediaSpan = mediaWrapper.querySelector(`[${NOVAI_MEDIA_VALUE_ATTR}]`);
+      if (mediaSpan) {
+        let value = options.mediaValue;
+        if (typeof value === "number" && !isNaN(value)) {
+          value = value;
+        } else if (typeof value === "string") {
+          value = value.trim();
+          if (!value) value = "-";
+        } else {
+          value = "-";
+        }
+        mediaSpan.textContent = value;
       }
-      mediaSpan.textContent = value;
     }
 
     const mediaInfoWrapper = mediaWrapper.querySelector(`[${NOVAI_MEDIA_INFO_ATTR}]`);
-    if (mediaInfoWrapper) {
+    if (mediaInfoWrapper && Object.prototype.hasOwnProperty.call(options, "showCatalogInfo")) {
       mediaInfoWrapper.style.display = options.showCatalogInfo ? "inline-flex" : "none";
     }
 
     const mediaAlert = mediaWrapper.querySelector(`#${NOVAI_MEDIA_ALERT_ID}`);
-    if (mediaAlert) {
+    if (mediaAlert && Object.prototype.hasOwnProperty.call(options, "showMediaAlert")) {
       mediaAlert.style.display = options.showMediaAlert ? "inline-flex" : "none";
     }
   }
@@ -1473,6 +1476,131 @@ var analytics_ui = `
   </span>
 `;
 
+function renderAnalyticsMarkup() {
+  const wrapper = document.createElement("div");
+  wrapper.id = NOVAI_ANALYTICS_ROOT_ID;
+  wrapper.innerHTML = analytics_ui;
+
+  if (!wrapper.querySelector("#visits-component")) {
+    const visitsMarkup = renderVisitsComponentMarkup();
+    const revenueCard = wrapper.querySelector("#eagrossrev");
+    if (revenueCard) {
+      revenueCard.insertAdjacentHTML("afterend", visitsMarkup);
+    } else {
+      wrapper.insertAdjacentHTML("afterbegin", visitsMarkup);
+    }
+  }
+
+  return wrapper;
+}
+
+function getAnalyticsValueSlots() {
+  const root = document.getElementById(NOVAI_ANALYTICS_ROOT_ID);
+  if (!root) return [];
+  return Array.from(root.querySelectorAll("[data-novai-slot]"));
+}
+
+// mountAnalyticsUI
+function mountAnalyticsUI() {
+  const header = document.querySelector(".ui-pdp-header");
+  if (!header) return null;
+
+  const titleNode = header.querySelector(".ui-pdp-title");
+  let root = document.getElementById(NOVAI_ANALYTICS_ROOT_ID);
+
+  if (!root) {
+    const markupElement = renderAnalyticsMarkup();
+    if (titleNode && titleNode.parentElement === header) {
+      titleNode.insertAdjacentElement("afterend", markupElement);
+    } else {
+      header.insertAdjacentElement("afterbegin", markupElement);
+    }
+    root = markupElement;
+  } else {
+    if (titleNode && titleNode.parentElement === header && titleNode.nextElementSibling !== root) {
+      titleNode.insertAdjacentElement("afterend", root);
+    } else if ((!titleNode || titleNode.parentElement !== header) && root.parentElement !== header) {
+      header.insertAdjacentElement("afterbegin", root);
+    }
+
+    if (!root.querySelector("#visits-component")) {
+      const visitsMarkup = renderVisitsComponentMarkup();
+      const revenueCard = root.querySelector("#eagrossrev");
+      if (revenueCard) {
+        revenueCard.insertAdjacentHTML("afterend", visitsMarkup);
+      } else {
+        root.insertAdjacentHTML("afterbegin", visitsMarkup);
+      }
+    }
+  }
+
+  ensureMediaWrapperInsideVisitsCard();
+  ensureSinceAndMediaContainer(titleNode || header);
+
+  return root;
+}
+
+// setLoadingState
+function setLoadingState(enabled) {
+  const slots = getAnalyticsValueSlots();
+  if (!slots.length) return;
+
+  if (enabled) {
+    for (const slot of slots) {
+      const placeholder = slot.dataset.novaiPlaceholder || "--";
+      slot.textContent = placeholder;
+      const loaderWrapper = document.createElement("span");
+      loaderWrapper.className = "novai-loader-slot";
+      loaderWrapper.style.display = "inline-flex";
+      loaderWrapper.style.alignItems = "center";
+      loaderWrapper.style.marginLeft = "4px";
+      loaderWrapper.innerHTML = NvaiLoader;
+      slot.appendChild(loaderWrapper);
+    }
+    return;
+  }
+
+  for (const slot of slots) {
+    const placeholder = (slot.dataset.novaiPlaceholder || "--").trim();
+    const current = (slot.textContent || "").trim();
+    if (current === placeholder) continue;
+    const loader = slot.querySelector(".novai-loader-slot");
+    loader && loader.remove();
+  }
+}
+
+// hydrateAnalyticsUI
+function hydrateAnalyticsUI(data = {}) {
+  const root = mountAnalyticsUI();
+  if (!root || !data || "object" != typeof data) return;
+
+  const hasVisitsPayload = ["visits", "conversion", "visitsPerSale", "hasSales", "isCatalog"].some((key) => Object.prototype.hasOwnProperty.call(data, key));
+  if (hasVisitsPayload) {
+    updateVisitsComponentContent({
+      totalVisits: data.visits,
+      conversion: data.conversion,
+      visitsPerSale: data.visitsPerSale,
+      hasSales: data.hasSales,
+      isCatalog: data.isCatalog
+    });
+  }
+
+  const hasSincePayload = ["vendasMesMedia", "criadoDias", "criadoDataBR", "showCatalogInfo", "showMediaAlert"].some((key) => Object.prototype.hasOwnProperty.call(data, key));
+  if (hasSincePayload) {
+    const anchor = document.querySelector(".ui-pdp-title") || document.querySelector(".ui-pdp-header");
+    ensureSinceAndMediaContainer(anchor);
+    updateSinceAndMediaUI({
+      mediaValue: data.vendasMesMedia,
+      days: data.criadoDias,
+      dateBR: data.criadoDataBR,
+      showCatalogInfo: data.showCatalogInfo,
+      showMediaAlert: data.showMediaAlert
+    });
+  }
+
+  setLoadingState(false);
+}
+
 const PRICE_BUTTON_SIZE = "4rem";
 const PRICE_BUTTON_BOTTOM = "1.5rem";
 const PRICE_BUTTON_RIGHT = "2rem";
@@ -2092,19 +2220,13 @@ function buildMainComponentSkeleton() {
 `;
 }
 
-function buildVisitsComponentSkeleton() {
-  const shimmer = `background: ${NOVAI_SKELETON_GRADIENT}; background-size:200% 100%; animation: loading 1.4s ease infinite;`;
+function renderVisitsComponentMarkup() {
   return `
   <div id="visits-component">
     <style>
-      @keyframes loading { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-      .skeleton-text{ ${shimmer} border-radius:4px; height:1em; display:inline-block; }
-      .skeleton-pill{ ${shimmer} border-radius:12px; height:1.2em; display:inline-block; }
-
       :root{ --novai-ml-yellow:#ffe600; --novai-shadow:0 6px 18px rgba(0,0,0,.12); }
       #visits-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
-      /* Card Novai */
       .novai-kpi-card{
         position:relative; background:#222; color:#fff; border:0;
         border-radius:12px; padding:12px 14px; box-shadow:var(--novai-shadow); overflow:hidden;
@@ -2116,7 +2238,6 @@ function buildVisitsComponentSkeleton() {
       .novai-kpi-icon{ width:26px; height:26px; border-radius:999px; background:rgba(255,230,0,.25); display:inline-flex; align-items:center; justify-content:center; font-size:14px; }
       .novai-kpi-title{ text-transform:uppercase; letter-spacing:.04em; font-weight:700; font-size:12px; }
 
-      /* VISITAS (card esquerdo) */
       #visits-left .novai-kpi-head #eabtn-chart{
         margin-left:auto;
         border-radius:2rem; width:26px; height:26px; padding:.14em .2em;
@@ -2131,31 +2252,28 @@ function buildVisitsComponentSkeleton() {
         display:block;
         margin-top:2px;
       }
-      #visits-left [data-visits-total]{ display:block;                 /* 2ª linha */
+      #visits-left [data-visits-total]{ display:block;
         font-size:15px; font-weight:900; color:#fff; line-height:1.1;
-        word-break:break-word;}
-      #visits-left .visits-total-label{ display:block;                 /* 1ª linha */
+        word-break:break-word; }
+      #visits-left .visits-total-label{ display:block;
         font-size:14px; font-weight:700; color:#fff; opacity:.95; line-height:1;
         margin-bottom:2px; }
 
-      /* CONVERSÃO (card direito) */
-      /* >>> força duas linhas: label em cima, valor embaixo */
       #visits-right #vendaporvisitas.venda-row{
-        display:block;                 /* vira bloco para empilhar */
+        display:block;
         margin-top:2px;
       }
       #visits-right .venda-label{
-        display:block;                 /* 1ª linha */
+        display:block;
         font-size:14px; font-weight:700; color:#fff; opacity:.95; line-height:1;
         margin-bottom:2px;
       }
       #visits-right .venda-valor{
-        display:block;                 /* 2ª linha */
+        display:block;
         font-size:15px; font-weight:900; color:#fff; line-height:1.1;
         word-break:break-word;
       }
 
-      /* pílula da conversão: ligeiramente maior */
       #visits-right .conv-pill{
         display:inline-flex; align-items:center; gap:.4rem;
         margin-top:8px;
@@ -2168,13 +2286,11 @@ function buildVisitsComponentSkeleton() {
     </style>
 
     <div id="visits-grid">
-      <!-- ===== LEFT: VISITAS ===== -->
       <div id="visits-left" class="novai-kpi-card">
         <div class="novai-kpi-head">
           <div class="novai-kpi-icon">👁️</div>
           <div class="novai-kpi-title">VISITAS</div>
 
-          <!-- Botão do gráfico no cabeçalho (mantém ids/classes) -->
           <div id="eabtn-chart" class="andes-button--loud background_novai andes-button">
             <img src="https://img.icons8.com/ios-glyphs/32/ffffff/combo-chart.png" style="width:1.2em; margin:auto;">
             <div id="eabtn-chart-tooltip"
@@ -2188,31 +2304,26 @@ function buildVisitsComponentSkeleton() {
 
         <div class="novai-kpi-value">
           <span class="visits-total-label">Visitas totais:</span>
-          <span data-visits-total class="skeleton-text" style="width:80px;"></span>
+          <span data-visits-total data-novai-slot="visits-total" data-novai-placeholder="--">--</span>
         </div>
       </div>
 
-      <!-- ===== RIGHT: CONVERSÃO ===== -->
       <div id="visits-right" class="novai-kpi-card">
         <div class="novai-kpi-head">
           <div class="novai-kpi-icon">📈</div>
           <div class="novai-kpi-title">CONVERSÃO</div>
         </div>
 
-        <!-- Vende a cada: 1ª linha (label) + 2ª linha (valor) -->
         <div id="vendaporvisitas" class="venda-row">
           <span class="venda-label">Vende a cada:</span>
           <span class="venda-valor">
-            <span data-visits-per-sale class="skeleton-text" style="width:80px;"></span> visitas
+            <span data-visits-per-sale data-novai-slot="visits-per-sale" data-novai-placeholder="--">--</span> visitas
           </span>
         </div>
 
-        <!-- Conversão mais visível (pílula) -->
         <div class="conv-pill">
           <span>Conversão:</span>
-          <span data-conversion-value class="conv-value">
-            <span class="skeleton-text" style="width:30px;"></span>
-          </span>
+          <span data-conversion-value class="conv-value" data-novai-slot="conversion" data-novai-placeholder="--">--</span>
         </div>
       </div>
     </div>
@@ -2227,36 +2338,33 @@ function buildVisitsComponentSkeleton() {
 
 
 
-function updateVisitsComponentContent({
-  totalVisits,
-  conversion,
-  visitsPerSale,
-  hasSales,
-  isCatalog
-}) {
+function updateVisitsComponentContent(options = {}) {
+  const {
+    totalVisits,
+    conversion,
+    visitsPerSale,
+    hasSales,
+    isCatalog
+  } = options;
   const container = document.getElementById("visits-component");
   if (!container) return;
 
   ensureMediaWrapperInsideVisitsCard();
 
-  if (typeof isCatalog === "boolean") {
+  if (Object.prototype.hasOwnProperty.call(options, "isCatalog") && typeof isCatalog === "boolean") {
     container.setAttribute("data-iscatalog", isCatalog ? "true" : "false");
   }
 
   container.setAttribute("data-loaded", "true");
 
   const totalNode = container.querySelector("[data-visits-total]");
-  if (totalNode) {
+  if (totalNode && Object.prototype.hasOwnProperty.call(options, "totalVisits")) {
     totalNode.textContent = totalVisits ?? "-";
-    totalNode.classList.remove("skeleton-text");
-    totalNode.style.removeProperty("width");
   }
 
   const conversionNode = container.querySelector("[data-conversion-value]");
-  if (conversionNode) {
+  if (conversionNode && Object.prototype.hasOwnProperty.call(options, "conversion")) {
     conversionNode.textContent = conversion ?? "-";
-    conversionNode.classList.remove("skeleton-text");
-    conversionNode.style.removeProperty("width");
   }
 
   const perSaleContainer = container.querySelector("#vendaporvisitas");
@@ -2265,12 +2373,12 @@ function updateVisitsComponentContent({
       perSaleContainer.dataset.defaultDisplay = perSaleContainer.style.display || "";
     }
     const perSaleNode = container.querySelector("[data-visits-per-sale]");
-    if (perSaleNode) {
+    if (perSaleNode && Object.prototype.hasOwnProperty.call(options, "visitsPerSale")) {
       perSaleNode.textContent = visitsPerSale ?? "-";
-      perSaleNode.classList.remove("skeleton-text");
-      perSaleNode.style.removeProperty("width");
     }
-    perSaleContainer.style.display = hasSales ? perSaleContainer.dataset.defaultDisplay : "none";
+    if (Object.prototype.hasOwnProperty.call(options, "hasSales")) {
+      perSaleContainer.style.display = hasSales ? perSaleContainer.dataset.defaultDisplay : "none";
+    }
   }
 }
 async function altInfo(e) {
@@ -2501,6 +2609,10 @@ function fetchCategoryWithCache(e, t) {
 }
 function contentScpt() {
   try { removeNovaiInjectedNodes("contentScpt"); } catch (_) {}
+  const analyticsRoot = mountAnalyticsUI();
+  if (analyticsRoot) {
+    setLoadingState(true);
+  }
   const headerCandidates = document.getElementsByClassName("ui-pdp-header");
   if (!headerCandidates || !headerCandidates[0]) {
     console.warn("[NOVAI] Cabeçalho da PDP não encontrado para injetar os componentes de métricas.");
@@ -2958,15 +3070,6 @@ function contentScpt() {
       }
     };
 
-    const headerNode = spot0[0];
-    if (headerNode) {
-      const titleNode = headerNode.querySelector(".ui-pdp-title");
-      if (titleNode) {
-        titleNode.insertAdjacentHTML("afterend", analytics_ui);
-      } else {
-        headerNode.insertAdjacentHTML("afterbegin", analytics_ui);
-      }
-    }
     anchorMoreToolsButton();
     i(), function () {
       let e = document.getElementById("eahealthmeter"), t = document.getElementById("eameter_modal");
@@ -3536,8 +3639,8 @@ function s() {
           const elapsed = Date.now() - L;
           const delay = Math.max(0, 800 - elapsed);
           setTimeout((() => {
-            updateVisitsComponentContent({
-              totalVisits: formattedTotalVisits,
+            hydrateAnalyticsUI({
+              visits: formattedTotalVisits,
               conversion: conversionPercentage,
               visitsPerSale: formattedVisitsPerSale,
               hasSales,
@@ -3563,7 +3666,7 @@ function s() {
             const authReady = await ensureAuthHeaderForRequests("métricas de visitas");
             if (!authReady) {
               const holder = document.getElementById("visits-component");
-              holder && updateVisitsComponentContent({ totalVisits: "-", conversion: "-", visitsPerSale: "-", hasSales: !1, isCatalog: !!iscatalog });
+              holder && hydrateAnalyticsUI({ visits: "-", conversion: "-", visitsPerSale: "-", hasSales: !1, isCatalog: !!iscatalog });
               return;
             }
 
@@ -3581,7 +3684,7 @@ function s() {
           catch (t) {
             console.error("[Novai] Visits API error", t);
             const n = document.getElementById("visits-component");
-            n && updateVisitsComponentContent({ totalVisits: "-", conversion: "-", visitsPerSale: "-", hasSales: !1, isCatalog: !!iscatalog });
+            n && hydrateAnalyticsUI({ visits: "-", conversion: "-", visitsPerSale: "-", hasSales: !1, isCatalog: !!iscatalog });
           }
           finally {
             document.removeEventListener("VisitsDataResponse", handleVisitsResponse);
@@ -3625,14 +3728,15 @@ function s() {
           const titleParent = titleNode.parentElement;
           titleParent && titleParent.setAttribute("style", "flex-direction: column;");
           if ("pro" === verif) {
-            const wrapper = ensureSinceAndMediaContainer(titleNode);
+            ensureSinceAndMediaContainer(titleNode);
             const numericDays = Number(dias);
-            updateSinceAndMediaUI({
-              days: dias,
-              dateBR: data_br,
-              mediaValue: iscatalog && 0 == media_vendas ? "-" : media_vendas,
+            hydrateAnalyticsUI({
+              criadoDias: dias,
+              criadoDataBR: data_br,
+              vendasMesMedia: iscatalog && 0 == media_vendas ? "-" : media_vendas,
               showCatalogInfo: !!(iscatalog && Number.isFinite(numericDays) && numericDays > 0),
-              showMediaAlert: !!alert_media_vendas
+              showMediaAlert: !!alert_media_vendas,
+              isCatalog: !!iscatalog
             });
           } else {
             removeSinceAndMediaContainer();
@@ -3734,15 +3838,7 @@ function s() {
         (), dLayerMainFallback(), fetchCategoryWithCache(categoria_Local, (e => {
           e && (nomeCategoria = e.name)
         }
-        )), setTimeout(i, 50), setTimeout(e, 150), setTimeout(a, 175), setTimeout(s, 500), setTimeout((function () {
-          if (spot0[0]) {
-            const headerNode = spot0[0];
-            ensureVisitsComponentSkeleton(headerNode);
-            let e = headerNode.parentElement;
-            e.parentElement.firstElementChild
-          }
-        }
-        ), 200)
+        )), setTimeout(i, 50), setTimeout(e, 150), setTimeout(a, 175), setTimeout(s, 500)
       }
       else {
         scheduleSinceAndMediaRetry("missing-header");
@@ -5780,3 +5876,10 @@ document.addEventListener("MetrifyVersion", (function (e) {
   message: document.body.innerText
 }
 , "*");
+
+/*
+Manual tests:
+- Abrir anúncio pela primeira vez e verificar que o card de visitas aparece completo com loaders amarelos substituídos por dados após o carregamento.
+- Navegar para outro anúncio via SPA e confirmar que a UI não duplica e mantém os valores anteriores até novos dados chegarem.
+- Validar que, em contas sem acesso PRO, o bloco "Criado há" não quebra a interface e os loaders são removidos ao final.
+*/
