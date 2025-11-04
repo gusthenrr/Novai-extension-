@@ -1836,21 +1836,22 @@ function parseSalesText(e) {
     thisItemSales: a
   }
 }
-function upsertCatalogBadge(vendas) {
+function upNovaiVendasAnuncio(vendas) {
   const subtitle = document.querySelector('.ui-pdp-subtitle');
   if (!subtitle) return;
 
   // margem visual
   if (subtitle.parentElement) {
     subtitle.parentElement.style.margin = '1rem 0';
+    subtitle.style.color = '#000'
   }
 
   // procura um badge já inserido
-  let badge = subtitle.querySelector('.mfy-catalog-badge');
-  if (!badge) {
-    badge = document.createElement('span');
-    badge.className = 'mfy-catalog-badge';
-    badge.innerHTML =
+  let v_a_c = subtitle.querySelector('.Novai-catalog-vendas');
+  if (!v_a_c) {
+    v_a_c = document.createElement('span');
+    v_a_c.className = 'Novai-catalog-vendas';
+    v_a_c.innerHTML =
   '<span style="display:inline-block;padding:.18rem .55rem;border-radius:8px;font-size:0.9em;'+
   'background: #fff172ff;color:#111;font-weight:700;'+
   'letter-spacing:.02em;line-height:1;">no catálogo</span><br>'+
@@ -1859,10 +1860,10 @@ function upsertCatalogBadge(vendas) {
   'background: #fff172ff;display:inline-block;padding:.18rem .55rem;line-height:1;font-weight:700;color: #111111;font-size:0.9em;"></strong>'+
   '<span style="font-size:.9em;margin-left:.1rem;color:#111;font-weight:700;'+
   'position:relative;top:-.05em;">desse modelo e vendedor</span>';  
-    subtitle.appendChild(badge);
+    subtitle.appendChild(v_a_c);
   }
 
-  const salesNode = badge.querySelector('.NovaiCatalogoAnuncioSales');
+  const salesNode = v_a_c.querySelector('.NovaiCatalogoAnuncioSales');
   if (salesNode) salesNode.textContent = `${vendas} vendidos`;
 
   subtitle.setAttribute('data-mfy-sales', String(vendas));
@@ -1916,7 +1917,7 @@ async function fetchProductDataFromPage(rawItemId, t) {
     vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
     let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
     if (a && vendas > 0) {
-  upsertCatalogBadge(vendas);
+  upNovaiVendasAnuncio(vendas);
 }
 
     t()
@@ -2012,7 +2013,7 @@ async function fetchProductDataFromPage(rawItemId, t) {
               NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
               let e = document.getElementsByClassName("ui-pdp-subtitle")[0];
               if (e) {
-  upsertCatalogBadge(vendas);
+  upNovaiVendasAnuncio(vendas);
 }
 
               let t = document.getElementById("mediabtn");
