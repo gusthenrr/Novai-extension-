@@ -1943,6 +1943,8 @@ async function fetchProductDataFromPage(rawItemId, t) {
     vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
     let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
     if (a && vendas > 0) {
+      const monthlyAvg = Math.round(vendas / (dias / 30));
+      media_vendas=monthlyAvg
   upNovaiVendasAnuncio(vendas);
 }
 
@@ -5025,18 +5027,35 @@ if (null != sessionStorage.getItem("eauser")) usuario_logado = sessionStorage.ge
 else var usuario_logado = null;
 function runLogged() {
   eaOnAdminPanel || "https://www.mercadolivre.com.br/" != window.location.href && function (e) {
-    let t = document.getElementsByClassName("nav-header-plus-menu-wrapper")[0], n = `<div class="eadropdown" style="pointer-events: all;min-width: 27px;height: 27px;transition: all 0.35s ease 0s;background-color: ${"lite"==verif?"var(--mfy-main)":"rgb(255, 214, 43)"};position: relative;top: 4px;left: -1em;display: flex;border-radius: 10em;align-items: center;cursor: pointer;z-index: 31;"> <img src="https://i.ibb.co/K7Lc6cr/metrify.png" style="pointer-events:none;width:15px;margin: auto;${"lite"==verif?"filter: brightness(10.5);":""}"></div>`;
-    if (void 0 !== t && t.insertAdjacentHTML("afterbegin", n), e);
-    else var a = document.getElementsByClassName("eadropdown")[0];
+    if (!document.getElementsByClassName("eadropdown")[0]) {
+      let n = `<div class="eadropdown" style="pointer-events: all;min-width: 27px;height: 27px;transition: all 0.35s ease 0s;background-color: ${"lite"==verif?"var(--mfy-main)":"rgb(255, 214, 43)"};display: flex;border-radius: 10em;align-items: center;cursor: pointer;z-index: 31;padding: 0 6px;margin-top: 4px;"> <img src="https://i.ibb.co/K7Lc6cr/metrify.png" style="pointer-events:none;width:15px;margin: auto;${"lite"==verif?"filter: brightness(10.5);":""}"></div>`;
+      let i = document.querySelector(".nav-bounds.nav-bounds-with-cart .nav-header-plus-logo.nav-area.nav-top-area.nav-left-area"), o = i ? i.querySelector(".nav-logo, .nav-log") : null;
+      if (i) {
+        const t = document.createElement("div");
+        t.className = "ea-header-dropdown";
+        t.innerHTML = n;
+        t.style.display = "flex";
+        t.style.alignItems = "center";
+        t.style.position = "relative";
+        t.style.marginRight = "12px";
+        t.style.height = "100%";
+        o ? i.insertBefore(t, o) : i.insertAdjacentElement("afterbegin", t);
+      } else {
+        let t = document.getElementsByClassName("nav-header-plus-menu-wrapper")[0];
+        void 0 !== t && t.insertAdjacentHTML("afterbegin", n);
+      }
+    }
+    var a = document.getElementsByClassName("eadropdown")[0];
     a && (a.addEventListener("mouseover", (function () {
       let e = document.getElementsByClassName("eamaindropdownmenu")[0];
       if (e) e.style.opacity = "100%", e.style.display = "block", e.style.transform = "scale(1)", a.style.backgroundColor = "var(--mfy-main)";
       else {
         let e = "";
-        "pro" == verif && (e = '<li class="eadropmenu-tools"> Ferramentas <img src="https://img.icons8.com/external-tal-revivo-shadow-tal-revivo/24/000000/external-single-chevron-arrow-as-a-notch-badge-basic-shadow-tal-revivo.png" style=" height: 1em; margin-right: -1.1em; position: relative; top: 0.21em;"></li>');
-        let t = `<div class="modeless-box eamaindropdownmenu" style="width: 175px; z-index:999; top: 8em; margin-right: 2.7em; right: 12em; transition: all 0.1s ease 0.21s; text-align: right; display: block;"><div class="modeless-box-header"><span style="font-size: 0.86em;letter-spacing: -0.1px;font-weight: bolder;">${usuario_logado}</span></div><div class="eadrop01" style="opacity: 100%;transition: 0.7s all;"><ul style="list-style-type: none;margin: 0;padding: 0;font-size: 14px;display: block;cursor: pointer;"><li><a target="_blank"  href="https://bit.ly/metrify-ext-conectar">Reconectar</a></li>` + e + ("lite" != verif ? "": "<li>Fazer Upgrade</li>") + '</ul></div><div style="font-size: 0.86em;font-weight: 400;color: lightgray;text-align: center;" class="modeless-box-header">Versão ' + mfy_version + "</div></div>";
-        this.insertAdjacentHTML("afterend", t);
-        let n = document.getElementsByClassName("eamaindropdownmenu")[0], i = '<div class="eaxtradropdown" style="box-sizing: border-box; width: 171px; right: -13.16em; top: 3.1em; transition: all 0.1s ease 0.21s; text-align: left; display: block; max-height: 440px; position: absolute; color: rgb(51, 51, 51); -webkit-font-smoothing: antialiased; font-size: 13px; z-index: 77; opacity: 0; pointer-events: none;" ><div class="eadropxtra" style="background-color: #ededed;opacity: 100%;transition: 0.7s all;border-radius: 0em 3px 3px 3px;box-shadow: 0px 11px 4px -10px rgb(0 0 0 / 51%);"><ul style="list-style-type: none;margin: 0;padding: 0;font-size: 14px;display: block;cursor: pointer;"><li>Gerador de EAN13</li></ul></div></div>', s = document.getElementsByClassName("eadropmenu-tools")[0];
+        "pro" == verif && (e = '<li class="eadropmenu-tools" style="position: relative;"> Ferramentas <img src="https://img.icons8.com/external-tal-revivo-shadow-tal-revivo/24/000000/external-single-chevron-arrow-as-a-notch-badge-basic-shadow-tal-revivo.png" style=" height: 1em; margin-right: -1.1em; position: relative; top: 0.21em;"></li>');
+        let t = `<div class="modeless-box eamaindropdownmenu" style="width: 175px; z-index:999; position: absolute; top: calc(100% + 0.5em); left: 0; transition: all 0.1s ease 0.21s; text-align: left; display: block;"><div class="modeless-box-header"><span style="font-size: 0.86em;letter-spacing: -0.1px;font-weight: bolder;">${usuario_logado}</span></div><div class="eadrop01" style="opacity: 100%;transition: 0.7s all;"><ul style="list-style-type: none;margin: 0;padding: 0;font-size: 14px;display: block;cursor: pointer;"><li><a target="_blank"  href="https://bit.ly/metrify-ext-conectar">Reconectar</a></li>` + e + ("lite" != verif ? "": "<li>Fazer Upgrade</li>") + '</ul></div><div style="font-size: 0.86em;font-weight: 400;color: lightgray;text-align: center;" class="modeless-box-header">Versão ' + mfy_version + "</div></div>";
+         r = this.closest(".ea-header-dropdown");
+        (r || this).insertAdjacentHTML("beforeend", t);
+        let n = (r || this).getElementsByClassName("eamaindropdownmenu")[0], i = '<div class="eaxtradropdown" style="box-sizing: border-box; width: 171px; left: calc(100% + 0.5em); top: 0; transition: all 0.1s ease 0.21s; text-align: left; display: block; max-height: 440px; position: absolute; color: rgb(51, 51, 51); -webkit-font-smoothing: antialiased; font-size: 13px; z-index: 77; opacity: 0; pointer-events: none;" ><div class="eadropxtra" style="background-color: #ededed;opacity: 100%;transition: 0.7s all;border-radius: 0em 3px 3px 3px;box-shadow: 0px 11px 4px -10px rgb(0 0 0 / 51%);"><ul style="list-style-type: none;margin: 0;padding: 0;font-size: 14px;display: block;cursor: pointer;"><li>Gerador de EAN13</li></ul></div></div>', s = document.getElementsByClassName("eadropmenu-tools")[0];
         if (s) {
           s.innerHTML = s.innerHTML + i;
           let e = document.getElementsByClassName("eadropmenu-tools")[0], t = document.getElementsByClassName("eaxtradropdown")[0];
