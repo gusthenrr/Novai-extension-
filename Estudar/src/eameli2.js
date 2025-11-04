@@ -196,6 +196,60 @@ function coerceNonNegativeInteger(value, fallback = 0) {
   return Number.isFinite(bounded) ? bounded : Math.max(0, Math.floor(fallback));
 }
 
+function computeMonthlyAverageIfReady() {
+  if (!Number.isFinite(catalogSalesCanonical)) return;
+  if (null == dias || dias === "") return;
+
+  const daysNumeric = Number(dias);
+  if (!Number.isFinite(daysNumeric) || daysNumeric < 0) return;
+
+  dias = daysNumeric;
+
+  if (daysNumeric === 0) {
+    avgMonthlySalesCount = 0;
+    media_vendas = "0";
+    NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
+    return;
+  }
+
+  if (daysNumeric === Infinity || daysNumeric === -Infinity) return;
+
+  const monthlyAvg = Math.round(catalogSalesCanonical / (daysNumeric / 30));
+  if (Number.isFinite(monthlyAvg) && monthlyAvg >= 0) {
+    avgMonthlySalesCount = monthlyAvg;
+    media_vendas = monthlyAvg;
+  } else {
+    avgMonthlySalesCount = 0;
+    media_vendas = "Indisponível";
+  }
+  NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
+}
+
+function setCatalogSalesValue(rawValue) {
+  if (rawValue === "" || rawValue === null || rawValue === undefined) return null;
+
+  const numeric = Number(rawValue);
+  if (!Number.isFinite(numeric) || numeric < 0) return null;
+
+  const canonical = Math.round(numeric);
+  catalogSalesCanonical = canonical;
+  vendas = canonical;
+  qtySold_catalog = canonical;
+  if (qtySold_period && typeof qtySold_period === "object") {
+    qtySold_period.total = canonical;
+  }
+  if (NOVAI_SALES_STATE.qty && typeof NOVAI_SALES_STATE.qty === "object") {
+    NOVAI_SALES_STATE.qty.catalogSoldTotal = canonical;
+    NOVAI_SALES_STATE.qty.normalizedSoldTotal = canonical;
+    if (NOVAI_SALES_STATE.qty.period && typeof NOVAI_SALES_STATE.qty.period === "object") {
+      NOVAI_SALES_STATE.qty.period = { ...NOVAI_SALES_STATE.qty.period, total: canonical };
+    }
+  }
+
+  computeMonthlyAverageIfReady();
+  return canonical;
+}
+
 function getNormalizedSoldQtyFromPDP() {
   const subtitleEl = document.querySelector('.ui-pdp-subtitle') || document.querySelector('.ui-pdp-header__subtitle');
   let normalizedQty = 0;
@@ -1234,6 +1288,7 @@ var eaInit = {
   body: {}
 }
 ], eaMLtaxdata = "", taxlitedata = "", data_br = "", dataMilisec = "", eanow = Date.now(), eadiff = "", dias = "", media_vendas = "", media_vendas_catalogo = "", eabar_category = "", MLenvios = !0, nomeProduto = "", categoryDomain = "", eaList = !1, alert_media_vendas = !1, visitasparavender = null;
+let catalogSalesCanonical = null;
 null != document.getElementsByClassName("ui-pdp-title")[0] && (nomeProduto = document.getElementsByClassName("ui-pdp-title")[0].innerHTML);
 var checkeddimensions = "dimensions=15x30x5,150";
 
@@ -1758,6 +1813,7 @@ function dlayerFallback() {
   }
   const vendasAlt = catalogBody.sold_quantity;
   const vendasIsEmpty = typeof vendas === "string" ? vendas.length === 0 : null == vendas;
+  let fallbackSales = null;
   if (vendasIsEmpty) {
     const parsedSubtitleSales = (() => {
       const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
@@ -1771,8 +1827,8 @@ function dlayerFallback() {
       const numeric = parseFloat(salesText.replace(/\./g, "").replace(",", "."));
       return isNaN(numeric) ? null : numeric;
     })();
-    if (typeof vendasAlt === "number" && !isNaN(vendasAlt)) vendas = vendasAlt;
-    else if (typeof parsedSubtitleSales === "number" && !isNaN(parsedSubtitleSales)) vendas = parsedSubtitleSales;
+    if (typeof vendasAlt === "number" && !isNaN(vendasAlt)) fallbackSales = vendasAlt;
+    else if (typeof parsedSubtitleSales === "number" && !isNaN(parsedSubtitleSales)) fallbackSales = parsedSubtitleSales;
   }
   if (!startTimeRaw) {
     dLayerMainFallback();
@@ -1799,33 +1855,35 @@ function dlayerFallback() {
   eadiff = diff;
   if ("" == dias) {
     const computedDays = Math.round(diff / (8.64 * Math.pow(10, 7)));
-    !isNaN(computedDays) && (dias = computedDays);
-  }
-  if ("" == media_vendas) {
-    if ("number" == typeof vendas && !isNaN(vendas) && dias > 0) {
-      const monthlyAvg = Math.round(vendas / (dias / 30));
-      if (Number.isFinite(monthlyAvg) && monthlyAvg >= 0) {
-        avgMonthlySalesCount = monthlyAvg;
-        media_vendas = monthlyAvg;
-      } else {
-        avgMonthlySalesCount = 0;
-        media_vendas = "Indisponível";
-      }
-    } else {
-      avgMonthlySalesCount = 0;
-      media_vendas = "Indisponível";
+    if (!isNaN(computedDays)) {
+      dias = computedDays;
+      computeMonthlyAverageIfReady();
     }
-    NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
+  } else {
+    computeMonthlyAverageIfReady();
   }
-  updateCatalogBody({ sold_quantity: vendas });
-  const diasNumber = "number" == typeof dias ? dias : parseFloat(dias);
-  if (!isNaN(diasNumber)) dias = diasNumber;
-  if (0 == diasNumber) {
-    avgMonthlySalesCount = 0;
-    media_vendas = "0";
-    NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
-  } else if (diasNumber < 30 && !isNaN(diasNumber)) {
-    alert_media_vendas = !0;
+  if (Number.isFinite(catalogSalesCanonical)) {
+    updateCatalogBody({ sold_quantity: catalogSalesCanonical });
+  }
+  const diasNumber = Number(dias);
+  if (!Number.isNaN(diasNumber)) {
+    dias = diasNumber;
+    if (diasNumber === 0) {
+      avgMonthlySalesCount = 0;
+      media_vendas = "0";
+      NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
+    } else {
+      computeMonthlyAverageIfReady();
+      if (diasNumber < 30) {
+        alert_media_vendas = !0;
+      }
+    }
+  }
+  if (!Number.isFinite(catalogSalesCanonical) && Number.isFinite(fallbackSales)) {
+    const subtitleEl = document.getElementsByClassName("ui-pdp-header__subtitle")[0];
+    if (subtitleEl) {
+      subtitleEl.setAttribute('data-mfy-sales-fallback', String(fallbackSales));
+    }
   }
   dLayerMainFallback();
 }
@@ -1862,7 +1920,12 @@ function parseSalesText(e) {
     thisItemSales: a
   }
 }
-function upNovaiVendasAnuncio(vendas) {
+function upNovaiVendasAnuncio(rawVendas) {
+  const canonicalSales = setCatalogSalesValue(rawVendas);
+  const displaySales = Number.isFinite(canonicalSales)
+    ? canonicalSales
+    : (Number.isFinite(catalogSalesCanonical) ? catalogSalesCanonical : rawVendas);
+
   const subtitle = document.querySelector('.ui-pdp-subtitle');
   if (!subtitle) return;
 
@@ -1890,9 +1953,9 @@ function upNovaiVendasAnuncio(vendas) {
   }
 
   const salesNode = v_a_c.querySelector('.NovaiCatalogoAnuncioSales');
-  if (salesNode) salesNode.textContent = `${vendas} vendidos`;
+  if (salesNode) salesNode.textContent = `${displaySales} vendidos`;
 
-  subtitle.setAttribute('data-mfy-sales', String(vendas));
+  subtitle.setAttribute('data-mfy-sales', String(displaySales));
 }
 
 async function fetchProductDataFromPage(rawItemId, t) {
@@ -1940,11 +2003,12 @@ async function fetchProductDataFromPage(rawItemId, t) {
       date_created: n.startTime,
       sold_quantity: n.itemSales
     });
-    vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
+    const canonicalSales = setCatalogSalesValue(n.itemSales);
+    n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
     let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
-    if (a && vendas > 0) {
-  upNovaiVendasAnuncio(vendas);
-}
+    if (a && Number.isFinite(canonicalSales) && canonicalSales > 0) {
+      upNovaiVendasAnuncio(canonicalSales);
+    }
 
     t()
   }
@@ -2025,22 +2089,14 @@ async function fetchProductDataFromPage(rawItemId, t) {
               }
             }
             if (o > 0 && null != a) {
-              vendas = a;
+              const canonicalSales = setCatalogSalesValue(a);
               dias = o;
+              computeMonthlyAverageIfReady();
               data_br = dayjs(i).locale("pt-br").format("DD/MM/YYYY");
-              const monthlyAvg = Math.round(vendas / (dias / 30));
-              if (Number.isFinite(monthlyAvg) && monthlyAvg >= 0) {
-                avgMonthlySalesCount = monthlyAvg;
-                media_vendas = monthlyAvg;
-              } else {
-                avgMonthlySalesCount = 0;
-                media_vendas = "-";
-              }
-              NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
               let e = document.getElementsByClassName("ui-pdp-subtitle")[0];
-              if (e) {
-  upNovaiVendasAnuncio(vendas);
-}
+              if (e && Number.isFinite(canonicalSales)) {
+                upNovaiVendasAnuncio(canonicalSales);
+              }
 
               let t = document.getElementById("mediabtn");
               if (t && dias > 0 && !t.querySelector(`[${NOVAI_MEDIA_VALUE_ATTR}]`)) {
@@ -2069,7 +2125,11 @@ let n = `
 </div>
 `;
 
-                t.innerHTML = (isNaN(Math.round(vendas / (dias / 30))) ? "-": Math.round(vendas / (dias / 30))) + " vendas/mês" + e + n;
+                const monthlyDisplay =
+                  typeof media_vendas === "number"
+                    ? media_vendas
+                    : (media_vendas === "0" ? "0" : "-");
+                t.innerHTML = `${monthlyDisplay} vendas/mês` + e + n;
                 let a = document.getElementsByClassName("mfy-catalog-info-tooltip")[0];
                 a && (t.addEventListener("mouseover", (function () {
                   a.style.opacity = 1
@@ -3953,24 +4013,25 @@ function s() {
       const normalized = parseFloat(subtitleSales.replace(/\./g, "").replace(",", "."));
       subtitleSales = isNaN(normalized) ? subtitleSales: normalized;
     }
-    if (("string" == typeof vendas && 0 == vendas.length || null == vendas) && null != subtitleSales) vendas = subtitleSales;
-    dLayer && "" == data_br ? (data_br = dayjs(dLayer).locale("pt-br").format("DD/MM/YYYY"), dataMilisec = Date.parse(dLayer), eadiff = eanow - dataMilisec, dias = Math.round(eadiff / (8.64 * Math.pow(10, 7))),
-    (() => {
-      if (0 == dias || isNaN(vendas)) {
-        avgMonthlySalesCount = 0;
-        media_vendas = "Indisponível (0 dias)";
-      } else {
-        const monthlyAvg = Math.round(vendas / (dias / 30));
-        if (Number.isFinite(monthlyAvg) && monthlyAvg >= 0) {
-          avgMonthlySalesCount = monthlyAvg;
-          media_vendas = monthlyAvg;
-        } else {
-          avgMonthlySalesCount = 0;
+    if (!Number.isFinite(catalogSalesCanonical) && typeof subtitleSales === "number" && !isNaN(subtitleSales)) {
+      subtitleEl?.setAttribute('data-mfy-sales-fallback', String(subtitleSales));
+    }
+    if (dLayer && "" == data_br) {
+      data_br = dayjs(dLayer).locale("pt-br").format("DD/MM/YYYY");
+      dataMilisec = Date.parse(dLayer);
+      eadiff = eanow - dataMilisec;
+      const computedDays = Math.round(eadiff / (8.64 * Math.pow(10, 7)));
+      if (!isNaN(computedDays)) {
+        dias = computedDays;
+        computeMonthlyAverageIfReady();
+        if (dias === 0) {
           media_vendas = "Indisponível (0 dias)";
         }
       }
-      NOVAI_SALES_STATE.averages.monthlySalesCount = avgMonthlySalesCount;
-    })(), o()): o()
+      o();
+    } else {
+      o();
+    }
   }
 }
 ()
