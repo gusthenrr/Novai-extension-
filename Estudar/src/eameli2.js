@@ -3196,11 +3196,660 @@ function contentScpt() {
     ), 500)
   }
   function i() {
-    price_tool = `\n    <style>\n    @import url("https://fonts.cdnfonts.com/css/montserrat");\n    </style>\n\n    <div id="price-tool" style="\n          position: fixed;\n          bottom: calc(${PRICE_BUTTON_BOTTOM} + ${PRICE_BUTTON_SIZE} + ${PRICE_TOOL_GAP});\n          right: calc(${PRICE_BUTTON_RIGHT} + ${PRICE_BUTTON_SIZE} + ${PRICE_TOOL_GAP});\n          background-color: #fff;\n          box-shadow: rgba(0, 0, 0, 0.1) 0px 7px 11px -7px,\n            rgba(0, 0, 0, 0.2) 0px 1px 2px 0px;\n          border: 0px !important;\n          z-index: ${PRICE_TOOL_Z_INDEX};\n          max-width: min(90vw, 28rem);\n          width: auto;\n          /* overflow: hidden; */\n        " class="ui-pdp-buybox smooth ui-pdp-container__row ui-pdp-component-list pr-16 pl-16 alinharvertical">\n        <div id="etapa2" class="smooth hdn transp" style="width: inherit; float: left; transform: translate(-10px, 0px)">\n            <div style="text-align: right; padding-left: 1.85em; width: 45%">\n                O valor <b>sugerido</b> para publicar seu anúncio é de:\n            </div>\n            <h1 class="price-tag price-tag-fraction" style="width: 53%; overflow: hidden; float: right; margin-top: -1.5em">\n                <span style="margin-right: 0.15em"><img\n                        src="https://ci3.googleusercontent.com/proxy/kgbUUHgOg_Wtd56AXKaaRk0M4A-EQe-kjbq9Cr4as2SUCOfQIjNrN6zcNl1wWyUslua9x1khV2gtnzRhC4xLj6fKrzNwgEblwySpi5Jn0YwOcJnJausP9aoTC0Sc81rJQMLdJEWgJO0kfywjk97OD9sFrum7D_GDtT4OxdcKLplxbn643Xo=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/payments/payment.png"\n                        height="16" width="20" style="margin-top: 0.2em; opacity: 35%" />R$</span><span\n                    id="valor_sugerido_reais">00</span><span id="valor_sugerido_centavos"\n                    style="font-size: 0.5em; font-weight: 100">,00</span>\n            </h1>\n            <p style="float: right; margin: -1.35em 3.75em 0em 0em; font-size: 11px" class="ui-pdp-review__amount">\n                *Sugestão com alíquota..\n            </p>\n            <div class="detalhamento" id="detalhamento">\n                <ul class="ui-pdp-review__amount">\n                    <li>\n                        Seu custo:\n                        <img alt="icon"\n                            src="https://ci3.googleusercontent.com/proxy/kgbUUHgOg_Wtd56AXKaaRk0M4A-EQe-kjbq9Cr4as2SUCOfQIjNrN6zcNl1wWyUslua9x1khV2gtnzRhC4xLj6fKrzNwgEblwySpi5Jn0YwOcJnJausP9aoTC0Sc81rJQMLdJEWgJO0kfywjk97OD9sFrum7D_GDtT4OxdcKLplxbn643Xo=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/payments/payment.png"\n                            height="11" style="padding: 0em 0.5em 0em 0em" /><span class="ui-pdp-price"\n                            id="detalhe-custo">R$&nbsp; 0,00</span>\n                    </li>\n                    <li>\n                        Impostos:<img alt="icon"\n                            src="https://ci3.googleusercontent.com/proxy/kgbUUHgOg_Wtd56AXKaaRk0M4A-EQe-kjbq9Cr4as2SUCOfQIjNrN6zcNl1wWyUslua9x1khV2gtnzRhC4xLj6fKrzNwgEblwySpi5Jn0YwOcJnJausP9aoTC0Sc81rJQMLdJEWgJO0kfywjk97OD9sFrum7D_GDtT4OxdcKLplxbn643Xo=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/payments/payment.png"\n                            height="11" style="padding: 0em 0.5em 0em 0.61em" /><span class="ui-pdp-price"\n                            id="detalhe-imposto">R$&nbsp;0</span>\n                    </li>\n                    <li style="transform: translate(4px, 0px)">\n                        Seu lucro:\n                        <img alt="icon"\n                            src="https://ci5.googleusercontent.com/proxy/t9hOuXHFrNPYlckwjpVbXLSlkxMtwzLYCTIi7PchhDo9m0lT7QD15EK5HN7R_R-xZrKcTgNktsim1qXR1LlKrEKQNa030zOY_S-rBf1-Eds9chp_rizwkWlvcacgOpH-Hj7BTbJJ-tG97e7u8JhDtjRMp8DP9Bwv9jtS-VYIrGWn=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/common/back.png"\n                            height="11" style="padding: 0em 0.2em; padding-right: 0.45em" /><span class="ui-pdp-price"\n                            id="detalhe-lucro">R$&nbsp; 0,00</span>\n                    </li>\n                    <li style="transform: translate(-7px, 0px)">\n                        Taxa do ML:<img alt="icon"\n                            src="https://ci3.googleusercontent.com/proxy/ZG5FLXGDXbk602QJeqgzhTwuKjwnGLhuBMgUeetEB1qxNi8LEnUTmvci9Se0YjumB0a2DrA-uf1Xeb52hj41rmg9hKW-Sh2tH4xqoGR5cn6k-r_deVRoI31lrjw84JyS22rnTXvilfhHu7q_Lj6l-ZeR_MT9MvmskNkjUaKqu-bI9f9CypObTG-9JnJyZA=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-office.png"\n                            height="11" style="padding-right: 0.2em; padding-left: 0.15em" />\n                        <span class="ui-pdp-price" id="detalhe-taxa">R$&nbsp; 0,00</span>\n                    </li>\n                    <li style="transform: translate(9px, 0px)">\n                        Taxa Fixa:<img alt="icon"\n                            src="https://ci3.googleusercontent.com/proxy/ZG5FLXGDXbk602QJeqgzhTwuKjwnGLhuBMgUeetEB1qxNi8LEnUTmvci9Se0YjumB0a2DrA-uf1Xeb52hj41rmg9hKW-Sh2tH4xqoGR5cn6k-r_deVRoI31lrjw84JyS22rnTXvilfhHu7q_Lj6l-ZeR_MT9MvmskNkjUaKqu-bI9f9CypObTG-9JnJyZA=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-office.png"\n                            height="11" style="padding-right: 0.2em" />\n                        <span class="ui-pdp-price" id="detalhe-taxafixa">R$&nbsp; 0,00</span>\n                    </li>\n                    <li style="transform: translate(30px, 0px)">\n                        Envio:\n                        <img alt="icon"\n                            src="https://ci3.googleusercontent.com/proxy/4AHE0GSzeLFc0tuceXt2Hib-rWVbcK8yqriCrBnrQFdt3LpCrH-NA3nyDKu-IO-65xO2yjlS7rsjGiJWV6QunadzFZlJPWqeb2Shj_fYgwagdLoTOAljMen83VI1eloEUOdeZcR4Su7DrJRWooeRNOF5nZ2fJv2BE06zEE2uKHkiVrr1vOvtY78kR28=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-mail.png"\n                            height="11" style="padding-right: 0.3em; transform: translate(-2px, 0px)" /><span\n                            class="ui-pdp-price" id="detalhe-envio">R$&nbsp; 0,00</span>\n                    </li>\n                </ul>\n            </div>\n            <a id="vermais" style="float: right; margin: 1em 7em 0em 0em">Ver mais detalhes</a>\n            <p id="eareset" style="\n              float: right;\n              margin: 1em 8.35em 0em 0em;\n              font-weight: 900;\n              color: #aeaeae;\n              font-size: 0.77em;\n              text-align: center;\n            ">
-    \n                Problemas no cálculo?<br />Aperte Ctrl+Shift+R\n            </p>\n            <br />\n            <a id="refazer" style="\n              padding: 1em;\n              border-radius: 0.7em;\n              float: right;\n              margin: 1em 5.5em 0em 0em;\n            " class="andes-button--quiet">↻ Refazer simulação</a>\n        </div>\n\n        <div id="etapa1" style="margin: auto; overflow: hidden; width: 100%; margin-top: -1em" class="smooth">\n            <div id="pricetool_header" style="\n              height: 4em;\n              margin-bottom: 1.5em;\n              background-color: #f5f5f5;\n              display: flex;\n              align-items: center;\n              padding: 0em 1em;\n            ">\n                <img style="opacity: 0.21; width: 3.5rem; position: absolute; left: 0.21rem"\n                    src="https://i.ibb.co/FDxGScN/icon-gray.png" title="Metrify" />\n                <h3 style="\n                float: left;\n                font-size: 1.5rem;\n                font-family: 'Montserrat', sans-serif;\n                font-weight: 700;\n                margin-left: 1rem;\n              ">\n                    Precificador\n                </h3>\n                \n            </div>\n\n            <div id="pricetool_content" style="line-height: 1em; padding: 0em 1em">\n                <div id="pricetool_loading" class="new-loader new-hdn">\n                    <lottie-player src="${extensionPath}src/lotties/lf20_uwR49r.json" background="transparent"\n                        speed="1" style="width: 7rem; height: 7rem; margin: auto" loop autoplay></lottie-player>\n                </div>\n\n                <div id="passo-02" class="new-hdn">\n                    <div class="pt_row" style="\n                  display: flex;\n                  justify-content: center;\n                  align-items: center;\n                  flex-direction: column;\n                  padding-top: 1rem;\n                ">\n                        <span style="\n                    background: -webkit-linear-gradient(\n                      left,\n                      rgba(121, 51, 255, 1),\n                      rgba(6, 189, 252, 1)\n                    );\n                    background-clip: text;\n                    -webkit-background-clip: text;\n                    -webkit-text-fill-color: transparent;\n                    font-size: 1.35rem;\n                    font-weight: 800;\n                    font-family: 'Montserrat', sans-serif;\n                  ">\n                            PAV Dinâmico:\n                        </span>\n                        <br />\n                        <span style="font-size: 1rem;margin-top: -0.7rem;">\n                            (Preço alvo de vendas)\n                        </span>\n\n                        <div style="\n              display: flex;\n              flex-direction: column;\n              justify-content: center;\n              align-items: center;\n              font-size: 1.75rem;\n              font-weight: 600;\n              max-width: 100%;\n              min-width: 21rem;\n              margin: 0 auto;\n              padding: 1em;\n              ">\n                            <range-slider class="rangeslider" id="pav-slider" min="7" max="100" step="0.50"></range-slider>\n                        </div>\n\n                        <span style="\n                    background: -webkit-linear-gradient(\n                      left,\n                      rgba(121, 51, 255, 1),\n                      rgba(6, 189, 252, 1)\n                    );\n                    background-clip: text;\n                    -webkit-background-clip: text;\n                    -webkit-text-fill-color: transparent;\n                    font-size: 1.35rem;\n                    font-weight: 800;\n                    font-family: 'Montserrat', sans-serif;\n                  ">\n                            Seus Resultados:\n                        </span>\n                        <br />\n\n                        <div id="pt_highlight_result" style="width: 90%">\n                            <div style="\n                      width: 100%;\n                      border: 1px solid #00000011;\n                      border-radius: 4rem;\n                      font-size: 1.35rem;\n                      display: flex;\n                      justify-content: space-between;\n                      padding: 1em;\n                      font-family: 'Montserrat', sans-serif;\n                      margin: 0.21em 0em;\n                    ">\n                                <span style="font-weight: bold">Você recebe</span>\n                                <span id="pt_result_revenue" style="font-weight: 500">R$0,00</span>\n                            </div>\n\n                            <div style="\n                      width: 100%;\n                      border: 1px solid #00000011;\n                      border-radius: 4rem;\n                      font-size: 1.35rem;\n                      display: flex;\n                      justify-content: space-between;\n                      padding: 1em;\n                      font-family: 'Montserrat', sans-serif;\n                      margin: 0.21em 0em;\n                    ">\n                                <span style="font-weight: bold">Lucro</span>\n                                <div>\n                                    <abbr\n                                        title="Valor de lucro final após todas as tarifas, taxas e custos (exceto tributos)."\n                                        style=" text-decoration:none">\n                                        <img id="profit_info" src="https://img.icons8.com/ios-filled/50/000000/info.png"\n                                            style="margin-right: 0.1em; width: 1rem; opacity: 0.21; cursor: pointer" />\n                                    </abbr>\n                                    <span id="pt_result_profit" style="font-weight: 500">R$0,00</span>\n                                </div>\n                            </div>\n\n                            <div style="\n                      width: 100%;\n                      border: 1px solid #00000011;\n                      border-radius: 4rem;\n                      font-size: 1.35rem;\n                      display: flex;\n                      justify-content: space-between;\n                      padding: 1em;\n                      font-family: 'Montserrat', sans-serif;\n                      margin: 0.21em 0em;\n                    ">\n\n                                <span style="font-weight: bold">Margem/venda</span>\n                                <abbr title="Margem de lucro relativa ao preço alvo de venda cadastrado no marketplace."\n                                    style=" text-decoration:none">\n            
-                            <img id="profitpct_info" src="https://img.icons8.com/ios-filled/50/000000/info.png"\n                                        style="margin-right: 0.1em; width: 1rem; opacity: 0.21; cursor: pointer" />\n                                </abbr>\n                                <span id="pt_result_profitpct" style="font-weight: 500">0%</span>\n                            </div>\n\n                            <div style="\n                      width: 100%;\n                      border: 1px solid #00000011;\n                      border-radius: 4rem;\n                      font-size: 1.35rem;\n                      display: flex;\n                      justify-content: space-between;\n                      padding: 1em;\n                      font-family: 'Montserrat', sans-serif;\n                      margin: 0.21em 0em;\n                    ">\n                                <span style="font-weight: bold">Markup</span>\n                                <div>\n                                    <abbr\n                                        title="Percentual indicador de quanto o preço do produto está acima do seu custo de produção/compra."\n                                        style=" text-decoration:none">\n                                        <img id="markup_info" src="https://img.icons8.com/ios-filled/50/000000/info.png"\n                                            style="margin-right: 0.1em; width: 1rem; opacity: 0.21; cursor: pointer" />\n                                    </abbr>\n                                    <span id="pt_result_markup" style="font-weight: 500">0%</span>\n                                </div>\n                            </div>\n                        </div>\n                    </div>\n\n                    <div class="pt_row" style="\n                  width: 77%;\n                  margin: auto;\n                  margin-top: 1.35rem;\n                  margin-bottom: 2rem;\n                ">\n                        <span style="\n                    font-size: 1.21rem;\n                    font-weight: bold;\n                    font-family: 'Montserrat', sans-serif;\n                  ">\n                            Custos de venda:\n                        </span>\n\n                        <div class="pt_row" class="andes-form-control">\n                            <div class="sub_row" style="\n                      width: 100%;\n                      display: flex;\n                      justify-content: space-between;\n                      margin-top: 0.7rem;\n                      font-weight: bold;\n                      font-size: 1.21rem;\n                      padding: 0.14em 0em;\n                      border-bottom: 1px solid #00000021;\n                    ">\n                                <span>Tarifa:</span>\n                                <span id="pt_result_marketplacecut" style="font-weight: 500">R$0,00</span>\n                            </div>\n\n                            <div class="sub_row" style="\n                      width: 100%;\n                      display: flex;\n                      justify-content: space-between;\n                      margin-top: 0.7rem;\n                      font-weight: bold;\n                      font-size: 1.21rem;\n                      padding: 0.14em 0em;\n                      border-bottom: 1px solid #00000021;\n                    ">\n                                <span>Impostos:</span>\n                                <span id="pt_result_tax" style="font-weight: 500">R$0,00</span>\n                            </div>\n\n                            <div class="sub_row" style="\n                      width: 100%;\n                      display: flex;\n                      justify-content: space-between;\n                      margin-top: 0.7rem;\n                      font-weight: bold;\n                      font-size: 1.21rem;\n                      padding: 0.14em 0em;\n                      border-bottom: 1px solid #00000021;\n                    ">\n                                <span>Taxa Fixa:</span>\n                                <span id="pt_result_fee" style="font-weight: 500">R$0,00</span>\n                            </div>\n\n                            <div class="sub_row" style="\n                      width: 100%;\n                      display: flex;\n                      justify-content: space-between;\n                      margin-top: 0.7rem;\n                      font-weight: bold;\n                      font-size: 1.21rem;\n                      padding: 0.14em 0em;\n                      border-bottom: 1px solid #00000021;\n                    ">\n                                <span>Custo:</span>\n                                <span id="pt_result_cost" style="font-weight: 500">R$0,00</span>\n                            </div>\n\n                            <div class="sub_row" style="\n                      width: 100%;\n                      display: flex;\n                      justify-content: space-between;\n                      margin-top: 0.7rem;\n                      font-weight: bold;\n                      font-size: 1.21rem;\n                      padding: 0.14em 0em;\n                      border-bottom: 1px solid #00000021;\n                    ">\n                                <span>Envio:</span>\n                                <span id="pt_result_shipping" style="font-weight: 500">R$0,00</span>\n                            </div>\n\n                        </div>\n                    </div>\n\n                    <div id="pt_goback" style="\n                  display: flex;\n                  align-items: center;\n                  justify-content: center;\n                  font-weight: 600;\n                  font-size: 1.35rem;\n                  width: 90%;\n                  height: 2.5rem;\n                  border-radius: 4rem;\n                  padding: 1rem;\n                  margin: auto;\n                  margin-top: 0.1em;\n                  margin-bottom: 1rem;\n                  background: -webkit-linear-gradient(left, #3c73ff, #12b0fd);\n                  color: white;\n                  font-family: Montserrat, sans-serif;\n                  cursor: pointer;\n                  box-shadow: rgba(0, 0, 0, 0.1) 0px 7px 11px -7px,\n                    rgba(0, 0, 0, 0.2) 0px 1px 2px 0px;\n                ">\n                        Voltar\n                    </div>\n                </div>\n\n                <div id="passo-01">\n                    <div class="pt_row">\n                        <span style="\n                    background: -webkit-linear-gradient(\n                      left,\n                      rgba(121, 51, 255, 1),\n                      rgba(6, 189, 252, 1)\n                    );\n                    background-clip: text;\n 
-                                               -webkit-background-clip: text;\n                    -webkit-text-fill-color: transparent;\n                    font-size: 1.35rem;\n                    font-weight: 800;\n                    margin: 0.5em 0em 0em 0.5em;\n                    font-family: 'Montserrat', sans-serif;\n                  ">\n                            PAV\n                        </span>\n                        <br />\n                        <span style="margin: 0.5em 0em 0em 0.5em">(Preço alvo de venda)\n                        </span>\n\n                        <div class="andes-form-control" style="padding: 0em 0.7em 0em 0em; font-weight: bold">\n                            <input id="pav-input" type="number" placeholder="digite o valor" style="\n                      margin: 0.5em 0em 0.5em 0.35em;\n                      font-weight: 400;\n                      background-color: #80808000;\n                      border-radius: 0.25em;\n                      border: 2px solid #00000021;\n                      width: 100%;\n                      font-size: 1em;\n                      padding: 0.35em 0.35em 0.35em 2.1em;\n                      font-family: Proxima Nova, -apple-system, Helvetica Neue,\n                        Helvetica, Roboto, Arial, sans-serif;\n                    " />\n                            <span style="position: absolute; top: 1.7rem; left: 1rem">R$:</span>\n                        </div>\n                    </div>\n\n                    <div class="pt_row" style="\n                  display: flex;\n                  justify-content: space-between;\n                  margin-top: 0.7rem;\n                  font-weight: bold;\n                " class="andes-form-control">\n                        <div id="pt_cost" style="flex: 1; padding: 0em 0.7em 0em 0.7em">\n                            <span style="\n                      font-size: 1.21rem;\n                      font-weight: bold;\n                      font-family: 'Montserrat', sans-serif;\n                    ">\n                                Custo do produto:\n                            </span>\n                            <input id="custo" type="number" style="\n                      margin: 0.5em 0em 0.5em 0.35em;\n                      font-weight: bold;\n                      background-color: #80808000;\n                      border-radius: 0.25em;\n                      border: 2px solid #00000021;\n                      width: 100%;\n                      font-size: 1.1em;\n                      padding: 0.5em 0.35em 0.5em 2em;\n                    " />\n                            <span style="position: relative; top: -2.6rem; left: 1rem">R$:</span>\n                        </div>\n\n                        <div id="pt_taxes" style="flex: 1; padding: 0em 0.7em 0em 0.7em">\n                            <span style="\n                      font-size: 1.21rem;\n                      font-weight: bold;\n                      font-family: 'Montserrat', sans-serif;\n                    ">Sua alíquota de imposto</span><input id="aliq" type="number" style="\n                      margin: 0.5em 0em 0.5em 0em;\n                      font-weight: bold;\n                      background-color: #80808000;\n                      border-radius: 0.25em;\n                      border: 2px solid #00000021;\n                      width: 100%;\n                      font-size: 1.1em;\n                      padding: 0.5em 0.35em 0.5em 0.75em;\n                    " value="0" />\n                            <span style="\n                      position: relative;\n                      top: -2.7rem;\n                      right: -7rem;\n                      font-size: 1.21rem;\n                    ">%</span>\n                        </div>\n                    </div>\n\n                    <div id="preco-ativar" style="\n                  display: flex;\n                  align-items: center;\n                  justify-content: center;\n                  font-weight: 600;\n                  font-size: 1.35rem;\n                  width: 90%;\n                  height: 4.5rem;\n                  border-radius: 7px;\n                  padding: 1rem;\n                  margin: auto;\n                  margin-top: 0.1em;\n                  margin-bottom: 1rem;\n                  background:  var(--mfy-main);\n                  color: white;\n                  font-family: Montserrat, sans-serif;\n                  cursor: pointer;\n                  box-shadow: rgba(0, 0, 0, 0.1) 0px 7px 11px -7px,\n                    rgba(0, 0, 0, 0.2) 0px 1px 2px 0px;\n                ">\n                        Simular\n                    </div>\n\n                    <div id="alerta-form1" class="hdn" style="width: 90%; margin: auto">\n                        <img src="https://img.icons8.com/officexs/16/000000/spam.png" style="width: 0.77em" /><span\n                            style="color: red; font-size: 14px; vertical-align: top">\n                            Preencha os campos acima para simular.</span>\n                    </div>\n                </div>\n\n                <div style="display: none">\n                    <iframe id="quotation-iframe" src=""></iframe>\n                    <input type="checkbox" id="simular" style="margin-left: 0.5em" /><label for="simular" style="\n                  font-size: 0.7em;\n                  float: right;\n                  display: inline-block;\n                  max-width: 6em;\n                  position: relative;\n                  left: -0.7em;\n                  top: 1em;\n                " value="false">Simular com minha conta</label>\n                    <span style="margin: 0.5em 0em 0em 0.5em">Margem de lucro desejada:\n                    </span>\n                    <div class="andes-form-control" style="padding: 0em 0em 0em 0em; font-weight: bold">\n                        <input id="margem" type="number" class="" style="\n                    margin: 0.5em 0em 0.5em 0.35em;\n                    font-weight: bold;\n                    background-color: #80808000;\n                    border-radius: 0.35em;\n                    border: 1px solid #80808047;\n                    width: 7.7em;\n                    font-size: 1em;\n                    padding: 0.35em;\n                    width: 3.5em;\n                    font-family: Proxima Nova, -apple-system, Helvetica Neue,\n                      Helvetica, Roboto, Arial, sans-serif;\n                  " />\n                        % ou R$\n                        <input id="mrgbrl" type="number" class="" style="\n                    margin: 0.5em 0em 0.5em 0.35em;\n                    font-weight: bold;\n                    background-color: #80808000;\n                    border-radius: 0.35em;\n                    border: 1px solid #80808047;\n             
-                                                      width: 7.7em;\n                    font-size: 1em;\n                    padding: 0.35em;\n                    width: 7em;\n                    font-family: Proxima Nova, -apple-system, Helvetica Neue,\n                      Helvetica, Roboto, Arial, sans-serif;\n                  " />\n                    </div>\n                    </div>\n                </div>\n            </div>\n        </div>`, (() => {
+    price_tool = `<style>
+
+  /* Paleta NOVAI */
+  :root{
+    --novai-ml-yellow:#ffe600;
+    --novai-bg:#111;
+    --novai-card:#161616;
+    --novai-text:#f5f5f5;
+    --novai-muted:#a3a3a3;
+    --novai-border:rgba(255,255,255,.14);
+  }
+
+  /* ► Container em formato "calculadora" (alto e estreito) */
+  #price-tool{
+    background:var(--novai-card) !important;
+    color:var(--novai-text) !important;
+    width:clamp(260px, 24vw, 320px) !important; /* mais estreito */
+    height:clamp(460px, 60vh, 640px) !important; /* mais alto */
+    border-radius:16px !important;
+    border:1px solid var(--novai-border) !important;
+    display:flex !important;
+    flex-direction:column !important;
+    padding:12px !important;
+    gap:8px !important;
+    box-shadow:0 12px 32px rgba(0,0,0,.28) !important;
+    overflow:hidden !important;
+    font-family:'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+  }
+
+  /* Tipografia e cores internas */
+  #price-tool *{
+    font-family:inherit !important;
+  }
+  #price-tool h1,#price-tool h3,#price-tool p,#price-tool span,
+  #price-tool .price-tag,#price-tool .ui-pdp-price,#price-tool .ui-pdp-review__amount{
+    color:var(--novai-text) !important;
+  }
+
+  /* Cabeçalho compacto com faixa amarela sutil */
+  #price-tool #pricetool_header{
+    background:#1c1c1c !important;
+    color:var(--novai-text) !important;
+    height:3.1rem !important;             /* override do inline */
+    margin-bottom:.75rem !important;
+    border-radius:12px !important;
+    box-shadow:inset 0 4px 0 var(--novai-ml-yellow) !important;
+    display:flex !important;
+    align-items:center !important;
+  }
+  #price-tool #pricetool_header h3{ color:var(--novai-ml-yellow) !important; }
+
+  /* Área de conteúdo rolável dentro do "celular" */
+  #price-tool #pricetool_content{
+    flex:1 !important;
+    overflow:auto !important;
+    padding:.25rem .5rem !important;
+  }
+
+  /* Cartelinhas e linhas de resultado */
+  #price-tool #pt_highlight_result > div,
+  #price-tool .sub_row{
+    border:1px solid var(--novai-border) !important;
+    border-radius:12px !important;
+    background:rgba(255,255,255,.03) !important;
+  }
+
+  /* Inputs escuros e legíveis */
+  #price-tool input{
+    background:transparent !important;
+    color:var(--novai-text) !important;
+    border-color:var(--novai-border) !important;
+    outline:none !important;
+  }
+
+  /* Botões com amarelo NOVAI */
+  #price-tool #preco-ativar,
+  #price-tool #pt_goback{
+    background:var(--novai-ml-yellow) !important;
+    color:#111 !important;
+    border:none !important;
+    border-radius:999px !important;
+    height:3rem !important;
+    font-weight:800 !important;
+    letter-spacing:.02em !important;
+    box-shadow:0 8px 18px rgba(0,0,0,.22) !important;
+  }
+  #price-tool #refazer,
+  #price-tool #vermais,
+  #price-tool a{ color:var(--novai-ml-yellow) !important; }
+
+  /* Lista de detalhamento */
+  #price-tool .detalhamento li{ color:var(--novai-text) !important; }
+
+  /* Evita quebrar layout por min-width herdado no slider container */
+  #price-tool #passo-02 div[style*="min-width: 21rem"]{
+    min-width:auto !important;
+    width:100% !important;
+  }
+
+  /* Slider ocupar largura do card */
+  #price-tool #pav-slider{ width:100% !important; }
+
+  /* Gradientes originais viram amarelo NOVAI (sem mexer no HTML) */
+  #price-tool span[style*="-webkit-text-fill-color: transparent"]{
+    background:none !important;
+    -webkit-text-fill-color:initial !important;
+    color:var(--novai-ml-yellow) !important;
+  }
+</style>
+
+<div id="price-tool" style="
+          position: fixed;
+          bottom: calc(${PRICE_BUTTON_BOTTOM} + ${PRICE_BUTTON_SIZE} + ${PRICE_TOOL_GAP});
+          right: calc(${PRICE_BUTTON_RIGHT} + ${PRICE_BUTTON_SIZE} + ${PRICE_TOOL_GAP});
+          background-color: #fff;
+          box-shadow: rgba(0, 0, 0, 0.1) 0px 7px 11px -7px,
+            rgba(0, 0, 0, 0.2) 0px 1px 2px 0px;
+          border: 0px !important;
+          z-index: ${PRICE_TOOL_Z_INDEX};
+          max-width: min(90vw, 28rem);
+          width: auto;
+          /* overflow: hidden; */
+        " class="hdn ui-pdp-buybox smooth ui-pdp-container__row ui-pdp-component-list pr-16 pl-16 alinharvertical">
+  <div id="etapa2" class="smooth hdn transp" style="width: inherit; float: left; transform: translate(-10px, 0px)">
+      <div style="text-align: right; padding-left: 1.85em; width: 45%">
+          O valor <b>sugerido</b> para publicar seu anúncio é de:
+      </div>
+      <h1 class="price-tag price-tag-fraction" style="width: 53%; overflow: hidden; float: right; margin-top: -1.5em">
+          <span style="margin-right: 0.15em"><img
+                  src="https://ci3.googleusercontent.com/proxy/kgbUUHgOg_Wtd56AXKaaRk0M4A-EQe-kjbq9Cr4as2SUCOfQIjNrN6zcNl1wWyUslua9x1khV2gtnzRhC4xLj6fKrzNwgEblwySpi5Jn0YwOcJnJausP9aoTC0Sc81rJQMLdJEWgJO0kfywjk97OD9sFrum7D_GDtT4OxdcKLplxbn643Xo=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/payments/payment.png"
+                  height="16" width="20" style="margin-top: 0.2em; opacity: 35%" />R$</span><span
+              id="valor_sugerido_reais">00</span><span id="valor_sugerido_centavos"
+              style="font-size: 0.5em; font-weight: 100">,00</span>
+      </h1>
+      <p style="float: right; margin: -1.35em 3.75em 0em 0em; font-size: 11px" class="ui-pdp-review__amount">
+          *Sugestão com alíquota..
+      </p>
+      <div class="detalhamento" id="detalhamento">
+          <ul class="ui-pdp-review__amount">
+              <li>
+                  Seu custo:
+                  <img alt="icon"
+                      src="https://ci3.googleusercontent.com/proxy/kgbUUHgOg_Wtd56AXKaaRk0M4A-EQe-kjbq9Cr4as2SUCOfQIjNrN6zcNl1wWyUslua9x1khV2gtnzRhC4xLj6fKrzNwgEblwySpi5Jn0YwOcJnJausP9aoTC0Sc81rJQMLdJEWgJO0kfywjk97OD9sFrum7D_GDtT4OxdcKLplxbn643Xo=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/payments/payment.png"
+                      height="11" style="padding: 0em 0.5em 0em 0em" /><span class="ui-pdp-price"
+                      id="detalhe-custo">R$&nbsp; 0,00</span>
+              </li>
+              <li>
+                  Impostos:<img alt="icon"
+                      src="https://ci3.googleusercontent.com/proxy/kgbUUHgOg_Wtd56AXKaaRk0M4A-EQe-kjbq9Cr4as2SUCOfQIjNrN6zcNl1wWyUslua9x1khV2gtnzRhC4xLj6fKrzNwgEblwySpi5Jn0YwOcJnJausP9aoTC0Sc81rJQMLdJEWgJO0kfywjk97OD9sFrum7D_GDtT4OxdcKLplxbn643Xo=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/payments/payment.png"
+                      height="11" style="padding: 0em 0.5em 0em 0.61em" /><span class="ui-pdp-price"
+                      id="detalhe-imposto">R$&nbsp;0</span>
+              </li>
+              <li style="transform: translate(4px, 0px)">
+                  Seu lucro:
+                  <img alt="icon"
+                      src="https://ci5.googleusercontent.com/proxy/t9hOuXHFrNPYlckwjpVbXLSlkxMtwzLYCTIi7PchhDo9m0lT7QD15EK5HN7R_R-xZrKcTgNktsim1qXR1LlKrEKQNa030zOY_S-rBf1-Eds9chp_rizwkWlvcacgOpH-Hj7BTbJJ-tG97e7u8JhDtjRMp8DP9Bwv9jtS-VYIrGWn=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/common/back.png"
+                      height="11" style="padding: 0em 0.2em; padding-right: 0.45em" /><span class="ui-pdp-price"
+                      id="detalhe-lucro">R$&nbsp; 0,00</span>
+              </li>
+              <li style="transform: translate(-7px, 0px)">
+                  Taxa do ML:<img alt="icon"
+                      src="https://ci3.googleusercontent.com/proxy/ZG5FLXGDXbk602QJeqgzhTwuKjwnGLhuBMgUeetEB1qxNi8LEnUTmvci9Se0YjumB0a2DrA-uf1Xeb52hj41rmg9hKW-Sh2tH4xqoGR5cn6k-r_deVRoI31lrjw84JyS22rnTXvilfhHu7q_Lj6l-ZeR_MT9MvmskNkjUaKqu-bI9f9CypObTG-9JnJyZA=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-office.png"
+                      height="11" style="padding-right: 0.2em; padding-left: 0.15em" />
+                  <span class="ui-pdp-price" id="detalhe-taxa">R$&nbsp; 0,00</span>
+              </li>
+              <li style="transform: translate(9px, 0px)">
+                  Taxa Fixa:<img alt="icon"
+                      src="https://ci3.googleusercontent.com/proxy/ZG5FLXGDXbk602QJeqgzhTwuKjwnGLhuBMgUeetEB1qxNi8LEnUTmvci9Se0YjumB0a2DrA-uf1Xeb52hj41rmg9hKW-Sh2tH4xqoGR5cn6k-r_deVRoI31lrjw84JyS22rnTXvilfhHu7q_Lj6l-ZeR_MT9MvmskNkjUaKqu-bI9f9CypObTG-9JnJyZA=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-office.png"
+                      height="11" style="padding-right: 0.2em" />
+                  <span class="ui-pdp-price" id="detalhe-taxafixa">R$&nbsp; 0,00</span>
+              </li>
+              <li style="transform: translate(30px, 0px)">
+                  Envio:
+                  <img alt="icon"
+                      src="https://ci3.googleusercontent.com/proxy/4AHE0GSzeLFc0tuceXt2Hib-rWVbcK8yqriCrBnrQFdt3LpCrH-NA3nyDKu-IO-65xO2yjlS7rsjGiJWV6QunadzFZlJPWqeb2Shj_fYgwagdLoTOAljMen83VI1eloEUOdeZcR4Su7DrJRWooeRNOF5nZ2fJv2BE06zEE2uKHkiVrr1vOvtY78kR28=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-mail.png"
+                      height="11" style="padding-right: 0.3em; transform: translate(-2px, 0px)" /><span
+                      class="ui-pdp-price" id="detalhe-envio">R$&nbsp; 0,00</span>
+              </li>
+          </ul>
+      </div>
+      <a id="vermais" style="float: right; margin: 1em 7em 0em 0em">Ver mais detalhes</a>
+      <p id="eareset" style="
+              float: right;
+              margin: 1em 8.35em 0em 0em;
+              font-weight: 900;
+              color: #aeaeae;
+              font-size: 0.77em;
+              text-align: center;
+            ">
+          Problemas no cálculo?<br />Aperte Ctrl+Shift+R
+      </p>
+      <br />
+      <a id="refazer" style="
+              padding: 1em;
+              border-radius: 0.7em;
+              float: right;
+              margin: 1em 5.5em 0em 0em;
+            " class="andes-button--quiet">↻ Refazer simulação</a>
+  </div>
+
+  <div id="etapa1" style="margin: auto; overflow: hidden; width: 100%; margin-top: -1em" class="smooth">
+      <div id="pricetool_header" style="
+              height: 4em;
+              margin-bottom: 1.5em;
+              background-color: #f5f5f5;
+              display: flex;
+              align-items: center;
+              padding: 0em 1em;
+            ">
+    
+          <h3 style="
+                float: left;
+                font-size: 1.5rem;
+                font-family: 'Montserrat', sans-serif;
+                font-weight: 700;
+                margin-left: 1rem;
+              ">
+              Precificador
+          </h3>
+      </div>
+
+      <div id="pricetool_content" style="line-height: 1em; padding: 0em 1em">
+          <div id="pricetool_loading" class="new-loader new-hdn">
+              <lottie-player src="${extensionPath}src/lotties/lf20_uwR49r.json" background="transparent"
+                  speed="1" style="width: 7rem; height: 7rem; margin: auto" loop autoplay></lottie-player>
+          </div>
+
+          <div id="passo-02" class="new-hdn">
+              <div class="pt_row" style="
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  flex-direction: column;
+                  padding-top: 1rem;
+                ">
+                  <span style="
+                    background: -webkit-linear-gradient(
+                      left,
+                      rgba(121, 51, 255, 1),
+                      rgba(6, 189, 252, 1)
+                    );
+                    background-clip: text;
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    font-size: 1.35rem;
+                    font-weight: 800;
+                    font-family: 'Montserrat', sans-serif;
+                  ">
+                      PAV Dinâmico:
+                  </span>
+                  <br />
+                  <span style="font-size: 1rem;margin-top: -0.7rem;">
+                      (Preço alvo de vendas)
+                  </span>
+
+                  <div style="
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              align-items: center;
+              font-size: 1.75rem;
+              font-weight: 600;
+              max-width: 100%;
+              min-width: 21rem;
+              margin: 0 auto;
+              padding: 1em;
+              ">
+                      <range-slider class="rangeslider" id="pav-slider" min="7" max="100" step="0.50"></range-slider>
+                  </div>
+
+                  <span style="
+                    background: -webkit-linear-gradient(
+                      left,
+                      rgba(121, 51, 255, 1),
+                      rgba(6, 189, 252, 1)
+                    );
+                    background-clip: text;
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    font-size: 1.35rem;
+                    font-weight: 800;
+                    font-family: 'Montserrat', sans-serif;
+                  ">
+                      Seus Resultados:
+                  </span>
+                  <br />
+
+                  <div id="pt_highlight_result" style="width: 90%">
+                      <div style="
+                      width: 100%;
+                      border: 1px solid #00000011;
+                      border-radius: 4rem;
+                      font-size: 1.35rem;
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 1em;
+                      font-family: 'Montserrat', sans-serif;
+                      margin: 0.21em 0em;
+                    ">
+                          <span style="font-weight: bold">Você recebe</span>
+                          <span id="pt_result_revenue" style="font-weight: 500">R$0,00</span>
+                      </div>
+
+                      <div style="
+                      width: 100%;
+                      border: 1px solid #00000011;
+                      border-radius: 4rem;
+                      font-size: 1.35rem;
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 1em;
+                      font-family: 'Montserrat', sans-serif;
+                      margin: 0.21em 0em;
+                    ">
+                          <span style="font-weight: bold">Lucro</span>
+                          <div>
+                              <abbr
+                                  title="Valor de lucro final após todas as tarifas, taxas e custos (exceto tributos)."
+                                  style=" text-decoration:none">
+                                  <img id="profit_info" src="https://img.icons8.com/ios-filled/50/000000/info.png"
+                                      style="margin-right: 0.1em; width: 1rem; opacity: 0.21; cursor: pointer" />
+                              </abbr>
+                              <span id="pt_result_profit" style="font-weight: 500">R$0,00</span>
+                          </div>
+                      </div>
+
+                      <div style="
+                      width: 100%;
+                      border: 1px solid #00000011;
+                      border-radius: 4rem;
+                      font-size: 1.35rem;
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 1em;
+                      font-family: 'Montserrat', sans-serif;
+                      margin: 0.21em 0em;
+                    ">
+
+                          <span style="font-weight: bold">Margem/venda</span>
+                          <abbr title="Margem de lucro relativa ao preço alvo de venda cadastrado no marketplace."
+                              style=" text-decoration:none">
+
+                              <img id="profitpct_info" src="https://img.icons8.com/ios-filled/50/000000/info.png"
+                                      style="margin-right: 0.1em; width: 1rem; opacity: 0.21; cursor: pointer" />
+                          </abbr>
+                          <span id="pt_result_profitpct" style="font-weight: 500">0%</span>
+                      </div>
+
+                      <div style="
+                      width: 100%;
+                      border: 1px solid #00000011;
+                      border-radius: 4rem;
+                      font-size: 1.35rem;
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 1em;
+                      font-family: 'Montserrat', sans-serif;
+                      margin: 0.21em 0em;
+                    ">
+                          <span style="font-weight: bold">Markup</span>
+                          <div>
+                              <abbr
+                                  title="Percentual indicador de quanto o preço do produto está acima do seu custo de produção/compra."
+                                  style=" text-decoration:none">
+                                  <img id="markup_info" src="https://img.icons8.com/ios-filled/50/000000/info.png"
+                                      style="margin-right: 0.1em; width: 1rem; opacity: 0.21; cursor: pointer" />
+                              </abbr>
+                              <span id="pt_result_markup" style="font-weight: 500">0%</span>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="pt_row" style="
+                  width: 77%;
+                  margin: auto;
+                  margin-top: 1.35rem;
+                  margin-bottom: 2rem;
+                ">
+                  <span style="
+                    font-size: 1.21rem;
+                    font-weight: bold;
+                    font-family: 'Montserrat', sans-serif;
+                  ">
+                      Custos de venda:
+                  </span>
+
+                  <div class="pt_row" class="andes-form-control">
+                      <div class="sub_row" style="
+                      width: 100%;
+                      display: flex;
+                      justify-content: space-between;
+                      margin-top: 0.7rem;
+                      font-weight: bold;
+                      font-size: 1.21rem;
+                      padding: 0.14em 0em;
+                      border-bottom: 1px solid #00000021;
+                    ">
+                          <span>Tarifa:</span>
+                          <span id="pt_result_marketplacecut" style="font-weight: 500">R$0,00</span>
+                      </div>
+
+                      <div class="sub_row" style="
+                      width: 100%;
+                      display: flex;
+                      justify-content: space-between;
+                      margin-top: 0.7rem;
+                      font-weight: bold;
+                      font-size: 1.21rem;
+                      padding: 0.14em 0em;
+                      border-bottom: 1px solid #00000021;
+                    ">
+                          <span>Impostos:</span>
+                          <span id="pt_result_tax" style="font-weight: 500">R$0,00</span>
+                      </div>
+
+                      <div class="sub_row" style="
+                      width: 100%;
+                      display: flex;
+                      justify-content: space-between;
+                      margin-top: 0.7rem;
+                      font-weight: bold;
+                      font-size: 1.21rem;
+                      padding: 0.14em 0em;
+                      border-bottom: 1px solid #00000021;
+                    ">
+                          <span>Taxa Fixa:</span>
+                          <span id="pt_result_fee" style="font-weight: 500">R$0,00</span>
+                      </div>
+
+                      <div class="sub_row" style="
+                      width: 100%;
+                      display: flex;
+                      justify-content: space-between;
+                      margin-top: 0.7rem;
+                      font-weight: bold;
+                      font-size: 1.21rem;
+                      padding: 0.14em 0em;
+                      border-bottom: 1px solid #00000021;
+                    ">
+                          <span>Custo:</span>
+                          <span id="pt_result_cost" style="font-weight: 500">R$0,00</span>
+                      </div>
+
+                      <div class="sub_row" style="
+                      width: 100%;
+                      display: flex;
+                      justify-content: space-between;
+                      margin-top: 0.7rem;
+                      font-weight: bold;
+                      font-size: 1.21rem;
+                      padding: 0.14em 0em;
+                      border-bottom: 1px solid #00000021;
+                    ">
+                          <span>Envio:</span>
+                          <span id="pt_result_shipping" style="font-weight: 500">R$0,00</span>
+                      </div>
+
+                  </div>
+              </div>
+
+              <div id="pt_goback" style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-weight: 600;
+                  font-size: 1.35rem;
+                  width: 90%;
+                  height: 2.5rem;
+                  border-radius: 4rem;
+                  padding: 1rem;
+                  margin: auto;
+                  margin-top: 0.1em;
+                  margin-bottom: 1rem;
+                  background: -webkit-linear-gradient(left, #3c73ff, #12b0fd);
+                  color: white;
+                  font-family: Montserrat, sans-serif;
+                  cursor: pointer;
+                  box-shadow: rgba(0, 0, 0, 0.1) 0px 7px 11px -7px,
+                    rgba(0, 0, 0, 0.2) 0px 1px 2px 0px;
+                ">
+                  Voltar
+              </div>
+          </div>
+
+          <div id="passo-01">
+              <div class="pt_row">
+                  <span style="
+                    background: -webkit-linear-gradient(
+                      left,
+                      rgba(121, 51, 255, 1),
+                      rgba(6, 189, 252, 1)
+                    );
+                    background-clip: text;
+                    -webkit-background-clip: text;
+
+                    -webkit-text-fill-color: transparent;
+                    font-size: 1.35rem;
+                    font-weight: 800;
+                    margin: 0.5em 0em 0em 0.5em;
+                    font-family: 'Montserrat', sans-serif;
+                  ">
+                      PAV
+                  </span>
+                  <br />
+                  <span style="margin: 0.5em 0em 0em 0.5em">(Preço alvo de venda)
+                  </span>
+
+                  <div class="andes-form-control" style="padding: 0em 0.7em 0em 0em; font-weight: bold">
+                      <input id="pav-input" type="number" placeholder="digite o valor" style="
+                      margin: 0.5em 0em 0.5em 0.35em;
+                      font-weight: 400;
+                      background-color: #80808000;
+                      border-radius: 0.25em;
+                      border: 2px solid #00000021;
+                      width: 100%;
+                      font-size: 1em;
+                      padding: 0.35em 0.35em 0.35em 2.1em;
+                      font-family: Proxima Nova, -apple-system, Helvetica Neue,
+                        Helvetica, Roboto, Arial, sans-serif;
+                    " />
+                      <span style="position: absolute; top: 1.7rem; left: 1rem">R$:</span>
+                  </div>
+              </div>
+
+              <div class="pt_row" style="
+                  display: flex;
+                  justify-content: space-between;
+                  margin-top: 0.7rem;
+                  font-weight: bold;
+                " class="andes-form-control">
+                  <div id="pt_cost" style="flex: 1; padding: 0em 0.7em 0em 0.7em">
+                      <span style="
+                      font-size: 1.21rem;
+                      font-weight: bold;
+                      font-family: 'Montserrat', sans-serif;
+                    ">
+                          Custo do produto:
+                      </span>
+                      <input id="custo" type="number" style="
+                      margin: 0.5em 0em 0.5em 0.35em;
+                      font-weight: bold;
+                      background-color: #80808000;
+                      border-radius: 0.25em;
+                      border: 2px solid #00000021;
+                      width: 100%;
+                      font-size: 1.1em;
+                      padding: 0.5em 0.35em 0.5em 2em;
+                    " />
+                      <span style="position: relative; top: -2.6rem; left: 1rem">R$:</span>
+                  </div>
+
+                  <div id="pt_taxes" style="flex: 1; padding: 0em 0.7em 0em 0.7em">
+                      <span style="
+                      font-size: 1.21rem;
+                      font-weight: bold;
+                      font-family: 'Montserrat', sans-serif;
+                    ">Sua alíquota de imposto</span><input id="aliq" type="number" style="
+                      margin: 0.5em 0em 0.5em 0em;
+                      font-weight: bold;
+                      background-color: #80808000;
+                      border-radius: 0.25em;
+                      border: 2px solid #00000021;
+                      width: 100%;
+                      font-size: 1.1em;
+                      padding: 0.5em 0.35em 0.5em 0.75em;
+                    " value="0" />
+                      <span style="
+                      position: relative;
+                      top: -2.7rem;
+                      right: -7rem;
+                      font-size: 1.21rem;
+                    ">%</span>
+                  </div>
+              </div>
+
+              <div id="preco-ativar" style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-weight: 600;
+                  font-size: 1.35rem;
+                  width: 90%;
+                  height: 4.5rem;
+                  border-radius: 7px;
+                  padding: 1rem;
+                  margin: auto;
+                  margin-top: 0.1em;
+                  margin-bottom: 1rem;
+                  background:  var(--mfy-main);
+                  color: white;
+                  font-family: Montserrat, sans-serif;
+                  cursor: pointer;
+                  box-shadow: rgba(0, 0, 0, 0.1) 0px 7px 11px -7px,
+                    rgba(0, 0, 0, 0.2) 0px 1px 2px 0px;
+                ">
+                  Simular
+              </div>
+
+              <div id="alerta-form1" class="hdn" style="width: 90%; margin: auto">
+                  <img src="https://img.icons8.com/officexs/16/000000/spam.png" style="width: 0.77em" /><span
+                      style="color: red; font-size: 14px; vertical-align: top">
+                      Preencha os campos acima para simular.</span>
+              </div>
+          </div>
+
+          <div style="display: none">
+              <iframe id="quotation-iframe" src=""></iframe>
+              <input type="checkbox" id="simular" style="margin-left: 0.5em" /><label for="simular" style="
+                  font-size: 0.7em;
+                  float: right;
+                  display: inline-block;
+                  max-width: 6em;
+                  position: relative;
+                  left: -0.7em;
+                  top: 1em;
+                " value="false">Simular com minha conta</label>
+              <span style="margin: 0.5em 0em 0em 0.5em">Margem de lucro desejada:
+              </span>
+              <div class="andes-form-control" style="padding: 0em 0em 0em 0em; font-weight: bold">
+                  <input id="margem" type="number" class="" style="
+                    margin: 0.5em 0em 0.5em 0.35em;
+                    font-weight: bold;
+                    background-color: #80808000;
+                    border-radius: 0.35em;
+                    border: 1px solid #80808047;
+                    width: 7.7em;
+                    font-size: 1em;
+                    padding: 0.35em;
+                    width: 3.5em;
+                    font-family: Proxima Nova, -apple-system, Helvetica Neue,
+                      Helvetica, Roboto, Arial, sans-serif;
+                  " />
+                  % ou R$
+                  <input id="mrgbrl" type="number" class="" style="
+                    margin: 0.5em 0em 0.5em 0.35em;
+                    font-weight: bold;
+                    background-color: #80808000;
+                    border-radius: 0.35em;
+                    border: 1px solid #80808047;
+                    width: 7.7em;
+                    font-size: 1em;
+                    padding: 0.35em;
+                    width: 7em;
+                    font-family: Proxima Nova, -apple-system, Helvetica Neue,
+                      Helvetica, Roboto, Arial, sans-serif;
+                  " />
+              </div>
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
+`, (() => {
           const fallbackAnchor = spot2 && spot2[0];
           const anchorElement = document.querySelector("main") || fallbackAnchor || document.body;
           mountPriceInterface(anchorElement);
