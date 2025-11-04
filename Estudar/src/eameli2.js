@@ -2765,7 +2765,7 @@ function contentScpt() {
         const hasMonthlyRevenue = ensureFiniteNumber(revenueByPeriod['30d'], 0) > 0;
         const hasTotalRevenue = ensureFiniteNumber(revenueByPeriod.total, 0) > 0;
         dias / (vendas || 1) > 1 && m && (m.style.display = "none");
-        dias <= 30 && (f && (f.style.display = "none"), g && (g.style.display = "none"), p && (p.style.display = "none"));
+        dias <= 30 && (f && (f.style.display = "none"), g && (g.style.display = "none"));
         !hasMonthlyRevenue && (m && (m.style.display = "none"), c && (c.style.display = "none"), p && (p.style.display = "none"), g && (g.style.display = "none"), f && (f.style.display = "none"));
         !hasTotalRevenue && u && (u.style.display = "none");
         let h = document.getElementsByClassName("revperiod");
@@ -2785,7 +2785,7 @@ function contentScpt() {
         const updatePeriodLabels = (label) => {
           if (y?.length > 0) {
             y[0].innerHTML = "Faturamento:";
-            if (y.length > 1) y[1].innerHTML = label;
+            if (y.length > 1) y[1].innerHTML = 'Total';
           }
           for (let i = 0;
           i < h?.length;
@@ -2818,7 +2818,7 @@ function contentScpt() {
         }));
         u?.addEventListener("click", (() => {
           setAnuncioValue(revenueByPeriod.total);
-          updatePeriodLabels(" /Total");
+          updatePeriodLabels(" Total");
           setActiveButton(u);
         }));
         const defaultButton = [p, c, m, g, f, u].find((btn) => btn && btn.style.display !== "none");
