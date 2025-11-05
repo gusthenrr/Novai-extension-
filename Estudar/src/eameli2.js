@@ -1943,8 +1943,10 @@ async function fetchProductDataFromPage(rawItemId, t) {
     vendas = n.itemSales, n.startTime && (dataLayer[0] = dataLayer[0] || {}, dataLayer[0].startTime = n.startTime);
     let a = document.getElementsByClassName("ui-pdp-subtitle")[0];
     if (a && vendas > 0) {
+      const dias = Math.max(1, Math.floor((Date.now() - Date.parse(n.startTime)) / 86400000));
       const monthlyAvg = Math.round(vendas / (dias / 30));
       media_vendas=monthlyAvg
+      
   upNovaiVendasAnuncio(vendas);
 }
 
@@ -2703,9 +2705,12 @@ function contentScpt() {
 
         qtySold_normalized = getNormalizedSoldQtyFromPDP();
         qtySold_catalog = qtySold_normalized;
+        console.log('vendas: ', vendas)
+        console.log('qtySold_catalog: ', qtySold_catalog)
+        console.log('avgMonthlySalesCount: ', avgMonthlySalesCount)
         const totalSoldCount = coerceNonNegativeInteger(vendas, qtySold_catalog);
-        const monthlyCount = ensureFiniteNumber(avgMonthlySalesCount, 0);
-
+        const monthlyCount = media_vendas
+        console.log('mounthly count: ', monthlyCount)
         qtySold_period = {
           '1d': ensureFiniteNumber(monthlyCount / 30, 0),
           '7d': ensureFiniteNumber(monthlyCount * (7 / 30), 0),
@@ -2719,7 +2724,7 @@ function contentScpt() {
         NOVAI_SALES_STATE.qty.catalogSoldTotal = qtySold_catalog;
         NOVAI_SALES_STATE.qty.period = { ...qtySold_period };
         NOVAI_SALES_STATE.averages.monthlySalesCount = monthlyCount;
-
+        console.log('quantidade vendida: ', qtySold_period)
         const revenueByPeriod = {
           '1d': computeListingPeriodRevenue(qtySold_period, priceListing, '1d'),
           '7d': computeListingPeriodRevenue(qtySold_period, priceListing, '7d'),
@@ -4121,24 +4126,6 @@ function s() {
       }
       )
     }
-    const price_tool_fix =`<div id="price-tool" style="position: fixed;bottom: calc(1.5rem + 3.5rem + 1.5rem);right: calc(1.5rem + 3.5rem + 1.5rem);background-color: #fff;box-shadow: rgba(0, 0, 0, 0.1) 0px 7px 11px -7px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px;border: 0px !important;z-index: 2147483646;max-width: min(90vw, 28rem);width: auto;" class="ui-pdp-buybox smooth ui-pdp-container__row ui-pdp-component-list pr-16 pl-16 alinharvertical"><div id="etapa2" class="smooth hdn transp" style="width: inherit;float: left;transform: translate(-10px, 0px);"><div style="text-align: right;padding-left: 1.85em;width: 45%;">O valor <b>sugerido</b> para publicar seu anúncio é de:</div><h1 class="price-tag price-tag-fraction" style="width: 53%;overflow: hidden;float: right;margin-top: -1.5em;"><span style="margin-right: 0.15em;"><img src="https://ci3.googleusercontent.com/proxy/kgbUUHgOg_Wtd56AXKaaRk0M4A-EQe-kjbq9Cr4as2SUCOfQIjNrN6zcNl1wWyUslua9x1khV2gtnzRhC4xLj6fKrzNwgEblwySpi5Jn0YwOcJnJausP9aoTC0Sc81rJQMLdJEWgJO0kfywjk97OD9sFrum7D_GDtT4OxdcKLplxbn643Xo=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/payments/payment.png" height="16" width="20" style="margin-top: 0.2em;opacity: 35%;">R$</span><span id="valor_sugerido_reais">00</span><span id="valor_sugerido_centavos" style="font-size: 0.5em;font-weight: 100;">,00</span></h1><p style="float: right;margin: -1.35em 3.75em 0em 0em;font-size: 11px;" class="ui-pdp-review__amount"> *Sugestão com alíquota..</p><div class="detalhamento" id="detalhamento"><ul class="ui-pdp-review__amount"><li>Seu custo: <img alt="icon" src="https://ci3.googleusercontent.com/proxy/kgbUUHgOg_Wtd56AXKaaRk0M4A-EQe-kjbq9Cr4as2SUCOfQIjNrN6zcNl1wWyUslua9x1khV2gtnzRhC4xLj6fKrzNwgEblwySpi5Jn0YwOcJnJausP9aoTC0Sc81rJQMLdJEWgJO0kfywjk97OD9sFrum7D_GDtT4OxdcKLplxbn643Xo=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/payments/payment.png" height="11" style="padding: 0em 0.5em 0em 0em;"><span class="ui-pdp-price" id="detalhe-custo">R$&nbsp; 0,00</span></li><li>Impostos:<img alt="icon" src="https://ci3.googleusercontent.com/proxy/kgbUUHgOg_Wtd56AXKaaRk0M4A-EQe-kjbq9Cr4as2SUCOfQIjNrN6zcNl1wWyUslua9x1khV2gtnzRhC4xLj6fKrzNwgEblwySpi5Jn0YwOcJnJausP9aoTC0Sc81rJQMLdJEWgJO0kfywjk97OD9sFrum7D_GDtT4OxdcKLplxbn643Xo=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/payments/payment.png" height="11" style="padding: 0em 0.5em 0em 0.61em;"><span class="ui-pdp-price" id="detalhe-imposto">R$&nbsp;0</span></li><li style="transform: translate(4px, 0px);">Seu lucro: <img alt="icon" src="https://ci5.googleusercontent.com/proxy/t9hOuXHFrNPYlckwjpVbXLSlkxMtwzLYCTIi7PchhDo9m0lT7QD15EK5HN7R_R-xZrKcTgNktsim1qXR1LlKrEKQNa030zOY_S-rBf1-Eds9chp_rizwkWlvcacgOpH-Hj7BTbJJ-tG97e7u8JhDtjRMp8DP9Bwv9jtS-VYIrGWn=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/common/back.png" height="11" style="padding: 0em 0.2em;padding-right: 0.45em;"><span class="ui-pdp-price" id="detalhe-lucro">R$&nbsp; 0,00</span></li><li style="transform: translate(-7px, 0px);">Taxa do ML:<img alt="icon" src="https://ci3.googleusercontent.com/proxy/ZG5FLXGDXbk602QJeqgzhTwuKjwnGLhuBMgUeetEB1qxNi8LEnUTmvci9Se0YjumB0a2DrA-uf1Xeb52hj41rmg9hKW-Sh2tH4xqoGR5cn6k-r_deVRoI31lrjw84JyS22rnTXvilfhHu7q_Lj6l-ZeR_MT9MvmskNkjUaKqu-bI9f9CypObTG-9JnJyZA=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-office.png" height="11" style="padding-right: 0.2em;padding-left: 0.15em;"> <span class="ui-pdp-price" id="detalhe-taxa">R$&nbsp; 0,00</span></li><li style="transform: translate(9px, 0px);">Taxa Fixa:<img alt="icon" src="https://ci3.googleusercontent.com/proxy/ZG5FLXGDXbk602QJeqgzhTwuKjwnGLhuBMgUeetEB1qxNi8LEnUTmvci9Se0YjumB0a2DrA-uf1Xeb52hj41rmg9hKW-Sh2tH4xqoGR5cn6k-r_deVRoI31lrjw84JyS22rnTXvilfhHu7q_Lj6l-ZeR_MT9MvmskNkjUaKqu-bI9f9CypObTG-9JnJyZA=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-office.png" height="11" style="padding-right: 0.2em;/* padding-left: 0.15em; */"> <span class="ui-pdp-price" id="detalhe-taxafixa">R$&nbsp; 0,00</span></li><li style="transform: translate(30px, 0px);">Envio: <img alt="icon" src="https://ci3.googleusercontent.com/proxy/4AHE0GSzeLFc0tuceXt2Hib-rWVbcK8yqriCrBnrQFdt3LpCrH-NA3nyDKu-IO-65xO2yjlS7rsjGiJWV6QunadzFZlJPWqeb2Shj_fYgwagdLoTOAljMen83VI1111111eloEUOdeZcR4Su7DrJRWooeRNOF5nZ2fJv2BE06zEE2uKHkiVrr1vOvtY78kR28=s0-d-e1-ft#https://http2.mlstatic.com/resources/frontend/statics/buyingflow-frontend-emails/1.15.0/images/shipping/shipping-mail.png" height="11" style="padding-right: 0.3em;transform: translate(-2px, 0px);"><span class="ui-pdp-price" id="detalhe-envio">R$&nbsp; 0,00</span></li></ul></div><a id="vermais" style="float: right;margin: 1em 7em 0em 0em;">Ver mais detalhes</a><p id="eareset" style="float: right;margin: 1em 8.35em 0em 0em;font-weight: 900;color: #aeaeae;font-size: 0.77em;text-align: center;">Problemas no cálculo?<br>Aperte Ctrl+Shift+R</p><br> <a id="refazer" style="padding: 1em;border-radius: 0.7em;float: right;margin: 1em 5.5em 0em 0em;" class="andes-button--quiet">↻ Refazer simulação</a></div><div style="float:left;padding: 0em 1em;" id="etapa1" class="smooth"> <img src="https://img.icons8.com/cotton/64/000000/profit-report.png" style="float: left;width: 2.5em;margin: 0em 0.53em 0em 0em;"><h3 class="ui-pdp-variations__selected-label" style="float: left;">Precificador Escalada Ecom</h3><br><h4 class="ui-pdp-color--GRAY ui-pdp-media__text" style="padding-left: 3.5em;margin-top: 0.5em;">Simule um preço de venda a partir deste anúncio com sua margem.</h4><br><div style="line-height: 1em;"> <span style="margin: 0.5em 0em 0em 0.5em;">Custo do seu produto: </span><div class="andes-form-control" style="padding: 0em 0em 0em 0.7em;font-weight: bold;"> R$:<input id="custo" type="number" class="" style="margin: 0.5em 0em 0.5em 0.35em;font-weight: bold;background-color: #80808000;border-radius: 0.35em;border: 1px solid #80808047;width: 7.7em;font-size: 1em;padding: 0.35em;width: 5.7em;font-family: Proxima Nova,-apple-system,Helvetica Neue,Helvetica,Roboto,Arial,sans-serif;"><div id="preco-ativar" class="andes-button andes-button--quiet" style="float: right;margin-top: 0.35em;"><img id="preco-img" style="width: 1.5em;position: relative;top: 0.4em;left: -0.1em;" src="https://img.icons8.com/ios-glyphs/30/ffffff/estimate.png"> Simular</div></div><div><span style="margin: 0.5em 0em 0em 0.5em;">Margem de lucro desejada: </span><div class="andes-form-control" style="padding: 0em 0em 0em 0em;font-weight: bold;"> <input id="margem" type="number" class="" style="margin: 0.5em 0em 0.5em 0.35em;font-weight: bold;background-color: #80808000;border-radius: 0.35em;border: 1px solid #80808047;width: 7.7em;font-size: 1em;padding: 0.35em;width: 3.5em;font-family: Proxima Nova,-apple-system,Helvetica Neue,Helvetica,Roboto,Arial,sans-serif;"> % ou R$ <input id="mrgbrl" type="number" class="" style="margin: 0.5em 0em 0.5em 0.35em;font-weight: bold;background-color: #80808000;border-radius: 0.35em;border: 1px solid #80808047;width: 7.7em;font-size: 1em;padding: 0.35em;width: 7em;font-family: Proxima Nova,-apple-system,Helvetica Neue,Helvetica,Roboto,Arial,sans-serif;"> <br> <span style=" font-size: 0.77em; position: relative; margin: 0em 0em 0em 0.5em; width: 6em; display: inline-block; text-align: right; top: 0.5em; ">Sua alíquota de imposto</span><input id="aliq" type="number" class="" style="margin: 0.5em 0em 0.5em 0.35em;font-weight: bold;background-color: #80808000;border-radius: 0.35em;border: 1px solid #80808047;width: 7.7em;font-size: 1em;padding: 0.35em;width: 3.1em;font-family: Proxima Nova,-apple-system,Helvetica Neue,Helvetica,Roboto,Arial,sans-serif;" value="0"> % <input type="checkbox" id="simular" style="margin-left: 0.5em;"><label for="simular" style="font-size: 0.7em;float: right;display: inline-block;max-width: 6em;position: relative;left: -0.7em;top: 1em;" value="false">Simular com minha conta</label><div id="alerta-form1" class="hdn"><img src="https://img.icons8.com/officexs/16/000000/spam.png" style="width: 0.77em;"><span style="color:red;font-size: 14px;vertical-align: top;"> Preencha os campos acima para simular.</span></div></div></div></div></div></div>`
-    const btn_preco_fix =
-    `<div id="preco-btn" class="andes-button andes-button--loud background_novai_black pricebtn"
-     style="width: ${PRICE_BUTTON_SIZE};
-            height: ${PRICE_BUTTON_SIZE};
-            padding: 0;
-            border-radius: 50%;
-            position: fixed;
-            bottom: ${PRICE_BUTTON_BOTTOM};
-            right: ${PRICE_BUTTON_RIGHT};
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
-            z-index: ${PRICE_BUTTON_Z_INDEX};
-            cursor: pointer;">
-  <img id="preco-img" style="width:50%;" src="https://img.icons8.com/ios-glyphs/30/ffffff/estimate.png"/>
-</div>`;
     if (iscatalog) {
       const ensureFinalPriceInterface = () => {
         if (!document.getElementById("preco-btn") || !document.getElementById("price-tool")) {
