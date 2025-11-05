@@ -1573,6 +1573,24 @@ const PRICE_TOOL_GAP = "1.5rem";
 const PRICE_TOOL_Z_INDEX = 2147483646;
 const PRICE_BUTTON_Z_INDEX = 2147483647;
 
+function applyFixedPositionPriceButton(button) {
+  if (!button) return;
+
+  button.style.position = "fixed";
+  button.style.bottom = PRICE_BUTTON_BOTTOM;
+  button.style.top = "";
+  button.style.right = PRICE_BUTTON_RIGHT;
+  button.style.left = "";
+  button.style.margin = "";
+  button.style.float = "";
+  button.style.zIndex = PRICE_BUTTON_Z_INDEX;
+}
+
+function ensurePriceButtonFixedPosition() {
+  const priceButton = document.getElementById("preco-btn");
+  applyFixedPositionPriceButton(priceButton);
+}
+
 var btn_preco = `<div id="preco-btn" class="andes-button andes-button--loud background_novai_black pricebtn"
      style="width: ${PRICE_BUTTON_SIZE};
             height: ${PRICE_BUTTON_SIZE};
@@ -1605,16 +1623,7 @@ function mountPriceInterface(anchorElement) {
   anchorElement.insertAdjacentHTML("beforeend", price_tool);
 
   const insertedButton = document.getElementById("preco-btn");
-  if (iscatalog && insertedButton) {
-    const priceSubtitles = document.getElementsByClassName("ui-pdp-price__subtitles");
-    const priceMainContainers = document.getElementsByClassName("ui-pdp-price__main-container");
-    const needsInlineLayout = (!priceSubtitles[0] && priceMainContainers.length < 2) || priceMainContainers.length > 2;
-
-    if (needsInlineLayout) {
-      insertedButton.style.margin = "0rem -1rem 3rem 0";
-      insertedButton.style.float = "left";
-    }
-  }
+  applyFixedPositionPriceButton(insertedButton);
 
   removeDuplicateElementsById("preco-btn");
   removeDuplicateElementsById("price-tool");
@@ -3935,11 +3944,17 @@ if (t.addEventListener("focus", (function () {
   t.length < 2 && e.parentElement?.previousElementSibling?.setAttribute("style", "margin: 0 0 .75rem 2.2rem");
   let n = document.getElementById("preco-btn");
   if (n) {
-    n.style.marginTop = "-2rem", n.nextSibling.style.margin = "-2rem 0 0 4.2rem", n.style.top = "-2rem", n.parentElement?.previousSibling?.previousSibling?.classList.contains("ui-pdp-price__part__container") && n.parentElement?.previousSibling?.previousSibling?.setAttribute("style", "position: relative; left: 4rem;"), t.length > 2 && (n.nextSibling.style.margin = "1rem 0px 0px 0rem", n.style.margin = "2.5rem -1rem 1rem 0");
-    let e = n.parentElement;
-    if (e) {
-      e.getElementsByClassName("andes-money-amount__discount")[0] && (n.style.margin = "3rem 1rem 0rem 0px", n.nextSibling.setAttribute("style", ""))
+    const priceToolElement = n.nextSibling;
+    priceToolElement?.style && (priceToolElement.style.margin = "-2rem 0 0 4.2rem");
+    n.parentElement?.previousSibling?.previousSibling?.classList.contains("ui-pdp-price__part__container") && n.parentElement?.previousSibling?.previousSibling?.setAttribute("style", "position: relative; left: 4rem;");
+    if (t.length > 2 && priceToolElement?.style) {
+      priceToolElement.style.margin = "1rem 0px 0px 0rem";
     }
+    const parentElement = n.parentElement;
+    if (parentElement?.getElementsByClassName("andes-money-amount__discount")[0] && priceToolElement) {
+      priceToolElement.setAttribute("style", "");
+    }
+    ensurePriceButtonFixedPosition();
   }
   let a = document.getElementsByClassName("ui-pdp-price__second-line")[0], i = a?.parentElement, s = i?.firstChild, o = s == a, r = a.getElementsByClassName("ui-pdp-price__second-line__label");
   if (t.length > 1) {
@@ -4144,17 +4159,11 @@ function s() {
 
       if (!spot2[0] && priceMainContainers.length < 2) {
         spot2 = document.getElementsByClassName("ui-pdp-price__main-container");
-        if (priceButtonElement) {
-          priceButtonElement.style.margin = "0rem -1rem 3rem 0";
-          priceButtonElement.style.float = "left";
-        }
       } else if (priceMainContainers.length > 2) {
         spot2 = document.getElementsByClassName("ui-pdp-container__row--price");
-        if (priceButtonElement) {
-          priceButtonElement.style.margin = "0rem -1rem 3rem 0";
-          priceButtonElement.style.float = "left";
-        }
       }
+
+      applyFixedPositionPriceButton(priceButtonElement);
 
       for (let e = 0; e < variationsbtn.length; e++) {
         variationsbtn[e].addEventListener("click", function () {
