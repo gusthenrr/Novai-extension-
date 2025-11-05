@@ -285,15 +285,45 @@ function ensureMainComponentSkeleton(container) {
 function ensureVisitsComponentSkeleton(container) {
   if (!container) return;
   removeDuplicateElementsById("visits-component");
-  if (container.querySelector("#visits-component")) return;
+  if (container.querySelector("#visits-component")) {
+    relocateChartButtonToSubtitle();
+    return;
+  }
 
   const revenueCard = container.querySelector("#eagrossrev");
   if (revenueCard && typeof revenueCard.insertAdjacentHTML === "function") {
     revenueCard.insertAdjacentHTML("afterend", buildVisitsComponentSkeleton());
+    relocateChartButtonToSubtitle();
     return;
   }
 
   container.insertAdjacentHTML("afterbegin", buildVisitsComponentSkeleton());
+  relocateChartButtonToSubtitle();
+}
+
+function relocateChartButtonToSubtitle(attempt = 0) {
+  const MAX_RELOCATION_ATTEMPTS = 8;
+  const subtitleWrapper = document.querySelector(".ui-pdp-header__subtitle");
+  const chartButton = document.getElementById("eabtn-chart");
+
+  if (!chartButton || !subtitleWrapper) {
+    if (attempt < MAX_RELOCATION_ATTEMPTS) {
+      setTimeout(() => relocateChartButtonToSubtitle(attempt + 1), 250);
+    }
+    return;
+  }
+
+  const subtitlePrimary = subtitleWrapper.querySelector(".ui-pdp-subtitle");
+  if (chartButton.parentElement !== subtitleWrapper) {
+    if (subtitlePrimary && subtitlePrimary.parentElement === subtitleWrapper) {
+      subtitlePrimary.insertAdjacentElement("afterend", chartButton);
+    } else {
+      subtitleWrapper.appendChild(chartButton);
+    }
+  }
+
+  chartButton.classList.add("novai-chart-btn--subtitle");
+  subtitleWrapper.classList.add("novai-subtitle-has-chart");
 }
 
 const NOVAI_SINCE_WRAPPER_ID = "novai-since-wrapper";
@@ -2277,15 +2307,40 @@ function buildVisitsComponentSkeleton() {
       .novai-kpi-title{ text-transform:uppercase; letter-spacing:.04em; font-weight:700; font-size:12px; }
 
       /* VISITAS (card esquerdo) */
+      #eabtn-chart{
+        border-radius:999px;
+        width:2.35em; height:2.35em;
+        padding:.14em .2em;
+        display:inline-flex; align-items:center; justify-content:center;
+        transition:.2s;
+        border:2px solid rgba(0, 0, 0, 1);
+        background: #000;
+        cursor:pointer;
+        margin-left:30px;
+      }
+      #eabtn-chart img{ width:1.2em; margin:auto; }
+      #eabtn-chart:hover{ background:var(--novai-ml-yellow); border-color:var(--novai-ml-yellow); }
+      #eabtn-chart:hover img{ filter:invert(1) brightness(0.2); }
+
       #visits-left .novai-kpi-head #eabtn-chart{
         margin-left:auto;
-        border-radius:2rem; width:26px; height:26px; padding:.14em .2em;
-        display:inline-flex; align-items:center; justify-content:center;
-        transition:.2s; border:1px solid rgba(255,255,255,.2);
-        background:transparent;
       }
-      #visits-left #eabtn-chart:hover{ background:var(--novai-ml-yellow); border-color:var(--novai-ml-yellow); }
-      #visits-left #eabtn-chart:hover img{ filter:invert(1) brightness(0.2); }
+
+      .ui-pdp-header__subtitle.novai-subtitle-has-chart{
+        display:flex;
+        align-items:center;
+        gap:.75rem;
+        flex-wrap:wrap;
+      }
+      .ui-pdp-header__subtitle .novai-chart-btn--subtitle{
+        border:1px solid rgba(0,0,0,.12);
+        background:#fff;
+        box-shadow:0 4px 12px rgba(0,0,0,.12);
+        margin-left:.25rem;
+      }
+      .ui-pdp-header__subtitle .novai-chart-btn--subtitle:hover{
+        box-shadow:0 6px 18px rgba(0,0,0,.16);
+      }
 
       #visits-left .novai-kpi-value{
         display:block;
@@ -4278,6 +4333,7 @@ function s() {
         function l() {
           let e = document.getElementById("eabtn-chart");
           if (e) {
+            relocateChartButtonToSubtitle();
             if (e) {
               function t() {
                 if (w) r();
