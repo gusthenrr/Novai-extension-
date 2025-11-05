@@ -2754,8 +2754,12 @@ function contentScpt() {
         };
 
         const setAnuncioValue = (value) => {
-          if (s?.length > 0) s[0].innerHTML = formatCurrency(value);
-          else a.innerHTML = formatCurrency(value);
+          const formatted = formatCurrency(value);
+          if (iscatalog && s?.length > 0) {
+            s[0].innerHTML = formatted;
+          } else {
+            a.innerHTML = formatted;
+          }
         };
 
         if (iscatalog) {
