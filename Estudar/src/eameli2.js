@@ -885,6 +885,7 @@ function eadataRetrieve(e) {
 var TTL1 = 30 * 24 * 60 * 60 * 1e3;
 const LOCAL_ACCESS_TOKEN_KEY = "local_usertkn";
 const LOCAL_REFRESH_TOKEN_KEY = "local_user_refresh";
+const LOCAL_USER_TOKEN_KEY = "local_user_token";
 const AUTH_REQUEST_EVENT = "NovaiRequestAuthState";
 const AUTH_STATE_EVENT = "NovaiAuthState";
 const AUTH_UPDATE_EVENT = "NovaiAuthTokensUpdated";
@@ -893,6 +894,7 @@ let pendingAuthSyncPromise = null;
 
 function persistAuthState(detail = {}) {
   const { accessToken, refreshToken, clear, source } = detail || {};
+  const tokenUser = detail.tokenUser ?? detail.token_user ?? detail.userToken ?? null;
   const ttl = "number" == typeof detail.ttl && detail.ttl > 0 ? detail.ttl : TTL1;
 
   if (clear) {
@@ -925,6 +927,13 @@ function persistAuthState(detail = {}) {
   if ("string" == typeof refreshToken && refreshToken.trim()) {
     try {
       overwriteStoredToken(LOCAL_REFRESH_TOKEN_KEY, refreshToken, ttl);
+      storedSomething = !0;
+    } catch (_) {}
+  }
+
+  if ("string" == typeof tokenUser && tokenUser.trim()) {
+    try {
+      overwriteStoredToken(LOCAL_USER_TOKEN_KEY, tokenUser, ttl);
       storedSomething = !0;
     } catch (_) {}
   }
@@ -968,13 +977,17 @@ function requestAuthStateFromBackground() {
 }
 
 function broadcastAuthTokens(accessToken, refreshToken, options = {}) {
-  if (!options.clear && !accessToken && !refreshToken) return;
+  const tokenUser = options.tokenUser ?? options.token_user ?? options.userToken ?? null;
+  if (!options.clear && !accessToken && !refreshToken && !tokenUser) return;
   const detail = {
     accessToken,
     refreshToken,
     ttl: TTL1,
     source: "page"
   };
+  if (tokenUser) {
+    detail.tokenUser = tokenUser;
+  }
   if (options.clear) {
     detail.clear = !0;
   }
@@ -996,6 +1009,9 @@ function clearStoredAuthTokens() {
   } catch (_) {}
   try {
     localStorage.removeItem(LOCAL_REFRESH_TOKEN_KEY);
+  } catch (_) {}
+  try {
+    localStorage.removeItem(LOCAL_USER_TOKEN_KEY);
   } catch (_) {}
   try {
     eaHeaders.delete("Authorization");
@@ -2504,8 +2520,8 @@ function askPermissions(e, t) {
   // No-op to avoid blocking overlays; always proceed to initialize features
   initializeExtensionFeatures()
 }
-async function getnewToken(e) {
-  let refreshToken = e;
+async function getnewToken(refreshTokenCandidate, tokenUserCandidate, accessTokenCandidate) {
+  let refreshToken = refreshTokenCandidate;
   if (!refreshToken) {
     try {
       refreshToken = eadataRetrieve(LOCAL_REFRESH_TOKEN_KEY);
@@ -2517,17 +2533,41 @@ async function getnewToken(e) {
     }
   }
 
+  let tokenUser = tokenUserCandidate;
+  if (!tokenUser) {
+    try {
+      tokenUser = eadataRetrieve(LOCAL_USER_TOKEN_KEY);
+    } catch (_) {
+      tokenUser = null;
+    }
+  }
+
+  let accessToken = accessTokenCandidate;
+  if (!accessToken) {
+    try {
+      accessToken = eadataRetrieve(LOCAL_ACCESS_TOKEN_KEY);
+    } catch (_) {
+      accessToken = null;
+    }
+  }
+
   const headers = new Headers;
   headers.append("accept", "application/json");
   headers.append("content-type", "application/json");
+
+  const payload = { refresh_token: refreshToken };
+  if (accessToken) {
+    payload.token = accessToken;
+  }
+  if (tokenUser) {
+    payload.token_user = tokenUser;
+  }
 
   try {
     const response = await fetch("https://nossopoint-backend-flask-server.com/token_access", {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        refresh_token: refreshToken
-      })
+      body: JSON.stringify(payload)
     });
 
     let body = null;
@@ -2538,11 +2578,20 @@ async function getnewToken(e) {
     if (body?.refresh_token) {
       try { eadataStore(LOCAL_REFRESH_TOKEN_KEY, body.refresh_token, TTL1); } catch (_) {}
     }
+    if (body?.token_user) {
+      try { eadataStore(LOCAL_USER_TOKEN_KEY, body.token_user, TTL1); } catch (_) {}
+    }
 
     if (response.ok && body?.access_token) {
-      return appendToken(body.access_token, body.refresh_token);
+      return appendToken({
+        access_token: body.access_token,
+        refresh_token: body.refresh_token ?? refreshToken,
+        token_user: body.token_user ?? tokenUser
+      });
     }
-  } catch (_) {}
+  } catch (error) {
+    console.warn("NOVAI: falha ao renovar tokens", error);
+  }
 
   return !1;
 }
@@ -4687,6 +4736,7 @@ async function ensureAuthorizationToken() {
 
   let storedAccess = getStoredAccessToken();
   let storedRefresh = getStoredRefreshToken();
+  let storedUser = getStoredUserToken();
 
   if (!storedAccess && !storedRefresh) {
     await requestAuthStateFromBackground();
@@ -4697,12 +4747,13 @@ async function ensureAuthorizationToken() {
   if (storedAccess && !isAccessTokenExpired(storedAccess)) {
     return appendToken({
       access_token: storedAccess,
-      refresh_token: storedRefresh
+      refresh_token: storedRefresh,
+      token_user: storedUser
     });
   }
 
   if (storedRefresh) {
-    const refreshed = await getnewToken(storedRefresh);
+    const refreshed = await getnewToken(storedRefresh, storedUser, storedAccess);
     if (refreshed) return refreshed;
   }
 
@@ -4747,13 +4798,15 @@ function storeFresh() {
 async function findfreshAuth() {
   initializeExtensionFeatures()
 }
-function appendToken(tokenOrPayload, maybeRefreshToken) {
+function appendToken(tokenOrPayload, maybeRefreshToken, maybeUserToken) {
   let accessToken = tokenOrPayload;
   let refreshToken = maybeRefreshToken;
+  let tokenUser = maybeUserToken;
 
   if (tokenOrPayload && "object" == typeof tokenOrPayload) {
-    accessToken = tokenOrPayload.access_token ?? tokenOrPayload.token ?? tokenOrPayload.accessToken;
+    accessToken = tokenOrPayload.access_token ?? tokenOrPayload.token ?? tokenOrPayload.accessToken ?? accessToken;
     refreshToken = refreshToken ?? tokenOrPayload.refresh_token ?? tokenOrPayload.refreshToken;
+    tokenUser = tokenUser ?? tokenOrPayload.token_user ?? tokenOrPayload.tokenUser ?? tokenOrPayload.userToken ?? tokenUser;
   }
 
   if (!accessToken) {
@@ -4768,7 +4821,10 @@ function appendToken(tokenOrPayload, maybeRefreshToken) {
   if (refreshToken) {
     try { overwriteStoredToken(LOCAL_REFRESH_TOKEN_KEY, refreshToken, TTL1); } catch (_) {}
   }
-  broadcastAuthTokens(accessToken, refreshToken);
+  if (tokenUser) {
+    try { overwriteStoredToken(LOCAL_USER_TOKEN_KEY, tokenUser, TTL1); } catch (_) {}
+  }
+  broadcastAuthTokens(accessToken, refreshToken, { tokenUser });
   clearNovaiLoginPrompt();
   return !0;
 }
@@ -4820,6 +4876,14 @@ function getStoredAccessToken() {
 function getStoredRefreshToken() {
   try {
     return eadataRetrieve(LOCAL_REFRESH_TOKEN_KEY);
+  } catch (_) {
+    return null;
+  }
+}
+
+function getStoredUserToken() {
+  try {
+    return eadataRetrieve(LOCAL_USER_TOKEN_KEY);
   } catch (_) {
     return null;
   }

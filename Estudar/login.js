@@ -25,15 +25,18 @@ function toggleFormDisabled(form, disabled) {
   });
 }
 
-function sendTokensToBackground(accessToken, refreshToken) {
+function sendTokensToBackground(accessToken, refreshToken, tokenUser) {
   return new Promise((resolve, reject) => {
     try {
-      chrome.runtime.sendMessage({
+      const message = {
         type: 'SET_AUTH_TOKENS',
-        accessToken,
-        refreshToken,
         ttl: TOKEN_TTL_MS,
-      }, (response) => {
+      };
+      if (accessToken) message.accessToken = accessToken;
+      if (refreshToken) message.refreshToken = refreshToken;
+      if (tokenUser) message.tokenUser = tokenUser;
+
+      chrome.runtime.sendMessage(message, (response) => {
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message));
           return;
@@ -90,12 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const accessToken = body?.access_token;
       const refreshToken = body?.refresh_token;
+      const tokenUser = body?.token_user ?? body?.tokenUser;
 
-      if (!accessToken || !refreshToken) {
+      if (!accessToken || !refreshToken || !tokenUser) {
         throw new Error('Resposta inválida do servidor. Tente novamente.');
       }
 
-      await sendTokensToBackground(accessToken, refreshToken);
+      await sendTokensToBackground(accessToken, refreshToken, tokenUser);
       setStatus('Conta conectada com sucesso! Redirecionando...', 'success');
 
       window.setTimeout(() => {

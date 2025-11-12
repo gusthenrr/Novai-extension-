@@ -42,6 +42,7 @@ const inFlightRequests = new Map();
 
 const LOCAL_ACCESS_TOKEN_KEY = 'local_usertkn';
 const LOCAL_REFRESH_TOKEN_KEY = 'local_user_refresh';
+const LOCAL_USER_TOKEN_KEY = 'local_user_token';
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 const LOGIN_API_DOMAIN = 'nossopoint-backend-flask-server.com';
@@ -149,20 +150,40 @@ function readTokenFromStorage(key) {
 }
 
 async function getAuthTokens() {
-  const [accessToken, refreshToken] = await Promise.all([
+  const [accessToken, refreshToken, tokenUser] = await Promise.all([
     readTokenFromStorage(LOCAL_ACCESS_TOKEN_KEY),
     readTokenFromStorage(LOCAL_REFRESH_TOKEN_KEY),
+    readTokenFromStorage(LOCAL_USER_TOKEN_KEY),
   ]);
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, tokenUser };
 }
 
-async function setAuthTokens({ accessToken, refreshToken, ttl }) {
+async function setAuthTokens({ accessToken, refreshToken, tokenUser, ttl, clear }) {
   const effectiveTtl = typeof ttl === 'number' && ttl > 0 ? ttl : TOKEN_TTL_MS;
+  const shouldClear = clear === true;
+  const current = await getAuthTokens();
+  const nextAccess = shouldClear ? null : (typeof accessToken !== 'undefined' ? accessToken : current.accessToken);
+  const nextRefresh = shouldClear ? null : (typeof refreshToken !== 'undefined' ? refreshToken : current.refreshToken);
+  const nextTokenUser = shouldClear ? null : (typeof tokenUser !== 'undefined' ? tokenUser : current.tokenUser);
+
   await Promise.all([
-    writeTokenToStorage(LOCAL_ACCESS_TOKEN_KEY, accessToken, effectiveTtl),
-    writeTokenToStorage(LOCAL_REFRESH_TOKEN_KEY, refreshToken, effectiveTtl),
+    writeTokenToStorage(LOCAL_ACCESS_TOKEN_KEY, nextAccess, effectiveTtl),
+    writeTokenToStorage(LOCAL_REFRESH_TOKEN_KEY, nextRefresh, effectiveTtl),
+    writeTokenToStorage(LOCAL_USER_TOKEN_KEY, nextTokenUser, effectiveTtl),
   ]);
-  return { accessToken, refreshToken, ttl: effectiveTtl };
+
+  const result = {
+    accessToken: nextAccess,
+    refreshToken: nextRefresh,
+    tokenUser: nextTokenUser,
+    ttl: effectiveTtl,
+  };
+
+  if (shouldClear || (nextAccess == null && nextRefresh == null && nextTokenUser == null)) {
+    result.clear = true;
+  }
+
+  return result;
 }
 
 function broadcastAuthTokensToTabs(tokens) {
@@ -330,10 +351,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   } else if (request.type === 'GET_AUTH_TOKENS') {
     getAuthTokens().then((tokens) => {
-      sendResponse(tokens);
+      sendResponse({ ...tokens, ttl: TOKEN_TTL_MS });
     }).catch((error) => {
       console.error('NOVAI: falha ao recuperar tokens armazenados.', error);
-      sendResponse({ accessToken: null, refreshToken: null, error: error?.message || 'Erro ao recuperar tokens' });
+      sendResponse({ accessToken: null, refreshToken: null, tokenUser: null, error: error?.message || 'Erro ao recuperar tokens' });
     });
     return true;
   } else if (request.type === 'STORE_CATEGORY') {

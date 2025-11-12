@@ -56,16 +56,30 @@ document.addEventListener(AUTH_UPDATE_EVENT, (event) => {
     const detail = event?.detail || {};
     const accessToken = detail.accessToken;
     const refreshToken = detail.refreshToken;
-    if (!accessToken && !refreshToken) {
+    const tokenUser = detail.tokenUser ?? detail.token_user ?? detail.userToken;
+    const shouldClear = detail.clear === true;
+    const hasAccess = typeof accessToken === 'string' && accessToken.trim();
+    const hasRefresh = typeof refreshToken === 'string' && refreshToken.trim();
+    const hasTokenUser = typeof tokenUser === 'string' && tokenUser.trim();
+    if (!shouldClear && !hasAccess && !hasRefresh && !hasTokenUser) {
         return;
     }
     try {
-        chrome.runtime.sendMessage({
+        const message = {
             type: 'SET_AUTH_TOKENS',
-            accessToken,
-            refreshToken,
             ttl: detail.ttl,
-        });
+        };
+        if (shouldClear) {
+            message.clear = true;
+            message.accessToken = null;
+            message.refreshToken = null;
+            message.tokenUser = null;
+        } else {
+            if (hasAccess) message.accessToken = accessToken;
+            if (hasRefresh) message.refreshToken = refreshToken;
+            if (hasTokenUser) message.tokenUser = tokenUser;
+        }
+        chrome.runtime.sendMessage(message);
     } catch (error) {
         console.warn('NOVAI: não foi possível encaminhar tokens para o background', error);
     }
@@ -196,9 +210,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         dispatchNovaiAuthState({
             accessToken: request.accessToken,
             refreshToken: request.refreshToken,
+            tokenUser: request.tokenUser,
             ttl: request.ttl,
+            clear: request.clear === true,
             source: 'background'
-        });
+});
     }
 });
 
