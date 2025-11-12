@@ -1526,6 +1526,7 @@ var eagrossrev = `
 
   <div class="novai-kpi-value">
     <span class="eagrossrev-title">R$0,00</span>
+    <span class="revtitle revperiod">/mês</span>
   </div>
 
   <div class="novai-kpi-sub earevstats">
@@ -2316,7 +2317,6 @@ function buildVisitsComponentSkeleton() {
         border:2px solid rgba(0, 0, 0, 1);
         background: #000;
         cursor:pointer;
-        margin-left:30px;
       }
       #eabtn-chart img{ width:1.2em; margin:auto; }
       #eabtn-chart:hover{ background:var(--novai-ml-yellow); border-color:var(--novai-ml-yellow); }
@@ -5733,7 +5733,7 @@ else var usuario_logado = null;
 function runLogged() {
   eaOnAdminPanel || "https://www.mercadolivre.com.br/" != window.location.href && function (e) {
     if (!document.getElementsByClassName("eadropdown")[0]) {
-      let n = `<div class="eadropdown" style="pointer-events: all;min-width: 27px;height: 27px;transition: all 0.35s ease 0s;background-color: ${"lite"==verif?"var(--mfy-main)":"rgb(255, 214, 43)"};display: flex;border-radius: 10em;align-items: center;cursor: pointer;z-index: 31;padding: 0 6px;margin-top: 4px;"> <img src="https://i.ibb.co/K7Lc6cr/metrify.png" style="pointer-events:none;width:15px;margin: auto;${"lite"==verif?"filter: brightness(10.5);":""}"></div>`;
+      let n = `<div class="eadropdown" style="pointer-events: all;min-width: 27px;height: 27px;transition: all 0.35s ease 0s;background-color: ${"lite"==verif?"var(--mfy-main)":"rgb(255, 214, 43)"};display: flex;border-radius: 10em;align-items: center;cursor: pointer;z-index: 31;padding: 0 6px;margin-top: 4px;"> <img src="../images/NOVAI_fundo_branco_preto-removebg-preview.png" style="pointer-events:none;width:15px;margin: auto;${"lite"==verif?"filter: brightness(10.5);":""}"></div>`;
       let i = document.querySelector(".nav-bounds.nav-bounds-with-cart .nav-header-plus-logo.nav-area.nav-top-area.nav-left-area"), o = i ? i.querySelector(".nav-logo, .nav-log") : null;
       if (i) {
         const t = document.createElement("div");
@@ -6222,6 +6222,11 @@ function mfyStart() {
 #eagrossrev .eagrossrev-breakdown .revtitle{
   color:#d1d5db;
 }
+
+#eagrossrev .novai-kpi-value .revtitle{
+  color:#d1d5db;
+}
+
 #eaoffSwitch {
   overflow: hidden;
   display: inline-flex;
@@ -6722,3 +6727,4 @@ document.addEventListener("MetrifyVersion", (function (e) {
   message: document.body.innerText
 }
 , "*");
+

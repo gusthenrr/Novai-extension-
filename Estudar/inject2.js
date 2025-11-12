@@ -1,7 +1,6 @@
 const AUTH_STATE_EVENT = 'NovaiAuthState';
 const AUTH_UPDATE_EVENT = 'NovaiAuthTokensUpdated';
 const AUTH_REQUEST_EVENT = 'NovaiRequestAuthState';
-const OPEN_LOGIN_EVENT = 'NovaiOpenLogin';
 
 function dispatchNovaiAuthState(detail) {
     try {
@@ -25,15 +24,14 @@ function asyncInjectScript(file_path, tag) {
         var script = document.createElement('script');
         script.setAttribute('type', 'text/javascript');
         script.setAttribute('src', file_path);
-        script.onload = resolve; // Resolve the promise when the script is loaded
-        script.onerror = reject; // Reject the promise if the script fails to load
+        script.onload = resolve;
+        script.onerror = reject;
         node.appendChild(script);
     });
 }
 
 
 function dispatchResponseToPage(response) {
-    // If the response has a payload, dispatch that, otherwise dispatch the whole response.
     const detail = response;
     document.dispatchEvent(new CustomEvent('MetrifyExtensionResponse', { detail }));
 }
@@ -56,21 +54,17 @@ function requestBackgroundAuthState() {
 
 document.addEventListener(AUTH_UPDATE_EVENT, (event) => {
     const detail = event?.detail || {};
-    const shouldClear = detail.clear === true;
-    const accessToken = shouldClear ? null : detail.accessToken;
-    const refreshToken = shouldClear ? null : detail.refreshToken;
-
-    if (!shouldClear && !accessToken && !refreshToken) {
+    const accessToken = detail.accessToken;
+    const refreshToken = detail.refreshToken;
+    if (!accessToken && !refreshToken) {
         return;
     }
-
     try {
         chrome.runtime.sendMessage({
             type: 'SET_AUTH_TOKENS',
             accessToken,
             refreshToken,
             ttl: detail.ttl,
-            clear: shouldClear,
         });
     } catch (error) {
         console.warn('NOVAI: não foi possível encaminhar tokens para o background', error);
@@ -83,18 +77,13 @@ document.addEventListener(AUTH_REQUEST_EVENT, () => {
 
 requestBackgroundAuthState();
 
-// Function to handle sending messages to the background service worker safely
 function sendMessageToBackground(message) {
     chrome.runtime.sendMessage(message, function (response) {
         if (!chrome.runtime.lastError) {
-            //console.log("Response from background:", response);
             dispatchResponseToPage(response);
         }
     });
 }
-
-
-// Listen for custom events from the web page and send them to the background service worker
 document.addEventListener('MetrifyExtension', function (event) {
     sendMessageToBackground(event.detail);
 });
@@ -150,13 +139,11 @@ document.addEventListener('GetCategoryData', function(event) {
 });
 
 document.addEventListener('StoreVisitsData', function(event) {
-    // console.log("StoreVisitsData event received:", event.detail);
     chrome.runtime.sendMessage({ 
         type: 'STORE_VISITS', 
         itemId: event.detail.itemId,
         visitsData: event.detail.visitsData 
     }, (response) => {
-        // console.log("StoreVisitsData response:", response);
         if (chrome.runtime.lastError) {
             console.error("StoreVisitsData error:", chrome.runtime.lastError.message);
         }
@@ -164,15 +151,12 @@ document.addEventListener('StoreVisitsData', function(event) {
 });
 
 document.addEventListener('GetVisitsData', function(event) {
-    // console.log("GetVisitsData event received:", event.detail);
     chrome.runtime.sendMessage({ 
         type: 'RETRIEVE_VISITS', 
         itemId: event.detail.itemId 
     }, (response) => {
-        // console.log("GetVisitsData response:", response);
         if (chrome.runtime.lastError) {
             console.error("GetVisitsData error:", chrome.runtime.lastError.message);
-            // Dispatch response with null data on error
             document.dispatchEvent(new CustomEvent('VisitsDataResponse', { 
                 detail: { 
                     itemId: event.detail.itemId,
@@ -189,18 +173,15 @@ document.addEventListener('GetVisitsData', function(event) {
         }));
     });
 });
-
 document.addEventListener('RequestDataEvent', function(event) {
     chrome.runtime.sendMessage(event.detail, (response) => {
         if (chrome.runtime.lastError) {
             console.error(chrome.runtime.lastError.message);
-            // Optionally, dispatch a response event indicating failure
             if (event.detail.responseEvent) {
                 document.dispatchEvent(new CustomEvent(event.detail.responseEvent, { detail: { success: false, error: chrome.runtime.lastError.message } }));
             }
             return;
         }
-        // If a response event name is provided in the original request, dispatch it with the response
         if (event.detail.responseEvent) {
             response.success ?
                 document.dispatchEvent(new CustomEvent(event.detail.responseEvent, { detail: { success: true, data: response.data } })) :
@@ -208,19 +189,6 @@ document.addEventListener('RequestDataEvent', function(event) {
         }
     });
 });
-
-// Open side panel on custom DOM event from the page
-// Listen at the document level (bubbling) for cross-context dispatches
-/* document.addEventListener('nvai:openSidebar', function (event) {
-    try {
-        chrome.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
-    } catch (e) {
-        // As a fallback, open via command
-        chrome.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
-    }
-}, true); */
-
-// Listen for messages from the background service worker to send back to the web page
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.type === 'RESPONSE') {
         dispatchResponseToPage(request);
@@ -229,21 +197,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             accessToken: request.accessToken,
             refreshToken: request.refreshToken,
             ttl: request.ttl,
-            source: 'background',
-            clear: request.clear === true,
+            source: 'background'
         });
     }
 });
 
-document.addEventListener(OPEN_LOGIN_EVENT, () => {
-    try {
-        chrome.runtime.sendMessage({ type: 'OPEN_LOGIN_PAGE' });
-    } catch (error) {
-        console.warn('NOVAI: não foi possível abrir a tela de login da extensão.', error);
-    }
-});
-
-// Scrape function to fetch URL content via background script
 async function scrape(url, noRedirect = false) {
     return new Promise((resolve) => {
         chrome.runtime.sendMessage({
@@ -254,13 +212,12 @@ async function scrape(url, noRedirect = false) {
             if (chrome.runtime.lastError) {
                 resolve({ error: chrome.runtime.lastError.message });
             } else {
-                resolve(response); // response will have {html} or {error}
+                resolve(response); 
             }
         });
     });
 }
 
-// Scrape function to fetch only script tags from URL (optimized for bandwidth)
 async function scrapeScripts(url, noRedirect = false) {
     return new Promise((resolve) => {
         chrome.runtime.sendMessage({
@@ -272,19 +229,15 @@ async function scrapeScripts(url, noRedirect = false) {
             if (chrome.runtime.lastError) {
                 resolve({ error: chrome.runtime.lastError.message });
             } else {
-                resolve(response); // response will have {html: "<script>...</script>...", scriptsOnly: true}
+                resolve(response); 
             }
         });
     });
 }
 
-
-// Listen for ScrapeURL DOM event
 document.addEventListener('ScrapeURL', async function (event) {
     const { url, idRef, noRedirect } = event.detail;
-    
     if (!url) {
-        // Return same format as success but with empty html object
         document.dispatchEvent(new CustomEvent('ScrapedURL', { 
             detail: { url, html: {}, idRef } 
         }));
@@ -297,7 +250,6 @@ document.addEventListener('ScrapeURL', async function (event) {
         if (error) {
             console.error(url, error);
         } else {
-            // Dispatch ScrapedURL event with the HTML data
             document.dispatchEvent(new CustomEvent('ScrapedURL', { 
                 detail: { url, html, idRef } 
             }));
@@ -310,14 +262,10 @@ document.addEventListener('ScrapeURL', async function (event) {
 document.addEventListener('ScrapeScriptsURL', async function (event) {
   const { url, idRef, noRedirect } = event.detail;
   const response = await scrapeScripts(url, noRedirect);
-  
-  // Dispatch event back to the page with the response
   document.dispatchEvent(new CustomEvent('ScrapedScriptsURL', { 
     detail: { url, response, idRef }
   }));
 });
-
-//get version event
 let count = 0;
 document.addEventListener('NovaiEvent', function (event) {
     var manifestData = chrome.runtime.getManifest();
@@ -333,7 +281,6 @@ if (window.location.href.indexOf("https://www.mercadolivre.com.br") == 0 || wind
 
 
     if (window.location.href.indexOf("https://www.mercadolivre.com.br/anuncie/hub") == 0 || window.location.href.indexOf("https://www.mercadolivre.com.br/novidades") == 0 || window.location.href.indexOf("https://www.mercadolivre.com.br/publicar") == 0) {
-        //console.log(`fixed`);
         document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/dayjs.min.js'), 'body'), false);
     } else {
         document.addEventListener("load", injectScript(chrome.runtime.getURL('src/libs/apexcharts.js'), 'body'), false); //gráfico normal
@@ -352,7 +299,7 @@ if (window.location.href.indexOf("https://www.mercadolivre.com.br") == 0 || wind
         (async () => {
             await asyncInjectScript(chrome.runtime.getURL('src/libs/popper.min.js'), 'body');
             await asyncInjectScript(chrome.runtime.getURL('src/libs/tippy-bundle.umd.min.js'), 'body');
-            await asyncInjectScript(chrome.runtime.getURL('src/eameli.js'), 'body');
+            await asyncInjectScript(chrome.runtime.getURL('src/novai.js'), 'body');
         })();
         document.addEventListener('requestnvaiGlobals', function () {
             sendResponseToDOM();
@@ -363,9 +310,5 @@ if (window.location.href.indexOf("https://www.mercadolivre.com.br") == 0 || wind
 
             document.dispatchEvent(responseEvent);
         }
-
-
-
     }
-
 }

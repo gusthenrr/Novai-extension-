@@ -4,7 +4,7 @@
       "default_title": "NOVAI"
    },
    "background": {
-      "service_worker": "worker.js"
+      "service_worker": "background.js"
    },
    "content_scripts": [ {
       "all_frames": true,
@@ -45,6 +45,6 @@
    "author": "NOVAI",
    "web_accessible_resources": [ {
       "matches": [ "https://*.mercadolivre.com.br/*"],
-      "resources": ["src/libs/*", "src/eameli.js", "src/eashopee.js", "inject.js", "src/lotties/*" ]
+      "resources": ["src/libs/*", "src/novai.js", "src/eashopee.js", "inject.js", "src/lotties/*" ]
    } ]
 }

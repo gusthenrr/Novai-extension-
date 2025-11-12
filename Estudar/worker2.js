@@ -1,8 +1,5 @@
-
-// Helper function to stream and limit response text
 async function streamLimitedText(response, maxBytes) {
   if (!response.body) {
-    // Fallback for environments that don't support streams
     const text = await response.text();
     return text.substring(0, maxBytes);
   }
@@ -22,7 +19,6 @@ async function streamLimitedText(response, maxBytes) {
       const chunkBytes = new TextEncoder().encode(chunk).length;
       
       if (totalBytes + chunkBytes > maxBytes) {
-        // Only add the portion that fits within our limit
         const remainingBytes = maxBytes - totalBytes;
         const limitedChunk = chunk.substring(0, remainingBytes);
         result += limitedChunk;
@@ -40,15 +36,13 @@ async function streamLimitedText(response, maxBytes) {
   return result;
 }
 
-// Simple in-memory cache for script-only fetches
-const scriptCache = new Map(); // key: url, value: { scripts, etag, lastModified, timestamp }
-const SCRIPT_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-// Deduplicate concurrent FETCH_URL requests for the same resource
-const inFlightRequests = new Map(); // key: composed by url+flags, value: { consumers: sendResponse[] }
+const scriptCache = new Map();
+const SCRIPT_CACHE_TTL_MS = 60 * 60 * 1000; 
+const inFlightRequests = new Map();
 
 const LOCAL_ACCESS_TOKEN_KEY = 'local_usertkn';
 const LOCAL_REFRESH_TOKEN_KEY = 'local_user_refresh';
-const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 const LOGIN_API_DOMAIN = 'nossopoint-backend-flask-server.com';
 const LOGIN_CORS_RULE_ID = 1001;
@@ -93,7 +87,6 @@ function ensureLoginCorsRule() {
 chrome.runtime.onInstalled.addListener((details) => {
   const installReason = chrome.runtime?.OnInstalledReason?.INSTALL;
   const reason = details?.reason;
-
   if (reason === installReason || reason === 'install' || typeof reason === 'undefined') {
     try {
       chrome.tabs.create({ url: chrome.runtime.getURL('login.html') }, () => {
@@ -121,7 +114,6 @@ function writeTokenToStorage(key, token, ttl = TOKEN_TTL_MS) {
       chrome.storage.local.remove([key], () => resolve());
     });
   }
-
   const entry = JSON.stringify({ value: token, expiry: Date.now() + ttl });
   return new Promise((resolve) => {
     chrome.storage.local.set({ [key]: entry }, () => resolve());
@@ -164,26 +156,13 @@ async function getAuthTokens() {
   return { accessToken, refreshToken };
 }
 
-async function setAuthTokens({ accessToken, refreshToken, ttl, clear }) {
+async function setAuthTokens({ accessToken, refreshToken, ttl }) {
   const effectiveTtl = typeof ttl === 'number' && ttl > 0 ? ttl : TOKEN_TTL_MS;
-
-  if (clear) {
-    await Promise.all([
-      writeTokenToStorage(LOCAL_ACCESS_TOKEN_KEY, null),
-      writeTokenToStorage(LOCAL_REFRESH_TOKEN_KEY, null),
-    ]);
-    return { accessToken: null, refreshToken: null, ttl: effectiveTtl, clear: true };
-  }
-
   await Promise.all([
     writeTokenToStorage(LOCAL_ACCESS_TOKEN_KEY, accessToken, effectiveTtl),
     writeTokenToStorage(LOCAL_REFRESH_TOKEN_KEY, refreshToken, effectiveTtl),
   ]);
-  return {
-    accessToken: accessToken ?? null,
-    refreshToken: refreshToken ?? null,
-    ttl: effectiveTtl,
-  };
+  return { accessToken, refreshToken, ttl: effectiveTtl };
 }
 
 function broadcastAuthTokensToTabs(tokens) {
@@ -197,7 +176,6 @@ function broadcastAuthTokensToTabs(tokens) {
         console.warn('NOVAI: falha ao consultar abas para propagar tokens.', chrome.runtime.lastError.message);
         return;
       }
-
       (tabs || []).forEach((tab) => {
         if (!tab || typeof tab.id !== 'number') {
           return;
@@ -226,7 +204,6 @@ function getFetchKey(url, noRedirect, extractScriptsOnly) {
   return `${url}|nr:${noRedirect ? '1' : '0'}|s:${extractScriptsOnly ? '1' : '0'}`;
 }
 
-// Helper function to extract only script tags from full HTML response
 async function streamExtractScripts(response) {
   const html = await response.text();
   return extractScriptsFromHtml(html);
@@ -243,7 +220,6 @@ function extractScriptsFromHtml(html) {
 }
 
 function extractScriptsIncremental(buffer) {
-  // Extract complete <script>...</script> tags; keep incomplete tail as remainder
   const scriptRegex = /<script\b[^>]*>[\s\S]*?<\/script>|<script\b[^>]*\/>/gi;
   const scriptTags = [];
   let lastIndex = 0;
@@ -256,12 +232,11 @@ function extractScriptsIncremental(buffer) {
   return { scripts: scriptTags, remainder };
 }
 
-// This function stores data using the Chrome Storage API.
 function authDataStore(key, value) {
   const now = new Date();
   const item = {
     value: value,
-    expiry: now.getTime() + (value.ttl || 3600000), // Default to 1 hour if no TTL provided
+    expiry: now.getTime() + (value.ttl || 3600000),
   };
 
   return new Promise((resolve, reject) => {
@@ -276,30 +251,22 @@ function authDataStore(key, value) {
   });
 }
 
-
-// This function retrieves data using the Chrome Storage API.
 function authDataRetrieve(key) {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get([key], function (result) {
       if (!result[key]) {
-        // console.log(`No data found for key: ${key}`);
         resolve(null);
         return;
       }
-
       const item = JSON.parse(result[key]);
       const now = new Date();
-
       if (item.value == undefined) {
         resolve(null);
         return;
       }
-
       if (now.getTime() > item.expiry) {
-        // console.log(`Data for key ${key} has expired. Removing...`);
         chrome.storage.local.remove([key], () => resolve(null));
       } else {
-        // console.log(`Retrieved data for key: ${key}`, item.value);
         resolve(item.value);
       }
     });
@@ -323,20 +290,19 @@ function safeStorageGet(keys) {
     });
   });
 }
-// Listening for messages from the content scripts.
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log("Message received in worker:", request);
+  console.log("Message received in background:", request);
   if (request.type === 'STORE') {
     const { key, value } = request;
     const now = new Date();
     const item = {
       value: value,
-      expiry: now.getTime() + (value.ttl || 3600000), // Default to 1 hour if no TTL provided
+      expiry: now.getTime() + (value.ttl || 3600000),
     };
     chrome.storage.local.set({ [key]: JSON.stringify(item) }, () => {
       sendResponse({ success: true });
     });
-    return true; // Will respond asynchronously
+    return true; 
   } else if (request.type === 'RETRIEVE') {
     const { key } = request;
     chrome.storage.local.get([key], (result) => {
@@ -352,7 +318,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ value: null, type: 'RETRIEVE' });
       }
     });
-    return true; // Will respond asynchronously
+    return true;
     } else if (request.type === 'SET_AUTH_TOKENS') {
     setAuthTokens(request).then((tokens) => {
       broadcastAuthTokensToTabs(tokens);
@@ -362,21 +328,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: false, error: error?.message || 'Erro ao salvar tokens' });
     });
     return true;
-  } else if (request.type === 'OPEN_LOGIN_PAGE') {
-    try {
-      chrome.tabs.create({ url: chrome.runtime.getURL('login.html') }, () => {
-        const err = chrome.runtime.lastError;
-        if (err) {
-          console.warn('NOVAI: não foi possível abrir a tela de login solicitada.', err.message);
-        }
-      });
-    } catch (error) {
-      console.warn('NOVAI: erro ao tentar abrir a tela de login sob demanda.', error);
-    }
-    if (typeof sendResponse === 'function') {
-      sendResponse({ success: true });
-    }
-    return false;
   } else if (request.type === 'GET_AUTH_TOKENS') {
     getAuthTokens().then((tokens) => {
       sendResponse(tokens);
@@ -388,7 +339,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.type === 'STORE_CATEGORY') {
     const { categoryId, categoryData } = request;
     const now = new Date();
-    const ttl = 60 * 24 * 60 * 60 * 1000; // 60 days in milliseconds
+    const ttl = 60 * 24 * 60 * 60 * 1000;
     const item = {
       value: categoryData,
       expiry: now.getTime() + ttl,
@@ -397,22 +348,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage.local.set({ [key]: JSON.stringify(item) }, () => {
       sendResponse({ success: true });
     });
-    return true; // Will respond asynchronously
+    return true; 
   } else if (request.type === 'RETRIEVE_CATEGORY') {
     const { categoryId } = request;
     const key = `category_${categoryId}`;
     console.log("RETRIEVE_CATEGORY request for", categoryId, "with key", key);
     chrome.storage.local.get([key], (result) => {
-      // console.log("RETRIEVE_CATEGORY storage result:", result);
       if (result[key]) {
         const item = JSON.parse(result[key]);
         const now = new Date();
         console.log("RETRIEVE_CATEGORY item found, checking expiry:", item.expiry, "vs now:", now.getTime());
         if (now.getTime() < item.expiry) {
-          // console.log("RETRIEVE_CATEGORY result:", result[key]);
           sendResponse({ categoryData: item.value });
         } else {
-          // Data expired, remove it
           console.log("RETRIEVE_CATEGORY expired for", categoryId);
           chrome.storage.local.remove([key]);
           sendResponse({ categoryData: null });
@@ -422,11 +370,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ categoryData: null });
       }
     });
-    return true; // Will respond asynchronously
+    return true;
   } else if (request.type === 'STORE_VISITS') {
     const { itemId, visitsData } = request;
     const now = new Date();
-    const ttl = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+    const ttl = 4 * 60 * 60 * 1000;
     const item = {
       value: visitsData,
       expiry: now.getTime() + ttl,
@@ -441,7 +389,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: true });
       }
     });
-    return true; // Will respond asynchronously
+    return true;
   } else if (request.type === 'RETRIEVE_VISITS') {
     const { itemId } = request;
     const key = `visits_${itemId}`;
@@ -454,7 +402,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           console.log("RETRIEVE_VISITS result for", itemId, ":", item.value);
           sendResponse({ visitsData: item.value });
         } else {
-          // Data expired, remove it
           chrome.storage.local.remove([key]);
           console.log("RETRIEVE_VISITS expired for", itemId);
           sendResponse({ visitsData: null });
@@ -464,7 +411,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ visitsData: null });
       }
     });
-    return true; // Will respond asynchronously
+    return true;
   } else if (request.type === 'STORE_PRODUCT_DATA') {
     const payload = request.payload || {};
     const rawItemId = typeof payload.itemId === 'string' ? payload.itemId.trim() : '';
@@ -502,7 +449,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
       });
     });
-    return true; // Will respond asynchronously
+    return true;
   } else if (request.type === 'GET_PRODUCT_DATA') {
     const rawIds = (request.payload && Array.isArray(request.payload.itemIds)) ? request.payload.itemIds : [];
     const itemIds = rawIds.filter((id) => typeof id === 'string' && id.trim().length > 0);
@@ -533,12 +480,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 creationDays = Math.floor((now.getTime() - st) / (1000 * 60 * 60 * 24));
               }
             }
-
         const meetsKeepRule =
               (itemData.itemSales >= 100 && creationDays > 30) ||
               (itemData.itemSales < 100 && creationDays >= 90) ||
               (itemData.itemSales < 5 && creationDays > 45);
-
             if (isStale || !meetsKeepRule) {
               keysToRemove.push(itemId);
             } else {
@@ -546,7 +491,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
           }
         }
-        
         }
 
       if (keysToRemove.length > 0) {
@@ -564,15 +508,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.error('Error retrieving product data from storage', error);
       sendResponse({ data: {}, error: error?.message || 'Failed to read product cache' });
     });
-
-    // Return true to indicate we will respond asynchronously.
     return true;
   } else if (request.type === 'REQUEST_DATA') {
     const { url, method, body, headers } = request.payload;
-
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
-
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     const fetchOptions = {
       method: method || 'GET',
       signal: controller.signal,
@@ -611,30 +551,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.error(`REQUEST_DATA error for ${method} ${url}:`, err.message);
         sendResponse({ success: false, error: err.message });
       });
-
-    return true; // Will respond asynchronously
+    return true;
   } else if (request.type === 'FETCH_URL') {
     const { url, noRedirect, headers, extractScriptsOnly = false } = request;
-
-    // Short-circuit using in-memory cache for script-only requests when fresh
     if (extractScriptsOnly && scriptCache.has(url)) {
       const cached = scriptCache.get(url);
       const age = Date.now() - (cached.timestamp || 0);
       if (age < SCRIPT_CACHE_TTL_MS && cached.scripts) {
         sendResponse({ scripts: cached.scripts, scriptsOnly: true });
-        return false; // response sent synchronously
+        return false;
       }
     }
-
-    // If an identical request is already in-flight, attach to it
     const reqKey = getFetchKey(url, noRedirect, extractScriptsOnly);
     if (inFlightRequests.has(reqKey)) {
       inFlightRequests.get(reqKey).consumers.push(sendResponse);
-      return true; // Will respond asynchronously when the first request completes
+      return true;
     }
     inFlightRequests.set(reqKey, { consumers: [sendResponse] });
-
-    // Helper to broadcast the result to all awaiting consumers
     const broadcastAndClear = (payload) => {
       const entry = inFlightRequests.get(reqKey);
       if (entry && entry.consumers && entry.consumers.length) {
@@ -645,21 +578,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       inFlightRequests.delete(reqKey);
     };
 
-    // Add a much longer timeout to prevent hanging requests but allow large pages to load
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30-second timeout
-
-    // Simple headers to avoid CORS preflight
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     const optimizedHeaders = {
-      // Only user agent - other headers can trigger CORS
       'User-Agent': extractScriptsOnly 
         ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         : 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1',
-      // Merge with any custom headers
       ...(headers || {})
     };
-
-    // Conditional request headers from cache for script-only
     let conditionalHeaders = {};
     if (extractScriptsOnly && scriptCache.has(url)) {
       const cached = scriptCache.get(url);
@@ -669,10 +595,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (cached.lastModified) conditionalHeaders['If-Modified-Since'] = cached.lastModified;
       }
     }
-
-    // We no longer need a HEAD request pre-check for script extraction
     fetch(url, {
-      // Remove credentials to avoid CORS issues
       redirect: noRedirect ? "manual" : "follow",
       signal: controller.signal,
       headers: { ...optimizedHeaders, ...conditionalHeaders }
@@ -680,37 +603,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .then(r => {
         clearTimeout(timeoutId);
         console.log(`Fetch response for ${url}: Status ${r.status}, Final URL: ${r.url}, NoRedirect: ${noRedirect}`);
-
-        // If noRedirect is true, return intermediate content even for 301/302
         if (noRedirect) {
-          // Return the intermediate page content for 301/302
           if (r.status === 301 || r.status === 302) {
             console.log(`Returning intermediate redirect content for ${url}`);
             return r.text();
           }
         }
-
-        // Check if response is ok (status 200-299) or if it's a redirect that needs manual handling
         if (r.status === 304 && extractScriptsOnly) {
-          // Not modified, return cached scripts
           const cached = scriptCache.get(url);
           if (cached && cached.scripts) {
             return cached.scripts;
           }
         }
-
-        if (!r.ok && r.status != 302 && r.status != 301 && r.status != 206 && r.status != 304) { // 206 is partial content
+        if (!r.ok && r.status != 302 && r.status != 301 && r.status != 206 && r.status != 304) {
           throw new Error(`HTTP ${r.status}: ${r.statusText}`);
         }
-
-        // For 301/302, check if we got the redirect page or the actual content
         if (r.status === 301 || r.status === 302) {
           const location = r.headers.get('location');
           if (location) {
             console.log(`Manual redirect needed from ${url} to ${location}`);
-            // Manually follow the redirect with optimized headers
             return fetch(location, {
-              // Remove credentials to avoid CORS issues
               redirect: "follow",
               signal: controller.signal,
               headers: optimizedHeaders
@@ -719,24 +631,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               if (!redirectResponse.ok && redirectResponse.status != 206) {
                 throw new Error(`HTTP ${redirectResponse.status}: ${redirectResponse.statusText}`);
               }
-              // Stream and extract scripts or limit response size
               return extractScriptsOnly 
                 ? streamExtractScripts(redirectResponse)
-                : r.text(); // For non-script requests, we are no longer limiting bytes
+                : r.text();
             });
           }
         }
-
-        // Stream and extract scripts or limit response size
         return extractScriptsOnly 
           ? streamExtractScripts(r)
-          : r.text(); // For non-script requests, we are no longer limiting bytes
+          : r.text();
       })
       .then(result => {
         if (extractScriptsOnly) {
           const etag = null;
           const lastModified = null;
-          // Cache payload with timestamp
           scriptCache.set(url, { scripts: result, etag: etag, lastModified: lastModified, timestamp: Date.now() });
           console.log(`Found ${result.length} script tags for ${url}`);
           broadcastAndClear({ 
@@ -757,35 +665,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.error(`Fetch error for ${url}:`, err.message);
         broadcastAndClear({ error: err.message });
       });
-    return true; // Will respond asynchronously
-  }/*  else if (request.type === 'OPEN_SIDE_PANEL') {
-    // Try to open side panel for active tab or last focused window
-    chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
-      const t = tabs && tabs[0];
-      if (t) {
-        openSidePanelFor(t.id, t.windowId);
-      } else {
-        chrome.windows.getLastFocused({}, (win) => {
-          if (win && typeof win.id === 'number') {
-            openSidePanelFor(null, win.id);
-          }
-        });
-      }
-      sendResponse({ success: true });
-    });
-    return true; // Will respond asynchronously
-  } */ else if (request.type === 'FETCH_USER_ME') {
+    return true;
+  }
+  else if (request.type === 'FETCH_USER_ME') {
     const { userId, forceRefresh, authToken } = request;
     const cacheKey = 'ml_user_me_data';
-    
-    // Check cache first if not forcing refresh
     if (!forceRefresh) {
       chrome.storage.local.get([cacheKey], (result) => {
         if (result[cacheKey]) {
           try {
             const cached = JSON.parse(result[cacheKey]);
             const now = Date.now();
-            // Check if cache is valid (24 hours) and matches current user
             if (cached.timestamp && (now - cached.timestamp < 24 * 60 * 60 * 1000) && 
                 cached.userId === userId && cached.data) {
               console.log('Returning cached user data for user:', userId);
@@ -796,8 +686,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             console.error('Error parsing cached user data:', e);
           }
         }
-        
-        // No valid cache, fetch fresh data
         fetchUserData();
       });
     } else {
@@ -806,12 +694,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     function fetchUserData() {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-      
+      const timeoutId = setTimeout(() => controller.abort(), 15000); 
       const fetchHeaders = {};
-      
-      // Only add authorization header if token is provided
-      // Avoid Content-Type for GET requests as it triggers CORS preflight
       if (authToken) {
         fetchHeaders['Authorization'] = `Bearer ${authToken}`;
       }
@@ -819,7 +703,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       fetch('https://api.mercadolibre.com/users/me', {
         method: 'GET',
         signal: controller.signal,
-        // Remove credentials: 'include' to avoid CORS issues
         headers: fetchHeaders
       })
         .then(response => {
@@ -830,7 +713,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           return response.json();
         })
         .then(data => {
-          // Cache the data with timestamp and user ID
           const cacheData = {
             userId: userId,
             data: data,
