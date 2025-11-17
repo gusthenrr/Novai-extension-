@@ -2122,13 +2122,28 @@ if (nativeSold) {
     // ---- UI ----
     function insertUi(itemId) {
       if (document.getElementById(ROOT_ID)) return;
-  
-      const anchor =
-        document.querySelector(".ui-pdp-header__title-container") ||
-        document.querySelector("#price") ||
-        document.querySelector(".ui-pdp-container__row");
-      if (!anchor || !anchor.parentElement) return;
-  
+
+      const titleElement = document.querySelector(".ui-pdp-title");
+      let parentForInsert = null;
+      let referenceNode = null;
+
+      if (titleElement && titleElement.parentElement) {
+        parentForInsert = titleElement.parentElement;
+        referenceNode = titleElement.nextSibling;
+      } else {
+        const fallbackAnchor =
+          document.querySelector(".ui-pdp-header__title-container") ||
+          document.querySelector("#price") ||
+          document.querySelector(".ui-pdp-container__row");
+
+        if (!fallbackAnchor) return;
+
+        parentForInsert = fallbackAnchor.parentElement || fallbackAnchor;
+        referenceNode = fallbackAnchor.nextSibling;
+      }
+
+      if (!parentForInsert) return;
+
       const block = document.createElement("div");
       block.id = ROOT_ID;
       block.className = "novai-kpi-block";
@@ -2165,9 +2180,13 @@ if (nativeSold) {
             <div id="novai-conversao" class="novai-kpi-value">--</div>
           </div>
         </div>`;
-  
-      anchor.parentElement.insertBefore(block, anchor.nextSibling);
-  
+
+      if (referenceNode) {
+        parentForInsert.insertBefore(block, referenceNode);
+      } else {
+        parentForInsert.appendChild(block);
+      }
+
       // hover do gráfico (NÃO faz fetch aqui)
       const fatCard = block.querySelector("#novai-fat-card");
       const panel = block.querySelector("#novai-chart-panel");
