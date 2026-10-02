@@ -295,7 +295,16 @@ function safeStorageGet(keys) {
 }
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Message received in background:", request);
-  if (request.type === 'STORE') {
+  if (request.type === 'OPEN_LOGIN_PAGE') {
+    chrome.tabs.create({ url: chrome.runtime.getURL('login.html') }, (tab) => {
+      if (chrome.runtime.lastError) {
+        sendResponse({ success: false, error: chrome.runtime.lastError.message });
+        return;
+      }
+      sendResponse({ success: true, tabId: tab?.id ?? null });
+    });
+    return true;
+  } else if (request.type === 'STORE') {
     const { key, value } = request;
     const now = new Date();
     const item = {

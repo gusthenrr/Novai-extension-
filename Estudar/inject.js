@@ -1,6 +1,7 @@
 const AUTH_STATE_EVENT = 'NovaiAuthState';
 const AUTH_UPDATE_EVENT = 'NovaiAuthTokensUpdated';
 const AUTH_REQUEST_EVENT = 'NovaiRequestAuthState';
+const AUTH_OPEN_LOGIN_EVENT = 'NovaiOpenLogin';
 
 function dispatchNovaiAuthState(detail) {
     try {
@@ -75,6 +76,22 @@ document.addEventListener(AUTH_UPDATE_EVENT, (event) => {
 
 document.addEventListener(AUTH_REQUEST_EVENT, () => {
     requestBackgroundAuthState();
+});
+
+document.addEventListener(AUTH_OPEN_LOGIN_EVENT, () => {
+    try {
+        chrome.runtime.sendMessage({ type: 'OPEN_LOGIN_PAGE' }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.warn('NOVAI: não foi possível abrir a tela de login.', chrome.runtime.lastError.message);
+                return;
+            }
+            if (!response?.success) {
+                console.warn('NOVAI: o background não confirmou a abertura da tela de login.');
+            }
+        });
+    } catch (error) {
+        console.warn('NOVAI: erro ao solicitar a tela de login.', error);
+    }
 });
 
 requestBackgroundAuthState();
