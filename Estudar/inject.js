@@ -58,7 +58,8 @@ document.addEventListener(AUTH_UPDATE_EVENT, (event) => {
     const accessToken = detail.accessToken;
     const refreshToken = detail.refreshToken;
     const tokenUser = detail.tokenUser;
-    if (!accessToken && !refreshToken && !tokenUser) {
+    const clear = detail.clear === true;
+    if (!clear && !accessToken && !refreshToken && !tokenUser) {
         return;
     }
     try {
@@ -67,6 +68,7 @@ document.addEventListener(AUTH_UPDATE_EVENT, (event) => {
             accessToken,
             refreshToken,
             tokenUser,
+            clear,
             ttl: detail.ttl,
         });
     } catch (error) {
@@ -216,6 +218,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             accessToken: request.accessToken,
             refreshToken: request.refreshToken,
             tokenUser: request.tokenUser,
+            clear: request.clear === true,
             ttl: request.ttl,
             source: 'background'
         });

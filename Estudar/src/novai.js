@@ -976,10 +976,17 @@ function requestAuthStateFromBackground() {
 }
 
 function broadcastAuthTokens(accessToken, refreshToken, options = {}) {
-  if (!options.clear && !accessToken && !refreshToken) return;
+  let tokenUser = options.tokenUser;
+  if (!tokenUser) {
+    try {
+      tokenUser = eadataRetrieve(LOCAL_USER_TOKEN_KEY);
+    } catch (_) {}
+  }
+  if (!options.clear && !accessToken && !refreshToken && !tokenUser) return;
   const detail = {
     accessToken,
     refreshToken,
+    tokenUser,
     ttl: TTL1,
     source: "page"
   };
@@ -1006,12 +1013,16 @@ function clearStoredAuthTokens() {
     localStorage.removeItem(LOCAL_REFRESH_TOKEN_KEY);
   } catch (_) {}
   try {
+    localStorage.removeItem(LOCAL_USER_TOKEN_KEY);
+  } catch (_) {}
+  try {
     eaHeaders.delete("Authorization");
   } catch (_) {}
 }
 
 const NOVAI_REAUTH_PROMPT_ID = "novai-login-required";
 let novaiReauthInProgress = !1;
+let pendingUnauthorizedRecovery = null;
 
 function clearNovaiLoginPrompt() {
   novaiReauthInProgress = !1;
@@ -1071,6 +1082,39 @@ function triggerReauthFlow(reason) {
   renderNovaiLoginPrompt();
 }
 
+function recoverFromUnauthorizedResponse() {
+  if (pendingUnauthorizedRecovery) return pendingUnauthorizedRecovery;
+
+  pendingUnauthorizedRecovery = (async () => {
+    // O access token falhou, mas o refresh token e o token_user ainda podem
+    // renovar a sessao sem incomodar o usuario.
+    try {
+      eaHeaders.delete("Authorization");
+    } catch (_) {}
+    try {
+      localStorage.removeItem(LOCAL_ACCESS_TOKEN_KEY);
+    } catch (_) {}
+
+    let refreshToken = getStoredRefreshToken();
+    if (!refreshToken) {
+      await requestAuthStateFromBackground();
+      refreshToken = getStoredRefreshToken();
+    }
+
+    if (refreshToken && await getnewToken(refreshToken)) {
+      clearNovaiLoginPrompt();
+      return !0;
+    }
+
+    triggerReauthFlow("Nao foi possivel renovar o token de acesso");
+    return !1;
+  })().finally((() => {
+    pendingUnauthorizedRecovery = null;
+  }));
+
+  return pendingUnauthorizedRecovery;
+}
+
 function installNovaiFetchInterceptor() {
   if (window.__novaiFetchInterceptInstalled) {
     return;
@@ -1081,8 +1125,6 @@ function installNovaiFetchInterceptor() {
   }
 
   window.__novaiFetchInterceptInstalled = !0;
-
-  const monitoredStatuses = new Set([401, 403]);
 
   const getHeadersFrom = (input, init) => {
     if (init && init.headers) return init.headers;
@@ -1125,15 +1167,27 @@ function installNovaiFetchInterceptor() {
   window.fetch = function(input, init) {
     const headers = getHeadersFrom(input, init);
     const shouldMonitor = headersMatchEa(headers);
+    let requestAuthorization = null;
+    try {
+      requestAuthorization = headers instanceof Headers
+        ? headers.get("Authorization")
+        : headers?.Authorization || headers?.authorization || null;
+    } catch (_) {}
     return originalFetch.call(this, input, init).then((response => {
-      if (shouldMonitor && response && monitoredStatuses.has(response.status)) {
-        triggerReauthFlow("Token de acesso inválido ou expirado");
+      if (shouldMonitor && response?.status === 401) {
+        let currentAuthorization = null;
+        try {
+          currentAuthorization = eaHeaders.get("Authorization");
+        } catch (_) {}
+
+        // Ignora respostas atrasadas de requisicoes feitas com o token anterior.
+        if (!requestAuthorization || !currentAuthorization || requestAuthorization === currentAuthorization) {
+          void recoverFromUnauthorizedResponse();
+        }
       }
       return response;
     })).catch((error => {
-      if (shouldMonitor) {
-        triggerReauthFlow("Falha ao consultar a API protegida");
-      }
+      // Falhas de rede, proxy ou CORS nao comprovam que a sessao expirou.
       throw error;
     }));
   };
@@ -2560,7 +2614,11 @@ async function getnewToken(e) {
     }
 
     if (response.ok && body?.access_token) {
-      return appendToken(body.access_token, body.refresh_token);
+      return appendToken({
+        access_token: body.access_token,
+        refresh_token: body.refresh_token || refreshToken,
+        token_user: body.token_user || tokenUser
+      });
     }
   } catch (_) {}
 
@@ -4770,10 +4828,12 @@ async function findfreshAuth() {
 function appendToken(tokenOrPayload, maybeRefreshToken) {
   let accessToken = tokenOrPayload;
   let refreshToken = maybeRefreshToken;
+  let tokenUser = null;
 
   if (tokenOrPayload && "object" == typeof tokenOrPayload) {
     accessToken = tokenOrPayload.access_token ?? tokenOrPayload.token ?? tokenOrPayload.accessToken;
     refreshToken = refreshToken ?? tokenOrPayload.refresh_token ?? tokenOrPayload.refreshToken;
+    tokenUser = tokenOrPayload.token_user ?? tokenOrPayload.tokenUser;
   }
 
   if (!accessToken) {
@@ -4788,7 +4848,10 @@ function appendToken(tokenOrPayload, maybeRefreshToken) {
   if (refreshToken) {
     try { overwriteStoredToken(LOCAL_REFRESH_TOKEN_KEY, refreshToken, TTL1); } catch (_) {}
   }
-  broadcastAuthTokens(accessToken, refreshToken);
+  if (tokenUser) {
+    try { overwriteStoredToken(LOCAL_USER_TOKEN_KEY, tokenUser, TTL1); } catch (_) {}
+  }
+  broadcastAuthTokens(accessToken, refreshToken, { tokenUser });
   clearNovaiLoginPrompt();
   return !0;
 }

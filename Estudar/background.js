@@ -158,14 +158,32 @@ async function getAuthTokens() {
   return { accessToken, refreshToken, tokenUser };
 }
 
-async function setAuthTokens({ accessToken, refreshToken, tokenUser, ttl }) {
+async function setAuthTokens({ accessToken, refreshToken, tokenUser, ttl, clear = false }) {
   const effectiveTtl = typeof ttl === 'number' && ttl > 0 ? ttl : TOKEN_TTL_MS;
-  await Promise.all([
-    writeTokenToStorage(LOCAL_ACCESS_TOKEN_KEY, accessToken, effectiveTtl),
-    writeTokenToStorage(LOCAL_REFRESH_TOKEN_KEY, refreshToken, effectiveTtl),
-    writeTokenToStorage(LOCAL_USER_TOKEN_KEY, tokenUser, effectiveTtl),
-  ]);
-  return { accessToken, refreshToken, tokenUser, ttl: effectiveTtl };
+
+  if (clear) {
+    await Promise.all([
+      writeTokenToStorage(LOCAL_ACCESS_TOKEN_KEY, null, effectiveTtl),
+      writeTokenToStorage(LOCAL_REFRESH_TOKEN_KEY, null, effectiveTtl),
+      writeTokenToStorage(LOCAL_USER_TOKEN_KEY, null, effectiveTtl),
+    ]);
+    return { accessToken: null, refreshToken: null, tokenUser: null, clear: true, ttl: effectiveTtl };
+  }
+
+  // Atualizacoes parciais nao devem apagar tokens que continuam validos.
+  const writes = [];
+  if (typeof accessToken === 'string' && accessToken.trim()) {
+    writes.push(writeTokenToStorage(LOCAL_ACCESS_TOKEN_KEY, accessToken, effectiveTtl));
+  }
+  if (typeof refreshToken === 'string' && refreshToken.trim()) {
+    writes.push(writeTokenToStorage(LOCAL_REFRESH_TOKEN_KEY, refreshToken, effectiveTtl));
+  }
+  if (typeof tokenUser === 'string' && tokenUser.trim()) {
+    writes.push(writeTokenToStorage(LOCAL_USER_TOKEN_KEY, tokenUser, effectiveTtl));
+  }
+  await Promise.all(writes);
+
+  return { ...(await getAuthTokens()), ttl: effectiveTtl };
 }
 
 function broadcastAuthTokensToTabs(tokens) {
