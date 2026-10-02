@@ -865,7 +865,8 @@ const params = new Proxy(new URLSearchParams(window.location.search), {
 );
 
 function isList() {
-  null != document.getElementsByClassName("ui-search-breadcrumb__title")[0] && (paginaAtual = "lista")
+  const isListHost = window.location.hostname === "lista.mercadolivre.com.br";
+  (isListHost || null != document.getElementsByClassName("ui-search-breadcrumb__title")[0]) && (paginaAtual = "lista")
 }
 function eadataStore(e, t, n) {
   const a = {
@@ -2775,7 +2776,9 @@ function fetchCategoryWithCache(e, t) {
       categoryId: i, categoryData: s
     }
     = a.detail;
-    i === e && (s ? t(s): fetch(`${novaiContorn}https://api.mercadolibre.com/categories/${e}`, eaInit).then((e => e.json())).then((n => {
+    i === e && (s ? t(s): requestData(`https://api.mercadolibre.com/categories/${e}`, {
+      headers: eaHeaders
+    }).then((n => {
       n.error || document.dispatchEvent(new CustomEvent("StoreCategoryData", {
         detail: {
           categoryId: e,
@@ -4806,6 +4809,18 @@ async function ensureAuthHeaderForRequests(context = "requisições protegidas")
 }
 
 function initializeExtensionFeatures() {
+  // A camada visual da pagina de resultados usa somente dados que ja estao
+  // no HTML. Ela nao deve aguardar login, backend ou proxy.
+  if ("lista" === paginaAtual) {
+    dataCleanup();
+    if (!ensureAuthPromise) {
+      ensureAuthPromise = prepareAuthorizationSilently().finally((() => {
+        ensureAuthPromise = null;
+      }));
+    }
+    return;
+  }
+
   if (eaHeaders && "function" == typeof eaHeaders.get && eaHeaders.get("Authorization")) {
     dataCleanup();
     return;
@@ -4818,6 +4833,24 @@ function initializeExtensionFeatures() {
       ensureAuthPromise = null;
     }));
   }
+}
+
+async function prepareAuthorizationSilently() {
+  if (eaHeaders && "function" == typeof eaHeaders.get && eaHeaders.get("Authorization")) return !0;
+
+  await requestAuthStateFromBackground().catch((() => null));
+  const storedAccess = getStoredAccessToken();
+  const storedRefresh = getStoredRefreshToken();
+
+  if (storedAccess && !isAccessTokenExpired(storedAccess)) {
+    return appendToken({ access_token: storedAccess, refresh_token: storedRefresh });
+  }
+
+  if (storedRefresh) {
+    return getnewToken(storedRefresh).catch((() => !1));
+  }
+
+  return !1;
 }
 function storeFresh() {
   initializeExtensionFeatures()
@@ -4918,12 +4951,72 @@ function isAccessTokenExpired(token) {
     return !1;
   }
 }
+
+function isCatalogListingUrl(value) {
+  if ("string" != typeof value || !value.trim()) return !1;
+  const url = value.trim();
+  if (/\/p\/MLB-?\d+/i.test(url)) return !0;
+  if (/(?:^|\/\/)produto\.mercadolivre\.com\.br/i.test(url)) return !1;
+  return /mercadolivre\.com\.br/i.test(url);
+}
+
 function runOnList() {
   if ("lista" === paginaAtual) {
-    preLoadedState = "object" != typeof window.__PRELOADED_STATE__ || null === window.__PRELOADED_STATE__ || window.__PRELOADED_STATE__.tagName ? altPreloadedState?.pageState: window.__PRELOADED_STATE__, listView = preLoadedState?.initialState.analytics_track.pageLayout;
-    let d = document.getElementsByClassName("ui-search-results")[0] ?? document.getElementsByClassName("ui-search-layout--grid__grid__layout--grid")[0], m = d.getElementsByTagName("ol")[0] ?? d.getElementsByClassName("ui-search-layout--grid__grid")[0], c = d.querySelectorAll("li");
-    var e = preLoadedState.initialState.results.filter((e => e.polycard)).map((e => e.polycard)).length > 0 ? preLoadedState.initialState.results.filter((e => e.polycard)).map((e => e.polycard)): preLoadedState.initialState.results.filter((e => e.trends_categories?.polycards))[0].trends_categories.polycards;
-    c = Array.from(c), c = c.filter((e => e.classList.contains("ui-search-layout__item")));
+    const windowState = window.__PRELOADED_STATE__;
+    const currentState = windowState && "object" == typeof windowState && !windowState.tagName
+      ? windowState
+      : altPreloadedState?.pageState || altPreloadedState || {};
+    preLoadedState = currentState?.pageState || currentState;
+    const initialState = preLoadedState?.initialState || preLoadedState || {};
+    listView = initialState?.analytics_track?.pageLayout || initialState?.analyticsTrack?.pageLayout || "gallery";
+
+    let d = document.getElementsByClassName("ui-search-results")[0] ?? document.getElementsByClassName("ui-search-layout--grid__grid__layout--grid")[0];
+    if (!d) {
+      setTimeout((() => {
+        if ("lista" === paginaAtual) runOnList();
+      }), 750);
+      return;
+    }
+
+    let m = d.getElementsByTagName("ol")[0] ?? d.getElementsByClassName("ui-search-layout--grid__grid")[0];
+    let c = Array.from(d.querySelectorAll("li")).filter((card => card.classList.contains("ui-search-layout__item") || card.querySelector(".poly-card")));
+    if (!m || c.length === 0) {
+      setTimeout((() => {
+        if ("lista" === paginaAtual) runOnList();
+      }), 750);
+      return;
+    }
+
+    const rawResults = Array.isArray(initialState?.results) ? initialState.results : [];
+    const trendResult = rawResults.find((result => Array.isArray(result?.trends_categories?.polycards)));
+    let e = rawResults.filter((result => result?.polycard)).map((result => result.polycard));
+    if (e.length === 0 && trendResult) e = trendResult.trends_categories.polycards;
+    if (e.length === 0) e = rawResults.filter((result => result?.metadata?.id));
+
+    // Fallback para a estrutura atual do Mercado Livre: os dados minimos para
+    // identificar catalogo podem ser obtidos do proprio link de cada card.
+    if (e.length === 0) {
+      e = c.map(((card, index) => {
+        const link = card.querySelector('a[href*="MLB"]') || card.querySelector("a[href]");
+        const href = link?.href || "";
+        const idMatch = href.match(/MLB-?(\d+)/i);
+        return {
+          metadata: {
+            id: idMatch ? `MLB${idMatch[1]}` : `NOVAI-LIST-${index}`,
+            url: href,
+            category_id: "",
+            is_pad: "false"
+          },
+          title: link?.getAttribute("title") || link?.textContent?.trim() || "",
+          catalogListed: isCatalogListingUrl(href)
+        };
+      }));
+    }
+
+    // Mantem cards e dados alinhados quando o site inclui blocos promocionais.
+    const usableCount = Math.min(c.length, e.length || c.length);
+    c = c.slice(0, usableCount);
+    e = e.slice(0, usableCount);
     let p = c.length, g = p;
     var t = p;
     let f = `
@@ -5025,8 +5118,7 @@ function runOnList() {
 </div>`;
 
   c && "pro" == verif && !document.getElementById("ealistrequest") && (m.insertAdjacentHTML("beforebegin", f), function () {
-      let e = preLoadedState.initialState.results.filter((e => e.trends_categories?.polycards)).length > 0, t = preLoadedState.initialState.results.filter((e => e.trends_categories?.polycards))[0], n = e ? t.trends_categories.polycards: preLoadedState.initialState.results, i = e ? n: n.filter((e => e.id && e.id.startsWith("POLYCARD"))), s = !(!i[0]?.polycard && !e);
-      i = i[0]?.polycard ? i.map((e => e.polycard)): i.filter((e => e?.id && e.id.startsWith("MLB")));
+      let i = e, s = !!i[0]?.components;
       var o = {
         imageset: null,
         reviews: null,
@@ -5045,7 +5137,7 @@ function runOnList() {
             i[e] && !o[e] && (o[e] = !0)
           }
           ));
-          let r = !n?.metadata?.url.startsWith("produto");
+          let r = n?.catalogListed ?? isCatalogListingUrl(n?.metadata?.url || "");
           r = null != r && r;
           let d = n?.is_ad ?? "Patrocinado" === n?.ads_promotions?.text, m = !1;
           s && n?.components.forEach((e => {
@@ -5128,7 +5220,9 @@ function runOnList() {
 }
 ());
 let y = document.getElementById("ealistrequest");
-function n(e) {
+async function n(e) {
+  const authReady = await ensureAuthHeaderForRequests("buscar metricas da lista");
+  if (!authReady) return;
   let t = e.target, a = document.getElementById("ealistrequest");
   t.removeEventListener("click", n), a.style.margin = "0rem 0rem 1rem 0rem", a.outerHTML = `<div id="ealistrequest" style=" margin: 0.35rem 0.35rem 1rem 0.35rem; font-weight: 500;font-size: 1em;letter-spacing: 0.01em;font-family: Montserrat;transition: all 0.25s;display: flex;align-items: center;justify-content: center;background: #222222;/* background: linear-gradient(25deg, rgb(121 51 255) 92%, rgb(77 18 190) 100%); */padding: 0.75em 2em;border-radius: 0.5em;width: fit-content;color: #fff;font-size: 0.77em;cursor: pointer;box-shadow: rgb(0 0 0 / 10%) 0px 11px 6px -7px, rgb(0 0 0 / 13%) 0px 4px 3px -3px;">Carregando ${NvaiLoader} </div>`;
   let i = document.getElementsByClassName("mfy-ad-listinfo_widget");
@@ -5271,13 +5365,6 @@ setTimeout((function () {
 }
 ), 2750)
 }
-y?.addEventListener("click", (e => n(e))), y?.addEventListener("mouseover", (function () {
-  this.style.transform = "scale(1.05)"
-}
-)), y?.addEventListener("mouseout", (function () {
-  this.style.transform = "scale(1)"
-}
-));
 // Bind CTA listeners only once to prevent duplicate handlers
 if (y && !y.dataset.bound) {
   y.addEventListener("click", (e => n(e)));
@@ -5669,7 +5756,7 @@ async function l(n, a) {
       price: "",
       categoryId: e?.metadata.category_id ?? "",
       soldQuantity: "",
-      catalogListed: !e?.metadata?.url?.startsWith("produto")
+      catalogListed: e?.catalogListed ?? isCatalogListingUrl(e?.metadata?.url || "")
     }
     )
   }
@@ -5773,7 +5860,7 @@ async function l(n, a) {
       parseFloat((0).toFixed(0)),
       parseFloat((a.length / 50 * 100).toFixed(0))]), eanotify = document.getElementById("eanotify");
       (function () {
-        let e = preLoadedState.initialState.melidata_track.event_data.category_id;
+        let e = initialState?.melidata_track?.event_data?.category_id || initialState?.analytics_track?.event_data?.category_id || "";
         e?.length > 0 && o(e), async function (e) {
           "" != e && null != e && await new Promise((t => {
             fetchCategoryWithCache(e, (e => {
@@ -5803,7 +5890,7 @@ async function l(n, a) {
 function pageType() {
   const pls = (typeof window !== 'undefined' && window.preLoadedState) ? window.preLoadedState : undefined;
   if (!pls || !pls.userId) {
-    if (document.getElementsByClassName("ui-search-breadcrumb__title")[0] != null) {
+    if (window.location.hostname === "lista.mercadolivre.com.br" || document.getElementsByClassName("ui-search-breadcrumb__title")[0] != null) {
       paginaAtual = "lista";
     }
   } else {
@@ -6776,6 +6863,12 @@ let t = document.createElement("style");
     i.href = "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap", i.rel = "stylesheet", document.body.appendChild(n), document.body.appendChild(a), document.body.appendChild(i);
     let s = document.createElement("link");
     s.rel = "stylesheet", s.href = "https://cdn.jsdelivr.net/npm/range-slider-element@2/dist/range-slider-element.css", document.body.appendChild(s)
+  }
+  // A pagina de lista e publica: monta seus componentes antes de qualquer
+  // descoberta de usuario ou sincronizacao com o backend.
+  if (window.location.hostname === "lista.mercadolivre.com.br") {
+    paginaAtual = "lista";
+    initializeExtensionFeatures();
   }
   findUser()
 }
