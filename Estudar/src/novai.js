@@ -885,6 +885,7 @@ function eadataRetrieve(e) {
 var TTL1 = 30 * 24 * 60 * 60 * 1e3;
 const LOCAL_ACCESS_TOKEN_KEY = "local_usertkn";
 const LOCAL_REFRESH_TOKEN_KEY = "local_user_refresh";
+const LOCAL_USER_TOKEN_KEY = "local_user_jwt";
 const AUTH_REQUEST_EVENT = "NovaiRequestAuthState";
 const AUTH_STATE_EVENT = "NovaiAuthState";
 const AUTH_UPDATE_EVENT = "NovaiAuthTokensUpdated";
@@ -892,7 +893,7 @@ const AUTH_OPEN_LOGIN_EVENT = "NovaiOpenLogin";
 let pendingAuthSyncPromise = null;
 
 function persistAuthState(detail = {}) {
-  const { accessToken, refreshToken, clear, source } = detail || {};
+  const { accessToken, refreshToken, tokenUser, clear, source } = detail || {};
   const ttl = "number" == typeof detail.ttl && detail.ttl > 0 ? detail.ttl : TTL1;
 
   if (clear) {
@@ -925,6 +926,13 @@ function persistAuthState(detail = {}) {
   if ("string" == typeof refreshToken && refreshToken.trim()) {
     try {
       overwriteStoredToken(LOCAL_REFRESH_TOKEN_KEY, refreshToken, ttl);
+      storedSomething = !0;
+    } catch (_) {}
+  }
+
+  if ("string" == typeof tokenUser && tokenUser.trim()) {
+    try {
+      overwriteStoredToken(LOCAL_USER_TOKEN_KEY, tokenUser, ttl);
       storedSomething = !0;
     } catch (_) {}
   }
@@ -2517,16 +2525,25 @@ async function getnewToken(e) {
     }
   }
 
+  let tokenUser = null;
+  try {
+    tokenUser = eadataRetrieve(LOCAL_USER_TOKEN_KEY);
+  } catch (_) {}
+  if (!tokenUser) {
+    return !1;
+  }
+
   const headers = new Headers;
   headers.append("accept", "application/json");
   headers.append("content-type", "application/json");
 
   try {
-    const response = await fetch("https://nossopoint-backend-flask-server.com/token_access", {
+    const response = await fetch("https://novai-production-0d2f.up.railway.app/token_access", {
       method: "POST",
       headers,
       body: JSON.stringify({
-        refresh_token: refreshToken
+        refresh_token: refreshToken,
+        token_user: tokenUser
       })
     });
 
@@ -2537,6 +2554,9 @@ async function getnewToken(e) {
 
     if (body?.refresh_token) {
       try { eadataStore(LOCAL_REFRESH_TOKEN_KEY, body.refresh_token, TTL1); } catch (_) {}
+    }
+    if (body?.token_user) {
+      try { eadataStore(LOCAL_USER_TOKEN_KEY, body.token_user, TTL1); } catch (_) {}
     }
 
     if (response.ok && body?.access_token) {

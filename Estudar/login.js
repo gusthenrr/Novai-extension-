@@ -1,4 +1,4 @@
-const LOGIN_ENDPOINT = 'https://nossopoint-backend-flask-server.com/login-extension';
+const LOGIN_ENDPOINT = 'https://novai-production-0d2f.up.railway.app/login-extension';
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
 
 function setStatus(message, variant = 'info') {
@@ -25,13 +25,14 @@ function toggleFormDisabled(form, disabled) {
   });
 }
 
-function sendTokensToBackground(accessToken, refreshToken) {
+function sendTokensToBackground(accessToken, refreshToken, tokenUser) {
   return new Promise((resolve, reject) => {
     try {
       chrome.runtime.sendMessage({
         type: 'SET_AUTH_TOKENS',
         accessToken,
         refreshToken,
+        tokenUser,
         ttl: TOKEN_TTL_MS,
       }, (response) => {
         if (chrome.runtime.lastError) {
@@ -90,12 +91,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const accessToken = body?.access_token;
       const refreshToken = body?.refresh_token;
+      const tokenUser = body?.token_user;
 
-      if (!accessToken || !refreshToken) {
+      if (!accessToken || !refreshToken || !tokenUser) {
         throw new Error('Resposta inválida do servidor. Tente novamente.');
       }
 
-      await sendTokensToBackground(accessToken, refreshToken);
+      await sendTokensToBackground(accessToken, refreshToken, tokenUser);
       setStatus('Conta conectada com sucesso! Redirecionando...', 'success');
 
       window.setTimeout(() => {

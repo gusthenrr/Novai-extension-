@@ -56,7 +56,8 @@ document.addEventListener(AUTH_UPDATE_EVENT, (event) => {
     const detail = event?.detail || {};
     const accessToken = detail.accessToken;
     const refreshToken = detail.refreshToken;
-    if (!accessToken && !refreshToken) {
+    const tokenUser = detail.tokenUser;
+    if (!accessToken && !refreshToken && !tokenUser) {
         return;
     }
     try {
@@ -64,6 +65,7 @@ document.addEventListener(AUTH_UPDATE_EVENT, (event) => {
             type: 'SET_AUTH_TOKENS',
             accessToken,
             refreshToken,
+            tokenUser,
             ttl: detail.ttl,
         });
     } catch (error) {
@@ -196,6 +198,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         dispatchNovaiAuthState({
             accessToken: request.accessToken,
             refreshToken: request.refreshToken,
+            tokenUser: request.tokenUser,
             ttl: request.ttl,
             source: 'background'
         });

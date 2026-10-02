@@ -42,9 +42,10 @@ const inFlightRequests = new Map();
 
 const LOCAL_ACCESS_TOKEN_KEY = 'local_usertkn';
 const LOCAL_REFRESH_TOKEN_KEY = 'local_user_refresh';
+const LOCAL_USER_TOKEN_KEY = 'local_user_jwt';
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-const LOGIN_API_DOMAIN = 'nossopoint-backend-flask-server.com';
+const LOGIN_API_DOMAIN = 'novai-production-0d2f.up.railway.app';
 const LOGIN_CORS_RULE_ID = 1001;
 
 function ensureLoginCorsRule() {
@@ -149,20 +150,22 @@ function readTokenFromStorage(key) {
 }
 
 async function getAuthTokens() {
-  const [accessToken, refreshToken] = await Promise.all([
+  const [accessToken, refreshToken, tokenUser] = await Promise.all([
     readTokenFromStorage(LOCAL_ACCESS_TOKEN_KEY),
     readTokenFromStorage(LOCAL_REFRESH_TOKEN_KEY),
+    readTokenFromStorage(LOCAL_USER_TOKEN_KEY),
   ]);
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, tokenUser };
 }
 
-async function setAuthTokens({ accessToken, refreshToken, ttl }) {
+async function setAuthTokens({ accessToken, refreshToken, tokenUser, ttl }) {
   const effectiveTtl = typeof ttl === 'number' && ttl > 0 ? ttl : TOKEN_TTL_MS;
   await Promise.all([
     writeTokenToStorage(LOCAL_ACCESS_TOKEN_KEY, accessToken, effectiveTtl),
     writeTokenToStorage(LOCAL_REFRESH_TOKEN_KEY, refreshToken, effectiveTtl),
+    writeTokenToStorage(LOCAL_USER_TOKEN_KEY, tokenUser, effectiveTtl),
   ]);
-  return { accessToken, refreshToken, ttl: effectiveTtl };
+  return { accessToken, refreshToken, tokenUser, ttl: effectiveTtl };
 }
 
 function broadcastAuthTokensToTabs(tokens) {
@@ -333,7 +336,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse(tokens);
     }).catch((error) => {
       console.error('NOVAI: falha ao recuperar tokens armazenados.', error);
-      sendResponse({ accessToken: null, refreshToken: null, error: error?.message || 'Erro ao recuperar tokens' });
+      sendResponse({ accessToken: null, refreshToken: null, tokenUser: null, error: error?.message || 'Erro ao recuperar tokens' });
     });
     return true;
   } else if (request.type === 'STORE_CATEGORY') {
