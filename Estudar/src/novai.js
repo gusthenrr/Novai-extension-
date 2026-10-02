@@ -4960,6 +4960,74 @@ function isCatalogListingUrl(value) {
   return /mercadolivre\.com\.br/i.test(url);
 }
 
+function ensureCatalogBadge(card) {
+  if (!card) return null;
+  const existing = card.querySelector(".novai-catalog-badge");
+  if (existing) return existing;
+
+  let media = card.querySelector(".poly-card__portada")
+    || card.querySelector(".ui-search-result__image")
+    || card.querySelector(".ui-search-result__image-wrapper")
+    || card.querySelector(".poly-component__picture")
+    || card.querySelector("img")?.parentElement;
+  if (!media) return null;
+  if ("IMG" === media.tagName) media = media.parentElement;
+  if (!media) return null;
+
+  try {
+    if ("static" === window.getComputedStyle(media).position) media.style.position = "relative";
+  } catch (_) {
+    media.style.position = "relative";
+  }
+
+  const badge = document.createElement("div");
+  badge.className = "iscatalog novai-catalog-badge";
+  badge.textContent = "Catálogo";
+  badge.setAttribute("style", "position:absolute;top:8px;right:8px;z-index:20;display:flex;align-items:center;justify-content:center;background:#ffe600;color:#111;border:2px solid #111;border-radius:999px;padding:6px 12px;font-family:Montserrat,Arial,sans-serif;font-size:13px;font-weight:900;line-height:1;letter-spacing:.01em;box-shadow:0 4px 12px rgba(0,0,0,.22);pointer-events:none;box-sizing:border-box;");
+  media.appendChild(badge);
+  return badge;
+}
+
+function ensureListSummaryHeader({ total = 0, catalog = 0, full = 0, ads = 0, category = "Resultados" } = {}) {
+  const oldHeader = document.getElementById("eanotify");
+  if (oldHeader && oldHeader.dataset.novaiSummary !== "true") oldHeader.remove();
+
+  let header = document.getElementById("eanotify");
+  if (!header) {
+    header = document.createElement("section");
+    header.id = "eanotify";
+    header.dataset.novaiSummary = "true";
+    header.setAttribute("style", "position:relative;z-index:30;width:100%;box-sizing:border-box;background:#222;border-top:4px solid #ffe600;color:#fff;font-family:Montserrat,Arial,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.16);");
+    header.innerHTML = `
+      <div style="max-width:1215px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;box-sizing:border-box;">
+        <div style="min-width:180px;flex:1;color:#ffe600;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="eabar_category"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <span style="background:#333;border-radius:8px;padding:7px 10px;">Anúncios: <strong id="eabar_total"></strong></span>
+          <span style="background:#333;border-radius:8px;padding:7px 10px;">Catálogo: <strong id="eabar_catalograte"></strong></span>
+          <span style="background:#333;border-radius:8px;padding:7px 10px;">Full: <strong id="eabar_fullrate"></strong></span>
+          <span style="background:#333;border-radius:8px;padding:7px 10px;">Patrocinados: <strong id="eabar_adsrate"></strong></span>
+          <span style="background:#333;border-radius:8px;padding:7px 10px;">Concorrência: <strong id="eabar_competition">-</strong></span>
+        </div>
+      </div>`;
+
+    const root = document.getElementById("root-app");
+    if (root?.parentNode) root.parentNode.insertBefore(header, root);
+    else (document.body || document.documentElement).prepend(header);
+  }
+
+  const percentage = value => total > 0 ? Math.round(value / total * 100) : 0;
+  const setText = (id, value) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  };
+  setText("eabar_category", category || "Resultados");
+  setText("eabar_total", String(total));
+  setText("eabar_catalograte", `${catalog} (${percentage(catalog)}%)`);
+  setText("eabar_fullrate", `${full} (${percentage(full)}%)`);
+  setText("eabar_adsrate", `${ads} (${percentage(ads)}%)`);
+  return header;
+}
+
 function runOnList() {
   if ("lista" === paginaAtual) {
     const windowState = window.__PRELOADED_STATE__;
@@ -5019,6 +5087,13 @@ function runOnList() {
     e = e.slice(0, usableCount);
     let p = c.length, g = p;
     var t = p;
+    const catalogCount = e.filter((item => item?.catalogListed ?? isCatalogListingUrl(item?.metadata?.url || ""))).length;
+    const fullCount = c.filter((card => !!card.querySelector(".poly-component__shipped-from, .poly-shipping__promise-icon--full, [class*='fulfillment']"))).length;
+    const adsCount = e.filter((item => item?.is_ad || "true" === item?.metadata?.is_pad || "Patrocinado" === item?.ads_promotions?.text)).length;
+    const categoryLabel = document.querySelector(".ui-search-breadcrumb__title")?.textContent?.trim()
+      || document.querySelector("h1")?.textContent?.trim()
+      || "Resultados da busca";
+    ensureListSummaryHeader({ total: p, catalog: catalogCount, full: fullCount, ads: adsCount, category: categoryLabel });
     let f = `
 <div id="ealistrequest"
      style="
@@ -5096,25 +5171,6 @@ function runOnList() {
     box-shadow: rgba(0, 0, 0, 0.21) 0px 6px 11px -3px, rgba(0, 0, 0, 0.05) 0px 2px 5px -2px;
 " class="local"><img width="16" height="16" src="https://img.icons8.com/material-outlined/${NovaiColorMain}/24/visit.png" alt="box--v1">0un</div>
 </div>
-<div style="
-      background-color: #ffe600;          /* NOVAI amarelo */
-      color: #111;                        /* texto preto */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: .35rem 1rem;
-      border-radius: 1rem;                /* ambos os lados arredondados */
-      border: 2px solid #000;             /* borda preta */
-      font-size: 1.1rem;
-      font-weight: 900;
-      letter-spacing: 0.02rem;
-      gap: 1rem;
-      box-shadow: 0 6px 18px rgba(0,0,0,.06);
-      position: absolute;
-      top: 0;                             /* canto superior direito */
-      right: 0;
-      " class="iscatalog">Catálogo</div>
-    
 </div>`;
 
   c && "pro" == verif && !document.getElementById("ealistrequest") && (m.insertAdjacentHTML("beforebegin", f), function () {
@@ -5147,14 +5203,17 @@ function runOnList() {
           let p = u, g = document.createElement("div");
           g.innerHTML = p;
           let f, y = g.firstElementChild;
-          if (0 == r ? y.querySelector(".iscatalog").remove(): (y.setAttribute("catalog", !0), l++), y.querySelector(".local") && y.querySelector(".local").remove(), y.querySelector(".imageset") && y.querySelector(".imageset").remove(), d && c[t]) {
+          if (r) {
+            y.setAttribute("catalog", !0);
+            l++;
+            ensureCatalogBadge(c[t]);
+          }
+          if (y.querySelector(".local") && y.querySelector(".local").remove(), y.querySelector(".imageset") && y.querySelector(".imageset").remove(), d && c[t]) {
             let e = c[t].querySelector(".ui-search-item__pub-label") ?? c[t].querySelector(".poly-component__ads-promotions");
             e && e.setAttribute("style", "background-color: #ffd900ff;color: var(--mfy-dark);border-radius: 0.5em;padding: 0.25em 0.75em;font-size: 0.86em;font-weight: 800;letter-spacing: 0.01em;margin-left: 0.5em;display: flex;align-items: center;justify-content: center;text-align: center; ")
           }
           if ("listing" == listView) {
             y.style.position = "absolute", y.style.bottom = "7%";
-            let e = y.querySelector(".iscatalog");
-            e && (e.style.borderRadius = "0 1rem 1rem 0", e.style.position = "absolute", e.style.top = "-3.5rem", e.style.left = "-2.7rem", e.style.right = "auto")
           }
           i.reviews ? y.querySelector(".reviews").innerHTML = y.querySelector(".reviews").getElementsByTagName("img")[0].outerHTML + `${i.reviews}`: y.querySelector(".reviews").remove(), y.querySelector(".imageset") && (y.querySelector(".imageset").innerHTML = y.querySelector(".imageset").getElementsByTagName("img")[0].outerHTML + `${i.imageset}`), i.local && (y.querySelector(".local").innerHTML = y.querySelector(".local").getElementsByTagName("img")[0].outerHTML + `${i.local}`), c[t] && (f = c[t].querySelector(".ui-search-result__image") || c[t].querySelector(".poly-card__portada"));
           // Prevent duplicate widget insertion on re-init
@@ -5682,33 +5741,7 @@ async function l(n, a) {
       let r = n.title.toLowerCase().replace(/[ãâàáäåāăąạảấầẩẫậắằẳẵặ]/g, "").replace(/[õôòóöøōŏőơọỏốồổỗộớờởỡợ]/g, "").replace(/[ñńņňṅṇṉṋṅ]/g, "").replace(/[ēĕėęěẹẻẽếềểễệ]/g, "").replace(/[īĭįỉịớờởỡợ]/g, "").replace(/[ūŭůűųụủứừửữự]/g, "").replace(/[ýỳỵỷỹ]/g, "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").split(" ").join("-").replace(/[^a-zA-Z0-9-]/g, "").replace(/^-/, ""), l = "https://produto.mercadolivre.com.br/MLB-" + n.itemID.split("MLB")[1], d = (n.catalogID.split("MLB")[1], n.itemID, i.getElementsByClassName("mfy-ad-listinfo_widget")[0]?.getAttribute("catalog"), l);
       if (i.setAttribute("product-id", n.itemID), i.setAttribute("product-price", n.price), i.setAttribute("shipping", n.shipping), "true" == i.getElementsByClassName("mfy-ad-listinfo_widget")[0]?.getAttribute("catalog") || n.catalogListed) {
         i.setAttribute("catalog", !0);
-       let e = `
-<div style="
-  background-color: #ffe600;          /* NOVAI amarelo */
-  color: #111;                        /* texto preto */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 1rem;                /* cantos arredondados */
-  font-size: 1.1rem;
-  font-weight: 900;
-  letter-spacing: 0.02rem;
-  gap: 1rem;
-  padding: 0.75rem 1rem 0.5rem 1rem;
-  border: 2px solid #000;             /* borda preta */
-  box-shadow: 0 6px 18px rgba(0,0,0,.06);
-  position: absolute;                 /* continua relativo ao card */
-  top: 0;                             /* canto superior direito do card */
-  right: 0;
-  z-index: 2147483647;                /* acima de tudo no card */
-  pointer-events: auto;               /* clicável */
-" class="iscatalog">
-  Catálogo
-</div>`;
-
-
-
-        i.getElementsByClassName("poly-card__content")[0].insertAdjacentHTML("afterbegin", e)
+        ensureCatalogBadge(i)
       }
       else i.setAttribute("catalog", !1);
       null == itemsLocalData[n.itemID] && "true" !== i.getAttribute("cache-req-started") && (i.setAttribute("cache-req-started", "true"), document.dispatchEvent(new CustomEvent("GetProductData", {
