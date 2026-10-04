@@ -819,6 +819,7 @@ function _mfyKeepAliveTick() {
     } else if (paginaAtual === 'lista') {
       const hasCTA = document.getElementById('ealistrequest') || document.getElementById('mfy-catalog-filter-container');
       if (!hasCTA) return _mfyScheduleReinit('missing list widgets');
+      refreshListDeliveryAndAdsCounts();
     }
   } catch (_) {}
 }
@@ -4988,6 +4989,74 @@ function ensureCatalogBadge(card) {
   return badge;
 }
 
+function normalizeListBadgeText(value) {
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function isNativeListBadge(element) {
+  return !element.closest(".mfy-ad-listinfo_widget, .novai-catalog-badge, #eanotify, .poly-component__title, .ui-search-item__title, h2, h3");
+}
+
+function isFullListCard(card, item) {
+  if (card) {
+    const markers = card.querySelectorAll(
+      '.poly-shipping__promise-icon--full, .ui-search-item__full, .ui-search-item__shipping--full, [class*="fulfillment"], [aria-label], [title], [alt], use'
+    );
+    for (const marker of markers) {
+      if (!isNativeListBadge(marker)) continue;
+      if (marker.matches('.poly-shipping__promise-icon--full, .ui-search-item__full, .ui-search-item__shipping--full, [class*="fulfillment"]')) return true;
+      const label = normalizeListBadgeText([marker.getAttribute("aria-label"), marker.getAttribute("title"), marker.getAttribute("alt")].filter(Boolean).join(" "));
+      if (/^(?:full|enviado pelo full|envio full)$/.test(label)) return true;
+      if (marker.tagName.toLowerCase() === "use" && /(?:poly_full|vpp_full_icon|(?:^|[#_-])full$)/i.test(marker.getAttribute("href") || marker.getAttribute("xlink:href") || "")) return true;
+    }
+    // O texto pode estar em um span novo, sem a classe do antigo ícone.
+    for (const label of card.querySelectorAll("span, small, div, p, svg, title")) {
+      if (!isNativeListBadge(label) || label.childElementCount > 0) continue;
+      if (/^(?:full|enviado pelo full|envio full)$/.test(normalizeListBadgeText(label.textContent))) return true;
+    }
+  }
+  return item?.shipping?.logistic_type === "fulfillment" || (item?.components || []).some(component =>
+    [component?.shipping?.text, component?.shipped_from?.text].some(text =>
+      /\{vpp_full_icon\}|^(?:full|enviado pelo full)$/i.test(String(text || "").trim())
+    )
+  );
+}
+
+function isSponsoredListCard(card, item) {
+  if (card) {
+    const markers = card.querySelectorAll(
+      '.poly-component__ads-promotions, .poly-component__ads-promotion, .poly-component__sponsored, .ui-search-item__pub-label, [data-testid="sponsored-label"], [aria-label], span, small, a, div, p'
+    );
+    for (const marker of markers) {
+      if (!isNativeListBadge(marker)) continue;
+      const label = normalizeListBadgeText(marker.getAttribute("aria-label"));
+      const text = normalizeListBadgeText(marker.textContent);
+      // "Ad" é um selo isolado: não procurar essa sequência no título inteiro.
+      if (/^(?:ads?|patrocinad[oa]s?|sponsored|publicidade)$/.test(label)) return true;
+      if (marker.childElementCount === 0 && /^(?:ads?|patrocinad[oa]s?|sponsored|publicidade)$/.test(text)) return true;
+    }
+  }
+  const isTrue = value => value === true || value === "true";
+  return isTrue(item?.is_ad) || isTrue(item?.metadata?.is_pad)
+    || /^(?:ads?|patrocinad[oa]s?|sponsored)$/.test(normalizeListBadgeText(item?.ads_promotions?.text));
+}
+
+function refreshListDeliveryAndAdsCounts() {
+  const header = document.querySelector('#eanotify[data-novai-summary="true"]');
+  if (!header) return;
+  const cards = Array.from(document.querySelectorAll(".ui-search-results li, .ui-search-layout--grid__grid__layout--grid li"))
+    .filter(card => card.classList.contains("ui-search-layout__item") || card.querySelector(".poly-card"));
+  if (!cards.length) return;
+  const updateCount = (id, count) => {
+    const element = header.querySelector(`#${id}`);
+    const value = `${count} (${Math.round(count / cards.length * 100)}%)`;
+    if (element && element.textContent !== value) element.textContent = value;
+  };
+  updateCount("eabar_fullrate", cards.filter(card => isFullListCard(card, card.novaiListItem)).length);
+  updateCount("eabar_adsrate", cards.filter(card => isSponsoredListCard(card, card.novaiListItem)).length);
+}
+
 function ensureListSummaryHeader({ total = 0, catalog = 0, full = 0, ads = 0, category = "Resultados" } = {}) {
   const oldHeader = document.getElementById("eanotify");
   if (oldHeader && oldHeader.dataset.novaiSummary !== "true") oldHeader.remove();
@@ -5088,8 +5157,9 @@ function runOnList() {
     let p = c.length, g = p;
     var t = p;
     const catalogCount = e.filter((item => item?.catalogListed ?? isCatalogListingUrl(item?.metadata?.url || ""))).length;
-    const fullCount = c.filter((card => !!card.querySelector(".poly-component__shipped-from, .poly-shipping__promise-icon--full, [class*='fulfillment']"))).length;
-    const adsCount = e.filter((item => item?.is_ad || "true" === item?.metadata?.is_pad || "Patrocinado" === item?.ads_promotions?.text)).length;
+    c.forEach((card, index) => { card.novaiListItem = e[index]; });
+    const fullCount = c.filter((card, index) => isFullListCard(card, e[index])).length;
+    const adsCount = c.filter((card, index) => isSponsoredListCard(card, e[index])).length;
     const categoryLabel = document.querySelector(".ui-search-breadcrumb__title")?.textContent?.trim()
       || document.querySelector("h1")?.textContent?.trim()
       || "Resultados da busca";
@@ -5195,11 +5265,7 @@ function runOnList() {
           ));
           let r = n?.catalogListed ?? isCatalogListingUrl(n?.metadata?.url || "");
           r = null != r && r;
-          let d = n?.is_ad ?? "Patrocinado" === n?.ads_promotions?.text, m = !1;
-          s && n?.components.forEach((e => {
-            e && "shipped_from" === e.id && e.shipped_from?.text?.includes("{vpp_full_icon}") && (m = !0)
-          }
-          )), m && (null == a ? a = 1: a += 1);
+          let d = isSponsoredListCard(c[t], n);
           let p = u, g = document.createElement("div");
           g.innerHTML = p;
           let f, y = g.firstElementChild;
@@ -5432,7 +5498,7 @@ if (y && !y.dataset.bound) {
   y.dataset.bound = "1";
 }
 document.getElementsByTagName("nvailoader");
-var a = document.getElementsByClassName("fulfillment ui-pb-label-builder fulfillment fulfillment").length > 0 ? document.getElementsByClassName("fulfillment ui-pb-label-builder fulfillment fulfillment"): document.querySelectorAll(".poly-component__shipped-from").length > 0 ? document.querySelectorAll(".poly-component__shipped-from"): document.getElementsByClassName("poly-shipping__promise-icon--full"), i = e.filter((e => e.metadata && "true" === e.metadata.is_pad)), s = [];
+var a = c.filter((card, index) => isFullListCard(card, e[index])), i = e.filter((item, index) => isSponsoredListCard(c[index], item)), s = [];
 function o(e) {
   let t = document.getElementById("eacatextrainfo");
   function n() {
