@@ -3421,7 +3421,7 @@ function contentScpt() {
     --novai-border:rgba(255,255,255,.14);
   }
 
-  /* Janela ampla, centralizada e limitada ao tamanho da tela. */
+  /* Janela compacta que acompanha a altura do formulário. */
   #price-tool{
     background:var(--novai-card) !important;
     color:var(--novai-text) !important;
@@ -3431,10 +3431,10 @@ function contentScpt() {
     bottom:auto !important;
     right:auto !important;
     transform:translate(-50%, -50%) !important;
-    width:min(560px, calc(100vw - 32px)) !important;
+    width:min(420px, calc(100vw - 32px)) !important;
     min-width:0 !important;
     max-width:calc(100vw - 32px) !important;
-    height:min(780px, calc(100dvh - 32px)) !important;
+    height:auto !important;
     max-height:calc(100dvh - 32px) !important;
     box-sizing:border-box !important;
     margin:0 !important;
@@ -3445,7 +3445,7 @@ function contentScpt() {
     padding:12px !important;
     gap:8px !important;
     box-shadow:0 12px 32px rgba(0,0,0,.28) !important;
-    overflow:hidden !important;
+    overflow:auto !important;
     font-family:'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
   }
   #price-tool.hdn{ display:none !important; }
@@ -3457,11 +3457,12 @@ function contentScpt() {
     padding:10px 20px; font-size:14px; font-weight:800; cursor:pointer;
   }
   #price-tool #etapa1{
-    display:flex; flex-direction:column; flex:1; min-height:0; margin:0 !important;
+    display:flex; flex-direction:column; flex:0 0 auto; min-height:0; margin:0 !important;
+    overflow:visible !important;
   }
-  #price-tool #etapa1.hdn{ display:none !important; }
+  #price-tool #etapa1.hdn, #price-tool #etapa2.hdn{ display:none !important; }
   #price-tool #etapa2{
-    flex:1; min-height:0; overflow:auto; transform:none !important;
+    flex:0 0 auto; min-height:0; overflow:visible; transform:none !important;
   }
 
   /* Tipografia e cores internas */
@@ -3489,7 +3490,7 @@ function contentScpt() {
 
   /* Área de conteúdo rolável dentro do "celular" */
   #price-tool #pricetool_content{
-    flex:1 !important;
+    flex:0 0 auto !important;
     min-height:0 !important;
     overflow:auto !important;
     padding:.25rem .5rem !important;
