@@ -287,6 +287,7 @@ function ensureVisitsComponentSkeleton(container) {
   removeDuplicateElementsById("visits-component");
   if (container.querySelector("#visits-component")) {
     relocateChartButtonToSubtitle();
+    ensurePriceButtonInConversion();
     return;
   }
 
@@ -294,11 +295,13 @@ function ensureVisitsComponentSkeleton(container) {
   if (revenueCard && typeof revenueCard.insertAdjacentHTML === "function") {
     revenueCard.insertAdjacentHTML("afterend", buildVisitsComponentSkeleton());
     relocateChartButtonToSubtitle();
+    ensurePriceButtonInConversion();
     return;
   }
 
   container.insertAdjacentHTML("afterbegin", buildVisitsComponentSkeleton());
   relocateChartButtonToSubtitle();
+  ensurePriceButtonInConversion();
 }
 
 function relocateChartButtonToSubtitle(attempt = 0) {
@@ -810,6 +813,7 @@ function _mfyScheduleReinit(reason) {
 function _mfyKeepAliveTick() {
   try {
     if (paginaAtual === 'anuncio') {
+      ensurePriceButtonInConversion();
       const hasSwitch = document.getElementById('eaoffSwitch');
       if (!hasSwitch) return _mfyScheduleReinit('missing eaoffSwitch');
       const hasSinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
@@ -1666,24 +1670,33 @@ const PRICE_BUTTON_BOTTOM = "1.5rem";
 const PRICE_BUTTON_RIGHT = "2rem";
 const PRICE_TOOL_GAP = "1.5rem";
 const PRICE_TOOL_Z_INDEX = 2147483646;
-const PRICE_BUTTON_Z_INDEX = 2147483647;
 
-function applyFixedPositionPriceButton(button) {
+function placePriceButtonInConversion(button) {
   if (!button) return;
-
-  button.style.position = "fixed";
-  button.style.bottom = PRICE_BUTTON_BOTTOM;
+  const conversionCard = document.getElementById("visits-right");
+  if (!conversionCard) {
+    button.style.display = "none";
+    return;
+  }
+  if (button.parentElement !== conversionCard) conversionCard.appendChild(button);
+  button.style.display = "flex";
+  button.style.position = "relative";
+  button.style.bottom = "";
   button.style.top = "";
-  button.style.right = PRICE_BUTTON_RIGHT;
+  button.style.right = "";
   button.style.left = "";
-  button.style.margin = "";
+  button.style.width = "2.75rem";
+  button.style.height = "2.75rem";
+  button.style.margin = "12px 0 0";
   button.style.float = "";
-  button.style.zIndex = PRICE_BUTTON_Z_INDEX;
+  button.style.zIndex = "1";
+  button.setAttribute("title", "Abrir calculadora de preço");
+  button.setAttribute("aria-label", "Abrir calculadora de preço");
 }
 
-function ensurePriceButtonFixedPosition() {
+function ensurePriceButtonInConversion() {
   const priceButton = document.getElementById("preco-btn");
-  applyFixedPositionPriceButton(priceButton);
+  placePriceButtonInConversion(priceButton);
 }
 
 var btn_preco = `<div id="preco-btn" class="andes-button andes-button--loud background_novai_black pricebtn"
@@ -1691,14 +1704,12 @@ var btn_preco = `<div id="preco-btn" class="andes-button andes-button--loud back
             height: ${PRICE_BUTTON_SIZE};
             padding: 0;
             border-radius: 50%;
-            position: fixed;
-            bottom: ${PRICE_BUTTON_BOTTOM};
-            right: ${PRICE_BUTTON_RIGHT};
-            display: flex;
+            position: relative;
+            display: none;
             align-items: center;
             justify-content: center;
             box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
-            z-index: ${PRICE_BUTTON_Z_INDEX};
+            z-index: 1;
             cursor: pointer;">
   <img id="preco-img" style="width:50%;" src="https://img.icons8.com/ios-glyphs/30/ffffff/estimate.png"/>
 </div>`;
@@ -1718,7 +1729,7 @@ function mountPriceInterface(anchorElement) {
   anchorElement.insertAdjacentHTML("beforeend", price_tool);
 
   const insertedButton = document.getElementById("preco-btn");
-  applyFixedPositionPriceButton(insertedButton);
+  placePriceButtonInConversion(insertedButton);
 
   removeDuplicateElementsById("preco-btn");
   removeDuplicateElementsById("price-tool");
@@ -2517,6 +2528,7 @@ function updateVisitsComponentContent({
   if (!container) return;
 
   ensureMediaWrapperInsideVisitsCard();
+  ensurePriceButtonInConversion();
 
   if (typeof isCatalog === "boolean") {
     container.setAttribute("data-iscatalog", isCatalog ? "true" : "false");
@@ -4061,9 +4073,11 @@ if (subtitleWrapper) {
 ();
 var e = document.getElementById("price-tool");
 e.className = "hdn", document.getElementById("preco-btn").onclick = function () {
-  if (null == document.getElementById("mlfee") ? "hdn" == e.className || "hdn ui-pdp-buybox" == e.className ? e.className = "ui-pdp-buybox smooth ui-pdp-container__row ui-pdp-component-list pr-16 pl-16 alinharvertical": e.className = "hdn": "hdn" == e.className || "hdn ui-pdp-buybox" == e.className ? (e.className = "ui-pdp-buybox smooth ui-pdp-container__row ui-pdp-component-list pr-16 pl-16 alinharvertical", document.getElementById("mlfee").style.display = "none", document.getElementById("mlpft").style.display = "none"): (e.className = "hdn", document.getElementById("mlfee").style.display = "flex", document.getElementById("mlpft").style.display = "flex"), iscatalog) {
-    let e = document.getElementById("preco-btn");
-    e && e.parentElement?.previousSibling?.previousSibling?.classList.contains("ui-pdp-price__part__container") && e.parentElement?.previousSibling?.previousSibling?.setAttribute("style", "position: relative; left: 4rem;")
+  const opening = e.classList.contains("hdn");
+  e.className = opening ? "ui-pdp-buybox smooth ui-pdp-container__row ui-pdp-component-list pr-16 pl-16 alinharvertical" : "hdn";
+  for (const id of ["mlfee", "mlpft"]) {
+    const label = document.getElementById(id);
+    if (label) label.style.display = opening ? "none" : "flex";
   }
 }
 ;
@@ -4085,17 +4099,7 @@ if (t.addEventListener("focus", (function () {
   t.length < 2 && e.parentElement?.previousElementSibling?.setAttribute("style", "margin: 0 0 .75rem 2.2rem");
   let n = document.getElementById("preco-btn");
   if (n) {
-    const priceToolElement = n.nextSibling;
-    priceToolElement?.style && (priceToolElement.style.margin = "-2rem 0 0 4.2rem");
-    n.parentElement?.previousSibling?.previousSibling?.classList.contains("ui-pdp-price__part__container") && n.parentElement?.previousSibling?.previousSibling?.setAttribute("style", "position: relative; left: 4rem;");
-    if (t.length > 2 && priceToolElement?.style) {
-      priceToolElement.style.margin = "1rem 0px 0px 0rem";
-    }
-    const parentElement = n.parentElement;
-    if (parentElement?.getElementsByClassName("andes-money-amount__discount")[0] && priceToolElement) {
-      priceToolElement.setAttribute("style", "");
-    }
-    ensurePriceButtonFixedPosition();
+    ensurePriceButtonInConversion();
   }
   let a = document.getElementsByClassName("ui-pdp-price__second-line")[0], i = a?.parentElement, s = i?.firstChild, o = s == a, r = a.getElementsByClassName("ui-pdp-price__second-line__label");
   if (t.length > 1) {
@@ -4304,7 +4308,7 @@ function s() {
         spot2 = document.getElementsByClassName("ui-pdp-container__row--price");
       }
 
-      applyFixedPositionPriceButton(priceButtonElement);
+      placePriceButtonInConversion(priceButtonElement);
 
       for (let e = 0; e < variationsbtn.length; e++) {
         variationsbtn[e].addEventListener("click", function () {
