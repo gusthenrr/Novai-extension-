@@ -1666,10 +1666,44 @@ var analytics_ui = `
 `;
 
 const PRICE_BUTTON_SIZE = "4rem";
-const PRICE_BUTTON_BOTTOM = "1.5rem";
-const PRICE_BUTTON_RIGHT = "2rem";
-const PRICE_TOOL_GAP = "1.5rem";
 const PRICE_TOOL_Z_INDEX = 2147483646;
+let priceToolDismissListenersBound = false;
+
+function setPriceToolOpen(open) {
+  const tool = document.getElementById("price-tool");
+  if (!tool) return;
+  tool.classList.toggle("hdn", !open);
+  tool.setAttribute("aria-hidden", String(!open));
+  document.getElementById("preco-btn")?.setAttribute("aria-expanded", String(open));
+  for (const id of ["mlfee", "mlpft"]) {
+    const label = document.getElementById(id);
+    if (!label) continue;
+    if (open) {
+      if (!label.hasAttribute("data-price-tool-display")) label.dataset.priceToolDisplay = label.style.display;
+      label.style.display = "none";
+    } else if (label.hasAttribute("data-price-tool-display")) {
+      label.style.display = label.dataset.priceToolDisplay;
+      delete label.dataset.priceToolDisplay;
+    }
+  }
+}
+
+function bindPriceToolDismissal() {
+  const closeButton = document.getElementById("price-tool-close");
+  if (closeButton) closeButton.onclick = () => setPriceToolOpen(false);
+  if (priceToolDismissListenersBound) return;
+  document.addEventListener("click", event => {
+    const tool = document.getElementById("price-tool");
+    const trigger = document.getElementById("preco-btn");
+    if (tool && !tool.classList.contains("hdn") && !tool.contains(event.target) && !trigger?.contains(event.target)) {
+      setPriceToolOpen(false);
+    }
+  }, true);
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") setPriceToolOpen(false);
+  });
+  priceToolDismissListenersBound = true;
+}
 
 function placePriceButtonBesidePrice(button) {
   if (!button) return;
@@ -1695,9 +1729,9 @@ function placePriceButtonBesidePrice(button) {
   button.style.top = "";
   button.style.right = "";
   button.style.left = "";
-  button.style.width = "2rem";
-  button.style.height = "2rem";
-  button.style.flex = "0 0 2rem";
+  button.style.width = PRICE_BUTTON_SIZE;
+  button.style.height = PRICE_BUTTON_SIZE;
+  button.style.flex = `0 0 ${PRICE_BUTTON_SIZE}`;
   button.style.margin = "0 0 0 10px";
   button.style.float = "";
   button.style.zIndex = "1";
@@ -1722,7 +1756,7 @@ var btn_preco = `<div id="preco-btn" class="andes-button andes-button--loud back
             box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
             z-index: 1;
             cursor: pointer;">
-  <img id="preco-img" style="width:50%;" src="https://img.icons8.com/ios-glyphs/30/ffffff/estimate.png"/>
+  <img id="preco-img" style="width:50%;" src="https://img.icons8.com/ios-glyphs/64/ffffff/estimate.png"/>
 </div>`;
 
 var price_tool = "";
@@ -1744,6 +1778,7 @@ function mountPriceInterface(anchorElement) {
 
   removeDuplicateElementsById("preco-btn");
   removeDuplicateElementsById("price-tool");
+  bindPriceToolDismissal();
 }
 
 var condicao_produto = "";
@@ -3386,12 +3421,23 @@ function contentScpt() {
     --novai-border:rgba(255,255,255,.14);
   }
 
-  /* ► Container em formato "calculadora" (alto e estreito) */
+  /* Janela ampla, centralizada e limitada ao tamanho da tela. */
   #price-tool{
     background:var(--novai-card) !important;
     color:var(--novai-text) !important;
-    width:clamp(260px, 24vw, 320px) !important; /* mais estreito */
-    height:clamp(460px, 60vh, 640px) !important; /* mais alto */
+    position:fixed !important;
+    top:50% !important;
+    left:50% !important;
+    bottom:auto !important;
+    right:auto !important;
+    transform:translate(-50%, -50%) !important;
+    width:min(560px, calc(100vw - 32px)) !important;
+    min-width:0 !important;
+    max-width:calc(100vw - 32px) !important;
+    height:min(780px, calc(100dvh - 32px)) !important;
+    max-height:calc(100dvh - 32px) !important;
+    box-sizing:border-box !important;
+    margin:0 !important;
     border-radius:16px !important;
     border:1px solid var(--novai-border) !important;
     display:flex !important;
@@ -3401,6 +3447,21 @@ function contentScpt() {
     box-shadow:0 12px 32px rgba(0,0,0,.28) !important;
     overflow:hidden !important;
     font-family:'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+  }
+  #price-tool.hdn{ display:none !important; }
+  #price-tool .price-tool-toolbar{
+    display:flex; justify-content:flex-end; flex-shrink:0;
+  }
+  #price-tool-close{
+    background:#ffe600; color:#111; border:0; border-radius:999px;
+    padding:10px 20px; font-size:14px; font-weight:800; cursor:pointer;
+  }
+  #price-tool #etapa1{
+    display:flex; flex-direction:column; flex:1; min-height:0; margin:0 !important;
+  }
+  #price-tool #etapa1.hdn{ display:none !important; }
+  #price-tool #etapa2{
+    flex:1; min-height:0; overflow:auto; transform:none !important;
   }
 
   /* Tipografia e cores internas */
@@ -3422,12 +3483,14 @@ function contentScpt() {
     box-shadow:inset 0 4px 0 var(--novai-ml-yellow) !important;
     display:flex !important;
     align-items:center !important;
+    flex-shrink:0 !important;
   }
   #price-tool #pricetool_header h3{ color:var(--novai-ml-yellow) !important; }
 
   /* Área de conteúdo rolável dentro do "celular" */
   #price-tool #pricetool_content{
     flex:1 !important;
+    min-height:0 !important;
     overflow:auto !important;
     padding:.25rem .5rem !important;
   }
@@ -3486,8 +3549,6 @@ function contentScpt() {
 
 <div id="price-tool" style="
           position: fixed;
-          bottom: calc(${PRICE_BUTTON_BOTTOM} + ${PRICE_BUTTON_SIZE} + ${PRICE_TOOL_GAP});
-          right: calc(${PRICE_BUTTON_RIGHT} + ${PRICE_BUTTON_SIZE} + ${PRICE_TOOL_GAP});
           background-color: #fff;
           box-shadow: rgba(0, 0, 0, 0.1) 0px 7px 11px -7px,
             rgba(0, 0, 0, 0.2) 0px 1px 2px 0px;
@@ -3496,7 +3557,8 @@ function contentScpt() {
           max-width: min(90vw, 28rem);
           width: auto;
           /* overflow: hidden; */
-        " class="hdn ui-pdp-buybox smooth ui-pdp-container__row ui-pdp-component-list pr-16 pl-16 alinharvertical">
+        " class="hdn ui-pdp-buybox smooth ui-pdp-container__row ui-pdp-component-list pr-16 pl-16 alinharvertical" role="dialog" aria-label="Calculadora de preço" aria-hidden="true">
+  <div class="price-tool-toolbar"><button id="price-tool-close" type="button">Fechar</button></div>
   <div id="etapa2" class="smooth hdn transp" style="width: inherit; float: left; transform: translate(-10px, 0px)">
       <div style="text-align: right; padding-left: 1.85em; width: 45%">
           O valor <b>sugerido</b> para publicar seu anúncio é de:
@@ -4083,13 +4145,10 @@ if (subtitleWrapper) {
 }
 ();
 var e = document.getElementById("price-tool");
-e.className = "hdn", document.getElementById("preco-btn").onclick = function () {
+setPriceToolOpen(false);
+document.getElementById("preco-btn").onclick = function () {
   const opening = e.classList.contains("hdn");
-  e.className = opening ? "ui-pdp-buybox smooth ui-pdp-container__row ui-pdp-component-list pr-16 pl-16 alinharvertical" : "hdn";
-  for (const id of ["mlfee", "mlpft"]) {
-    const label = document.getElementById(id);
-    if (label) label.style.display = opening ? "none" : "flex";
-  }
+  setPriceToolOpen(opening);
 }
 ;
 var t = document.getElementById("mrgbrl"), n = document.getElementById("margem");
