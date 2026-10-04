@@ -1674,11 +1674,16 @@ const PRICE_TOOL_Z_INDEX = 2147483646;
 function placePriceButtonInConversion(button) {
   if (!button) return;
   const conversionCard = document.getElementById("visits-right");
-  if (!conversionCard) {
+  const grid = document.getElementById("visits-grid");
+  if (!conversionCard || !grid) {
     button.style.display = "none";
     return;
   }
-  if (button.parentElement !== conversionCard) conversionCard.appendChild(button);
+  // Segunda linha da grade: fora do card e na mesma coluna de Conversão.
+  if (button.parentElement !== grid) grid.appendChild(button);
+  button.style.gridColumn = "2";
+  button.style.gridRow = "2";
+  button.style.justifySelf = "start";
   button.style.display = "flex";
   button.style.position = "relative";
   button.style.bottom = "";
@@ -1687,7 +1692,7 @@ function placePriceButtonInConversion(button) {
   button.style.left = "";
   button.style.width = "2.75rem";
   button.style.height = "2.75rem";
-  button.style.margin = "12px 0 0";
+  button.style.margin = "0 0 0 14px";
   button.style.float = "";
   button.style.zIndex = "1";
   button.setAttribute("title", "Abrir calculadora de preço");
