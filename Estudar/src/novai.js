@@ -287,7 +287,7 @@ function ensureVisitsComponentSkeleton(container) {
   removeDuplicateElementsById("visits-component");
   if (container.querySelector("#visits-component")) {
     relocateChartButtonToSubtitle();
-    ensurePriceButtonInConversion();
+    ensurePriceButtonBesidePrice();
     return;
   }
 
@@ -295,13 +295,13 @@ function ensureVisitsComponentSkeleton(container) {
   if (revenueCard && typeof revenueCard.insertAdjacentHTML === "function") {
     revenueCard.insertAdjacentHTML("afterend", buildVisitsComponentSkeleton());
     relocateChartButtonToSubtitle();
-    ensurePriceButtonInConversion();
+    ensurePriceButtonBesidePrice();
     return;
   }
 
   container.insertAdjacentHTML("afterbegin", buildVisitsComponentSkeleton());
   relocateChartButtonToSubtitle();
-  ensurePriceButtonInConversion();
+  ensurePriceButtonBesidePrice();
 }
 
 function relocateChartButtonToSubtitle(attempt = 0) {
@@ -813,7 +813,7 @@ function _mfyScheduleReinit(reason) {
 function _mfyKeepAliveTick() {
   try {
     if (paginaAtual === 'anuncio') {
-      ensurePriceButtonInConversion();
+      ensurePriceButtonBesidePrice();
       const hasSwitch = document.getElementById('eaoffSwitch');
       if (!hasSwitch) return _mfyScheduleReinit('missing eaoffSwitch');
       const hasSinceWrapper = document.getElementById(NOVAI_SINCE_WRAPPER_ID);
@@ -1671,37 +1671,43 @@ const PRICE_BUTTON_RIGHT = "2rem";
 const PRICE_TOOL_GAP = "1.5rem";
 const PRICE_TOOL_Z_INDEX = 2147483646;
 
-function placePriceButtonInConversion(button) {
+function placePriceButtonBesidePrice(button) {
   if (!button) return;
-  const conversionCard = document.getElementById("visits-right");
-  const grid = document.getElementById("visits-grid");
-  if (!conversionCard || !grid) {
+  const priceScope = document.querySelector(".ui-pdp-price__main-container, .ui-pdp-container__row--price, .ui-pdp-price");
+  const priceAmount = priceScope?.querySelector(".andes-money-amount:not(.andes-money-amount--previous)");
+  const priceLine = priceAmount?.closest(".ui-pdp-price__second-line")
+    || priceScope?.querySelector(".ui-pdp-price__second-line")
+    || priceAmount?.parentElement;
+  if (!priceLine) {
     button.style.display = "none";
     return;
   }
-  // Segunda linha da grade: fora do card e na mesma coluna de Conversão.
-  if (button.parentElement !== grid) grid.appendChild(button);
-  button.style.gridColumn = "2";
-  button.style.gridRow = "2";
-  button.style.justifySelf = "start";
+  if (button.parentElement !== priceLine) priceLine.appendChild(button);
+  priceLine.style.display = "flex";
+  priceLine.style.alignItems = "center";
+  priceLine.style.flexWrap = "nowrap";
+  button.style.gridColumn = "";
+  button.style.gridRow = "";
+  button.style.justifySelf = "";
   button.style.display = "flex";
   button.style.position = "relative";
   button.style.bottom = "";
   button.style.top = "";
   button.style.right = "";
   button.style.left = "";
-  button.style.width = "2.75rem";
-  button.style.height = "2.75rem";
-  button.style.margin = "0 0 0 14px";
+  button.style.width = "2rem";
+  button.style.height = "2rem";
+  button.style.flex = "0 0 2rem";
+  button.style.margin = "0 0 0 10px";
   button.style.float = "";
   button.style.zIndex = "1";
   button.setAttribute("title", "Abrir calculadora de preço");
   button.setAttribute("aria-label", "Abrir calculadora de preço");
 }
 
-function ensurePriceButtonInConversion() {
+function ensurePriceButtonBesidePrice() {
   const priceButton = document.getElementById("preco-btn");
-  placePriceButtonInConversion(priceButton);
+  placePriceButtonBesidePrice(priceButton);
 }
 
 var btn_preco = `<div id="preco-btn" class="andes-button andes-button--loud background_novai_black pricebtn"
@@ -1734,7 +1740,7 @@ function mountPriceInterface(anchorElement) {
   anchorElement.insertAdjacentHTML("beforeend", price_tool);
 
   const insertedButton = document.getElementById("preco-btn");
-  placePriceButtonInConversion(insertedButton);
+  placePriceButtonBesidePrice(insertedButton);
 
   removeDuplicateElementsById("preco-btn");
   removeDuplicateElementsById("price-tool");
@@ -2533,7 +2539,7 @@ function updateVisitsComponentContent({
   if (!container) return;
 
   ensureMediaWrapperInsideVisitsCard();
-  ensurePriceButtonInConversion();
+  ensurePriceButtonBesidePrice();
 
   if (typeof isCatalog === "boolean") {
     container.setAttribute("data-iscatalog", isCatalog ? "true" : "false");
@@ -4104,7 +4110,7 @@ if (t.addEventListener("focus", (function () {
   t.length < 2 && e.parentElement?.previousElementSibling?.setAttribute("style", "margin: 0 0 .75rem 2.2rem");
   let n = document.getElementById("preco-btn");
   if (n) {
-    ensurePriceButtonInConversion();
+    ensurePriceButtonBesidePrice();
   }
   let a = document.getElementsByClassName("ui-pdp-price__second-line")[0], i = a?.parentElement, s = i?.firstChild, o = s == a, r = a.getElementsByClassName("ui-pdp-price__second-line__label");
   if (t.length > 1) {
@@ -4313,7 +4319,7 @@ function s() {
         spot2 = document.getElementsByClassName("ui-pdp-container__row--price");
       }
 
-      placePriceButtonInConversion(priceButtonElement);
+      placePriceButtonBesidePrice(priceButtonElement);
 
       for (let e = 0; e < variationsbtn.length; e++) {
         variationsbtn[e].addEventListener("click", function () {
